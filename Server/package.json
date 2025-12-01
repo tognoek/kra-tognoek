@@ -16,6 +16,7 @@
     "@types/express": "^5.0.3",
     "@types/node": "^24.6.1",
     "nodemon": "^3.1.10",
+    "redis": "^5.8.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },

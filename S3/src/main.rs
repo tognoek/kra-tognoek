@@ -12,12 +12,11 @@ use axum::{
     extract::Extension
 };
 use serde::Deserialize;
-use std::{path::{Path}, io};
-use tokio::{fs::File, io::AsyncReadExt};
-use zip::write::FileOptions;
-use std::io::Cursor;
-use std::io::Write;
+use std::{path::{Path}};
+use zip::{ZipArchive, ZipWriter, write::FileOptions};
+use std::io::{Write, Read, Cursor};
 use tokio::sync::mpsc;
+use tokio::task;
 use crate::stats::StatEvent;
 use crate::pool::spawn_stats_pool;
 
@@ -32,19 +31,23 @@ struct Params {
 async fn download_zip(Query(params): Query<Params>, 
         Extension(tx): Extension<mpsc::Sender<StatEvent>>) -> impl IntoResponse {
     let monitor = Monitor::start();
-    // let _ = tx.send(StatEvent { cpu: 0.0, ram: 0, disk: 0 }).await;
 
     if !is_safe_name(&params.id) || !is_safe_name(&params.name) {
         let res = monitor.end();
-        let _ = tx.send(res);
+        let _ = tx.send(res).await;
         return (StatusCode::BAD_REQUEST, "Invalid id or name".to_string()).into_response();
     }
 
-    let code_path = Path::new("data").join("code").join(format!("{}.cpp", params.id));
-    let test_path = Path::new("data").join("test").join(&params.name);
+    let code_path = Path::new(DATA_DIR).join("code").join(format!("{}.cpp", params.id));
+    let test_path = Path::new(DATA_DIR).join("test").join(format!("{}.zip", &params.name));
 
-    let resp = match create_zip_in_memory(&code_path, &test_path).await {
-        Ok(bytes) => {
+    let code_path_clone = code_path.clone();
+    let test_path_clone = test_path.clone();
+
+    let resp = match task::spawn_blocking(move || {
+        merge_zip_and_code_sync(&test_path_clone, &code_path_clone)
+    }).await {
+        Ok(Ok(bytes)) => {
             let filename = format!("{}_{}.zip", params.id, params.name);
             let mut headers = HeaderMap::new();
             headers.insert(header::CONTENT_TYPE, "application/zip".parse().unwrap());
@@ -56,11 +59,20 @@ async fn download_zip(Query(params): Query<Params>,
             );
             (headers, bytes).into_response()
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Zip error: {}", e),
-        )
-            .into_response(),
+        Ok(Err(e)) => {
+            eprintln!("Zip error: {}", e); 
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Zip error: {}", e),
+            ).into_response()
+        }
+        Err(e) => {
+            eprintln!("Task join error: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Task error: {}", e),
+            ).into_response()
+        }
     };
 
     let res = monitor.end();
@@ -69,41 +81,45 @@ async fn download_zip(Query(params): Query<Params>,
     resp
 }
 
-async fn create_zip_in_memory(code_path: &Path, test_path: &Path) -> io::Result<Vec<u8>> {
-    let buffer = Cursor::new(Vec::new());
-    let mut zip = zip::ZipWriter::new(buffer);
-    let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+fn merge_zip_and_code_sync(test_zip_path: &Path, code_path: &Path) -> std::io::Result<Vec<u8>> {
+    let test_zip_bytes = std::fs::read(test_zip_path)?;
+    let reader = Cursor::new(test_zip_bytes);
+    let mut archive = ZipArchive::new(reader)?;
 
-    // add code file
+    let buffer = Vec::new();
+    let cursor = Cursor::new(buffer);
+    let mut zip_out = ZipWriter::new(cursor);
+
+    let options = FileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .unix_permissions(0o755); 
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let name = file.name().to_string();
+        
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents)?;
+        
+        zip_out.start_file(name, options)?;
+        zip_out.write_all(&contents)?;
+    }
+
     if code_path.exists() {
-        let mut file = File::open(code_path).await?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf).await?;
-        zip.start_file(
-            format!("code/{}", code_path.file_name().unwrap().to_string_lossy()),
-            options,
-        )?;
-        zip.write_all(&buf)?;
+        let code_content = std::fs::read(code_path)?;
+        let filename = code_path
+            .file_name()
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid filename"))?
+            .to_string_lossy();
+            
+        zip_out.start_file(format!("code/{}", filename), options)?;
+        zip_out.write_all(&code_content)?;
     }
 
-    // add test folder
-    if test_path.exists() {
-        for entry in walkdir::WalkDir::new(test_path) {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_file() {
-                let relative = path.strip_prefix(DATA_DIR).unwrap();
-                let mut file = File::open(path).await?;
-                let mut buf = Vec::new();
-                file.read_to_end(&mut buf).await?;
-                zip.start_file(relative.to_string_lossy(), options)?;
-                zip.write_all(&buf)?;
-            }
-        }
-    }
+    let cursor = zip_out.finish()?;
+    let final_bytes = cursor.into_inner();
 
-    let cursor: Cursor<Vec<u8>> = zip.finish()?; 
-    Ok(cursor.into_inner())
+    Ok(final_bytes)
 }
 
 fn is_safe_name(s: &str) -> bool {
