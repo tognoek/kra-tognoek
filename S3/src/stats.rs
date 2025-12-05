@@ -1,4 +1,15 @@
 use std::env;
+
+/// Kiểm tra biến môi trường ENABLE_CONSOLE_OUTPUT để bật/tắt việc vẽ ra console
+/// Mặc định: true (bật) nếu không set
+pub fn is_console_output_enabled() -> bool {
+    env::var("ENABLE_CONSOLE_OUTPUT")
+        .unwrap_or_else(|_| "true".to_string())
+        .to_lowercase()
+        .parse::<bool>()
+        .unwrap_or(true)
+}
+
 #[derive(Default)]
 pub struct Stats {
     pub max_call: u64,
@@ -56,20 +67,23 @@ impl Stats {
         let avg_disk = self.total_disk / self.total_calls;
         let avg_time = self.total_time / self.total_calls;
 
-        print!("\x1B[2J\x1B[3J\x1B[H");
-        println!("===========================[http://127.0.0.1:3000]============================");
-        println!("┌─────────────┬───────────────┬───────────────┬───────────────┬───────────────┐");
-        println!("│ TotalCalls  │   CPU %       │   RAM (MB)    │  Disk (MB)    │  Time (ms)    │");
-        println!("├─────────────┼───────────────┼───────────────┼───────────────┼───────────────┤");
-        println!(
-            "│ {:11} │ Avg: {:8.2} │ Avg: {:8} │ Avg: {:8} │ Avg: {:8} │",
-            self.format_number(self.total_calls), avg_cpu, avg_ram , avg_disk , avg_time
+        // Sử dụng buffer để giảm số lần syscall
+        let output = format!(
+            "\x1B[2J\x1B[3J\x1B[H\
+===========================[http://127.0.0.1:3000]============================\n\
+┌─────────────┬───────────────┬───────────────┬───────────────┬───────────────┐\n\
+│ TotalCalls  │   CPU %       │   RAM (MB)    │  Disk (MB)    │  Time (ms)    │\n\
+├─────────────┼───────────────┼───────────────┼───────────────┼───────────────┤\n\
+│ {:11} │ Avg: {:8.2} │ Avg: {:8} │ Avg: {:8} │ Avg: {:8} │\n\
+│ {:11} │ Max: {:8.2} │ Max: {:8} │ Max: {:8} │ Max: {:8} │\n\
+└─────────────┴───────────────┴───────────────┴───────────────┴───────────────┘\n",
+            self.format_number(self.total_calls), avg_cpu, avg_ram, avg_disk, avg_time,
+            "", self.max_cpu, self.max_ram, self.max_disk, self.max_time
         );
-        println!(
-            "│ {:11} │ Max: {:8.2} │ Max: {:8} │ Max: {:8} │ Max: {:8} │",
-            "", self.max_cpu, self.max_ram , self.max_disk , self.max_time
-        );
-        println!("└─────────────┴───────────────┴───────────────┴───────────────┴───────────────┘");
+        print!("{}", output);
+        // Flush để đảm bảo output được hiển thị ngay
+        use std::io::Write;
+        let _ = std::io::stdout().flush();
     }
 
     pub fn format_number(&self, n: u64) -> String {

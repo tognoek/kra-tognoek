@@ -1,0 +1,165 @@
+// Prisma schema for MySQL based on the provided DB design
+// Run: npx prisma generate && npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model VaiTro {
+  IdVaiTro  BigInt  @id @default(autoincrement())
+  TenVaiTro String  @unique
+  MoTa      String? @db.Text
+
+  taiKhoans TaiKhoan[]
+}
+
+model TaiKhoan {
+  IdTaiKhoan   BigInt   @id @default(autoincrement())
+  IdVaiTro     BigInt
+  TenDangNhap  String   @unique
+  MatKhau      String
+  HoTen        String
+  Email        String   @unique
+  TrangThai    Boolean  @default(true)
+  NgayTao      DateTime @default(now())
+
+  vaiTro       VaiTro   @relation(fields: [IdVaiTro], references: [IdVaiTro])
+  deBais       DeBai[]
+  binhLuans    BinhLuan[]
+  cuocThis     CuocThi[]
+  baiNops      BaiNop[]
+  cuocThiDangKy CuocThi_DangKy[]
+}
+
+model ChuDe {
+  IdChuDe  BigInt  @id @default(autoincrement())
+  TenChuDe String  @unique
+  MoTa     String? @db.Text
+
+  deBaiChuDes DeBai_ChuDe[]
+}
+
+model DeBai {
+  IdDeBai         BigInt   @id @default(autoincrement())
+  IdTaiKhoan      BigInt
+  TieuDe          String
+  NoiDungDeBai    String   @db.Text
+  DoKho           String
+  GioiHanThoiGian Int
+  GioiHanBoNho    Int
+  DangCongKhai    Boolean  @default(true)
+  NgayTao         DateTime @default(now())
+  TrangThai       Boolean  @default(true)
+
+  taiKhoan     TaiKhoan    @relation(fields: [IdTaiKhoan], references: [IdTaiKhoan])
+  deBaiChuDes  DeBai_ChuDe[]
+  binhLuans    BinhLuan[]
+  boTests      BoTest[]
+  cuocThiDeBai CuocThi_DeBai[]
+  baiNops      BaiNop[]
+}
+
+model DeBai_ChuDe {
+  IdDeBai BigInt
+  IdChuDe BigInt
+
+  deBai DeBai @relation(fields: [IdDeBai], references: [IdDeBai])
+  chuDe ChuDe @relation(fields: [IdChuDe], references: [IdChuDe])
+
+  @@id([IdDeBai, IdChuDe])
+}
+
+model BinhLuan {
+  IdBinhLuan BigInt   @id @default(autoincrement())
+  IdDeBai    BigInt
+  IdTaiKhoan BigInt
+  NoiDung    String   @db.Text
+  NgayTao    DateTime @default(now())
+  TrangThai  Boolean  @default(true)
+
+  deBai    DeBai    @relation(fields: [IdDeBai], references: [IdDeBai])
+  taiKhoan TaiKhoan @relation(fields: [IdTaiKhoan], references: [IdTaiKhoan])
+}
+
+model BoTest {
+  IdBoTest      BigInt   @id @default(autoincrement())
+  IdDeBai       BigInt
+  DuongDanInput String
+  DuongDanOutput String
+  DuongDanCode  String
+  NgayTao       DateTime @default(now())
+
+  deBai DeBai @relation(fields: [IdDeBai], references: [IdDeBai])
+}
+
+model CuocThi {
+  IdCuocThi       BigInt   @id @default(autoincrement())
+  IdTaiKhoan      BigInt
+  TenCuocThi      String
+  MoTa            String   @db.Text
+  ThoiGianBatDau  DateTime
+  ThoiGianKetThuc DateTime
+  TrangThai       Boolean  @default(true)
+  NgayTao         DateTime @default(now())
+  ChuY            String?  @db.Text
+
+  taiKhoan      TaiKhoan        @relation(fields: [IdTaiKhoan], references: [IdTaiKhoan])
+  deBais        CuocThi_DeBai[]
+  dangKys       CuocThi_DangKy[]
+  baiNops       BaiNop[]
+}
+
+model CuocThi_DeBai {
+  IdCuocThi   BigInt
+  IdDeBai     BigInt
+  TenHienThi  String? @db.Text
+
+  cuocThi CuocThi @relation(fields: [IdCuocThi], references: [IdCuocThi])
+  deBai   DeBai   @relation(fields: [IdDeBai], references: [IdDeBai])
+
+  @@id([IdCuocThi, IdDeBai])
+}
+
+model CuocThi_DangKy {
+  IdCuocThi  BigInt
+  IdTaiKhoan BigInt
+  TrangThai  Boolean @default(true)
+
+  cuocThi  CuocThi  @relation(fields: [IdCuocThi], references: [IdCuocThi])
+  taiKhoan TaiKhoan @relation(fields: [IdTaiKhoan], references: [IdTaiKhoan])
+
+  @@id([IdCuocThi, IdTaiKhoan])
+}
+
+model NgonNgu {
+  IdNgonNgu   BigInt  @id @default(autoincrement())
+  TenNgonNgu  String  @unique
+  TenNhanDien String
+  TrangThai   Boolean @default(true)
+
+  baiNops BaiNop[]
+}
+
+model BaiNop {
+  IdBaiNop        BigInt   @id @default(autoincrement())
+  IdTaiKhoan      BigInt
+  IdDeBai         BigInt
+  IdNgonNgu       BigInt
+  IdCuocThi       BigInt?
+  DuongDanCode    String
+  TrangThaiCham   String?
+  ThoiGianThucThi Int?
+  BoNhoSuDung     Int?
+  NgayNop         DateTime @default(now())
+
+  taiKhoan TaiKhoan @relation(fields: [IdTaiKhoan], references: [IdTaiKhoan])
+  deBai    DeBai    @relation(fields: [IdDeBai], references: [IdDeBai])
+  ngonNgu  NgonNgu  @relation(fields: [IdNgonNgu], references: [IdNgonNgu])
+  cuocThi  CuocThi? @relation(fields: [IdCuocThi], references: [IdCuocThi])
+}
+

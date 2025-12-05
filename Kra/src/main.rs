@@ -1,3 +1,5 @@
+mod tog;
+
 use redis::{Client, Commands, Connection, RedisResult};
 
 fn main() -> RedisResult<()> {

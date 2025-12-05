@@ -1,7 +1,7 @@
 // main.ts
 import { JobQueue } from './jobQueue';
 
-class JobQueueManager {
+export class JobQueueManager {
     private static instance: JobQueue | null = null;
 
     static async initialize(
@@ -58,4 +58,7 @@ async function main() {
     }
 }
 
-main();
+// Only auto-run when executed directly (not when imported in API)
+if (require.main === module) {
+    main();
+}

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Files - S3 Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .upload-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 1.2em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="text"]:focus,
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="file"] {
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        input[type="file"]::file-selector-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+            transition: background 0.3s ease;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: #5568d3;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: #666;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ddd, transparent);
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📤 Upload Files</h1>
+        <p class="subtitle">S3 File Upload Service</p>
+
+        <!-- Section 1: Upload Code File -->
+        <div class="upload-section">
+            <h2><span class="icon">💻</span> Upload Code File (.cpp)</h2>
+            <form id="codeForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="codeName">Tên file (không có đuôi .cpp):</label>
+                    <input type="text" id="codeName" name="name" placeholder="Ví dụ: 1, 2, hello_world" required>
+                </div>
+                <div class="form-group">
+                    <label for="codeFile">Chọn file .cpp:</label>
+                    <input type="file" id="codeFile" name="file" accept=".cpp" required>
+                    <div class="file-info" id="codeFileInfo"></div>
+                </div>
+                <button type="submit" class="btn" id="codeBtn">Upload Code File</button>
+                <div class="message" id="codeMessage"></div>
+            </form>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Section 2: Upload Test File -->
+        <div class="upload-section">
+            <h2><span class="icon">📦</span> Upload Test File (.zip)</h2>
+            <form id="testForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="testName">Tên file (không có đuôi .zip):</label>
+                    <input type="text" id="testName" name="name" placeholder="Ví dụ: sum, test1, problem_a" required>
+                </div>
+                <div class="form-group">
+                    <label for="testFile">Chọn file .zip:</label>
+                    <input type="file" id="testFile" name="file" accept=".zip" required>
+                    <div class="file-info" id="testFileInfo"></div>
+                </div>
+                <button type="submit" class="btn" id="testBtn">Upload Test File</button>
+                <div class="message" id="testMessage"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:3000';
+
+        // Code file upload
+        const codeForm = document.getElementById('codeForm');
+        const codeFileInput = document.getElementById('codeFile');
+        const codeFileInfo = document.getElementById('codeFileInfo');
+        const codeMessage = document.getElementById('codeMessage');
+        const codeBtn = document.getElementById('codeBtn');
+
+        codeFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                codeFileInfo.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                codeFileInfo.classList.add('show');
+            }
+        });
+
+        codeForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const name = document.getElementById('codeName').value.trim();
+            const file = codeFileInput.files[0];
+
+            if (!name || !file) {
+                showMessage('codeMessage', 'Vui lòng điền đầy đủ thông tin!', 'error');
+                return;
+            }
+
+            // Validate name
+            if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+                showMessage('codeMessage', 'Tên file chỉ được chứa chữ cái, số, dấu gạch dưới và dấu gạch ngang!', 'error');
+                return;
+            }
+
+            formData.append('name', name);
+            formData.append('file', file);
+
+            codeBtn.disabled = true;
+            codeBtn.textContent = 'Đang upload...';
+            codeMessage.classList.remove('success', 'error');
+
+            try {
+                const response = await fetch(`${API_BASE}/upload/code`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const text = await response.text();
+
+                if (response.ok) {
+                    showMessage('codeMessage', `✅ Thành công! ${text}`, 'success');
+                    codeForm.reset();
+                    codeFileInfo.classList.remove('show');
+                } else {
+                    showMessage('codeMessage', `❌ Lỗi: ${text}`, 'error');
+                }
+            } catch (error) {
+                showMessage('codeMessage', `❌ Lỗi kết nối: ${error.message}`, 'error');
+            } finally {
+                codeBtn.disabled = false;
+                codeBtn.textContent = 'Upload Code File';
+            }
+        });
+
+        // Test file upload
+        const testForm = document.getElementById('testForm');
+        const testFileInput = document.getElementById('testFile');
+        const testFileInfo = document.getElementById('testFileInfo');
+        const testMessage = document.getElementById('testMessage');
+        const testBtn = document.getElementById('testBtn');
+
+        testFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                testFileInfo.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                testFileInfo.classList.add('show');
+            }
+        });
+
+        testForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const name = document.getElementById('testName').value.trim();
+            const file = testFileInput.files[0];
+
+            if (!name || !file) {
+                showMessage('testMessage', 'Vui lòng điền đầy đủ thông tin!', 'error');
+                return;
+            }
+
+            // Validate name
+            if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+                showMessage('testMessage', 'Tên file chỉ được chứa chữ cái, số, dấu gạch dưới và dấu gạch ngang!', 'error');
+                return;
+            }
+
+            formData.append('name', name);
+            formData.append('file', file);
+
+            testBtn.disabled = true;
+            testBtn.textContent = 'Đang upload...';
+            testMessage.classList.remove('success', 'error');
+
+            try {
+                const response = await fetch(`${API_BASE}/upload/test`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const text = await response.text();
+
+                if (response.ok) {
+                    showMessage('testMessage', `✅ Thành công! ${text}`, 'success');
+                    testForm.reset();
+                    testFileInfo.classList.remove('show');
+                } else {
+                    showMessage('testMessage', `❌ Lỗi: ${text}`, 'error');
+                }
+            } catch (error) {
+                showMessage('testMessage', `❌ Lỗi kết nối: ${error.message}`, 'error');
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = 'Upload Test File';
+            }
+        });
+
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `message ${type}`;
+        }
+    </script>
+</body>
+</html>
+
