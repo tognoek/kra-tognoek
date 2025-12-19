@@ -13,6 +13,7 @@ cp env.example .env
 # Chỉnh lại:
 DATABASE_URL="mysql://user:password@localhost:3306/oj_system"
 REDIS_URL="redis://127.0.0.1:6379"
+JWT_SECRET="your-secret-key-change-in-production"
 ```
 
 ## Cài đặt & migrate
@@ -20,6 +21,7 @@ REDIS_URL="redis://127.0.0.1:6379"
 npm install
 npx prisma generate
 npx prisma migrate dev --name init
+npm run seed  # Tạo admin user và dữ liệu mẫu
 ```
 
 ## Chạy dev
@@ -27,16 +29,62 @@ npx prisma migrate dev --name init
 npm run dev
 ```
 
-Mặc định: `http://localhost:3000/api`
+Mặc định: `http://localhost:5000`
 
-## API chính
-- **Problems**: `GET /problems`, `POST /problems`, `GET /problems/:id`
-- **Contests**: `GET /contests`, `POST /contests`, `POST /contests/:id/register`
-- **Submissions**: `GET /submissions?status&problemId&userId&contestId`, `POST /submissions`, `GET /submissions/:id`, `POST /submissions/:id/callback`
-- **Users**: `GET /users`, `POST /users`
-- **Languages**: `GET /languages`
-- **Topics**: `GET /topics`
-- **Comments**: `GET /comments`, `POST /comments`
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Đăng ký
+- `POST /api/auth/login` - Đăng nhập
+- `GET /api/auth/me` - Lấy thông tin user hiện tại (cần auth)
+
+### Problems
+- `GET /api/problems` - Lấy danh sách problems
+- `POST /api/problems` - Tạo problem mới (cần auth)
+- `GET /api/problems/:id` - Lấy chi tiết problem
+
+### Contests
+- `GET /api/contests` - Lấy danh sách contests
+- `POST /api/contests` - Tạo contest mới (cần auth)
+- `POST /api/contests/:id/register` - Đăng ký contest (cần auth)
+
+### Submissions
+- `GET /api/submissions` - Lấy danh sách submissions (query: status, problemId, userId, contestId)
+- `POST /api/submissions` - Nộp bài mới (cần auth)
+- `GET /api/submissions/:id` - Lấy chi tiết submission
+- `POST /api/submissions/:id/callback` - Callback từ Kra worker (internal)
+
+### Admin (cần quyền Admin)
+- `GET /api/admin/stats` - Thống kê tổng quan
+- `GET /api/admin/users` - Lấy danh sách users
+- `PUT /api/admin/users/:id` - Cập nhật user
+- `DELETE /api/admin/users/:id` - Vô hiệu hóa user
+- `GET /api/admin/problems` - Lấy danh sách problems (admin view)
+- `PUT /api/admin/problems/:id` - Cập nhật problem
+- `GET /api/admin/contests` - Lấy danh sách contests (admin view)
+
+### Khác
+- `GET /api/users` - Lấy danh sách users
+- `GET /api/languages` - Lấy danh sách ngôn ngữ hỗ trợ
+- `GET /api/topics` - Lấy danh sách topics/chủ đề
+- `GET /api/comments` - Lấy comments
+- `POST /api/comments` - Tạo comment (cần auth)
+
+## Authentication
+
+API sử dụng JWT token. Sau khi login/register, client nhận được token và gửi kèm trong header:
+
+```
+Authorization: Bearer <token>
+```
+
+## Admin Account
+
+Sau khi chạy `npm run seed`, tài khoản admin mặc định:
+- Username: `admin`
+- Password: `admin123`
+
+**⚠️ Đổi mật khẩu ngay sau khi deploy!**
 
 ## Luồng nộp bài
 1) FE gọi `POST /api/submissions`
@@ -48,4 +96,4 @@ Mặc định: `http://localhost:3000/api`
 - Prisma schema: `prisma/schema.prisma`
 - Redis queue init: `src/redis/main.ts`
 - Express router: `src/routes/index.ts`
-
+- Auth middleware: `src/middleware/auth.ts`

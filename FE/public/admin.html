@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Online Judge</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🏆 Online Judge</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="/index.html" class="nav-link">Trang chủ</a>
+                <span class="nav-link" id="userName"></span>
+                <button class="btn btn-sm" onclick="logout()">Đăng xuất</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="admin-dashboard">
+            <div class="admin-sidebar">
+                <h3>Admin Panel</h3>
+                <a href="#" onclick="showSection('dashboard'); return false;" class="active" id="link-dashboard">Dashboard</a>
+                <a href="#" onclick="showSection('users'); return false;" id="link-users">Quản lý Users</a>
+                <a href="#" onclick="showSection('problems'); return false;" id="link-problems">Quản lý Problems</a>
+                <a href="#" onclick="showSection('contests'); return false;" id="link-contests">Quản lý Contests</a>
+            </div>
+
+            <div class="admin-content">
+                <!-- Dashboard Section -->
+                <div id="section-dashboard">
+                    <h2>Dashboard</h2>
+                    <div class="stats" style="margin-top: 2rem;">
+                        <div class="stat-card">
+                            <h3 id="statUsers">0</h3>
+                            <p>Users</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="statProblems">0</h3>
+                            <p>Problems</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="statContests">0</h3>
+                            <p>Contests</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="statSubmissions">0</h3>
+                            <p>Submissions</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Section -->
+                <div id="section-users" style="display: none;">
+                    <h2>Quản lý Users</h2>
+                    <div class="table-container" style="margin-top: 1.5rem;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên đăng nhập</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>Vai trò</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr><td colspan="7" class="loading">Đang tải...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Problems Section -->
+                <div id="section-problems" style="display: none;">
+                    <h2>Quản lý Problems</h2>
+                    <div class="table-container" style="margin-top: 1.5rem;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tiêu đề</th>
+                                    <th>Độ khó</th>
+                                    <th>Tác giả</th>
+                                    <th>Trạng thái</th>
+                                    <th>Công khai</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="problemsTableBody">
+                                <tr><td colspan="7" class="loading">Đang tải...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Contests Section -->
+                <div id="section-contests" style="display: none;">
+                    <h2>Quản lý Contests</h2>
+                    <div class="table-container" style="margin-top: 1.5rem;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên cuộc thi</th>
+                                    <th>Người tạo</th>
+                                    <th>Bắt đầu</th>
+                                    <th>Kết thúc</th>
+                                    <th>Số bài</th>
+                                    <th>Số đăng ký</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contestsTableBody">
+                                <tr><td colspan="8" class="loading">Đang tải...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('[id^="section-"]').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('[id^="link-"]').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(`section-${section}`).style.display = 'block';
+            document.getElementById(`link-${section}`).classList.add('active');
+
+            // Load data for section
+            if (section === 'dashboard') {
+                loadDashboard();
+            } else if (section === 'users') {
+                loadUsers();
+            } else if (section === 'problems') {
+                loadProblems();
+            } else if (section === 'contests') {
+                loadContests();
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const stats = await api.get('/admin/stats');
+                document.getElementById('statUsers').textContent = stats.users || 0;
+                document.getElementById('statProblems').textContent = stats.problems || 0;
+                document.getElementById('statContests').textContent = stats.contests || 0;
+                document.getElementById('statSubmissions').textContent = stats.submissions || 0;
+            } catch (e) {
+                console.error('Failed to load dashboard:', e);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const users = await api.get('/admin/users');
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = users.map(u => `
+                    <tr>
+                        <td>${u.IdTaiKhoan}</td>
+                        <td>${escapeHtml(u.TenDangNhap)}</td>
+                        <td>${escapeHtml(u.HoTen)}</td>
+                        <td>${escapeHtml(u.Email)}</td>
+                        <td><span class="badge">${escapeHtml(u.VaiTro)}</span></td>
+                        <td>${u.TrangThai ? '<span class="text-success">Hoạt động</span>' : '<span class="text-error">Vô hiệu</span>'}</td>
+                        <td>
+                            <button class="btn btn-sm" onclick="toggleUserStatus('${u.IdTaiKhoan}', ${!u.TrangThai})">
+                                ${u.TrangThai ? 'Vô hiệu' : 'Kích hoạt'}
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load users:', e);
+                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" class="text-error">Lỗi khi tải dữ liệu</td></tr>';
+            }
+        }
+
+        async function loadProblems() {
+            try {
+                const problems = await api.get('/admin/problems');
+                const tbody = document.getElementById('problemsTableBody');
+                tbody.innerHTML = problems.map(p => `
+                    <tr>
+                        <td>${p.IdDeBai}</td>
+                        <td>${escapeHtml(p.TieuDe)}</td>
+                        <td><span class="badge badge-${(p.DoKho || 'medium').toLowerCase()}">${escapeHtml(p.DoKho || 'Medium')}</span></td>
+                        <td>${escapeHtml(p.Author.HoTen)}</td>
+                        <td>${p.TrangThai ? '<span class="text-success">Hoạt động</span>' : '<span class="text-error">Vô hiệu</span>'}</td>
+                        <td>${p.DangCongKhai ? '<span class="text-success">Có</span>' : '<span class="text-muted">Không</span>'}</td>
+                        <td>
+                            <button class="btn btn-sm" onclick="toggleProblemStatus('${p.IdDeBai}', ${!p.TrangThai})">
+                                ${p.TrangThai ? 'Vô hiệu' : 'Kích hoạt'}
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load problems:', e);
+                document.getElementById('problemsTableBody').innerHTML = '<tr><td colspan="7" class="text-error">Lỗi khi tải dữ liệu</td></tr>';
+            }
+        }
+
+        async function loadContests() {
+            try {
+                const contests = await api.get('/admin/contests');
+                const tbody = document.getElementById('contestsTableBody');
+                tbody.innerHTML = contests.map(c => `
+                    <tr>
+                        <td>${c.IdCuocThi}</td>
+                        <td>${escapeHtml(c.TenCuocThi)}</td>
+                        <td>${escapeHtml(c.Creator.HoTen)}</td>
+                        <td>${new Date(c.ThoiGianBatDau).toLocaleString('vi-VN')}</td>
+                        <td>${new Date(c.ThoiGianKetThuc).toLocaleString('vi-VN')}</td>
+                        <td>${c.SoLuongBai}</td>
+                        <td>${c.SoLuongDangKy}</td>
+                        <td>${c.TrangThai ? '<span class="text-success">Hoạt động</span>' : '<span class="text-error">Vô hiệu</span>'}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load contests:', e);
+                document.getElementById('contestsTableBody').innerHTML = '<tr><td colspan="8" class="text-error">Lỗi khi tải dữ liệu</td></tr>';
+            }
+        }
+
+        async function toggleUserStatus(userId, newStatus) {
+            try {
+                await api.put(`/admin/users/${userId}`, { TrangThai: newStatus });
+                loadUsers();
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            }
+        }
+
+        async function toggleProblemStatus(problemId, newStatus) {
+            try {
+                await api.put(`/admin/problems/${problemId}`, { TrangThai: newStatus });
+                loadProblems();
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            }
+        }
+
+        // Check auth and redirect if not admin
+        checkAuth();
+        setTimeout(() => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+            fetch(`${API_BASE}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(user => {
+                if (user.VaiTro !== 'Admin') {
+                    alert('Bạn không có quyền truy cập trang này');
+                    window.location.href = '/index.html';
+                } else {
+                    document.getElementById('userName').textContent = user.HoTen || user.TenDangNhap;
+                    loadDashboard();
+                }
+            })
+            .catch(() => {
+                window.location.href = '/login.html';
+            });
+        }, 100);
+    </script>
+</body>
+</html>
+

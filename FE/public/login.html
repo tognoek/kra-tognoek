@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Online Judge</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🏆 Online Judge</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="/index.html" class="nav-link">Trang chủ</a>
+                <a href="/register.html" class="btn btn-outline">Đăng ký</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="form-container">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Đăng nhập</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div id="errorMessage" class="text-error" style="margin-bottom: 1rem; display: none;"></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Đăng nhập</button>
+                <p style="text-align: center; margin-top: 1rem;">
+                    Chưa có tài khoản? <a href="/register.html">Đăng ký ngay</a>
+                </p>
+            </form>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.style.display = 'none';
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const result = await api.post('/auth/login', {
+                    TenDangNhap: username,
+                    MatKhau: password,
+                });
+
+                localStorage.setItem('token', result.token);
+                window.location.href = '/index.html';
+            } catch (error) {
+                errorDiv.textContent = error.message || 'Đăng nhập thất bại';
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
+

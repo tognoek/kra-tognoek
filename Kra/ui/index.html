@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kra Worker - Push Judge Job</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .form-section:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .hint {
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #d63384;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .timeline-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .timeline-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .timeline-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .timeline-header strong {
+            color: #333;
+            font-size: 1em;
+        }
+
+        .timeline-time {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .timeline-body {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .empty {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Kra Worker</h1>
+        <p class="subtitle">Đẩy job chấm bài vào Redis queue</p>
+
+        <div class="form-section">
+            <h2>📝 Thông tin Job</h2>
+            <form id="job-form" method="post" action="/enqueue">
+                <div class="form-group">
+                    <label for="code_id">Code ID</label>
+                    <input type="text" id="code_id" name="code_id" placeholder="VD: 1" required />
+                    <div class="hint">Tên file code trong S3: <code>data/code/&lt;code_id&gt;.cpp</code></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="test_id">Test ID</label>
+                    <input type="text" id="test_id" name="test_id" placeholder="VD: sum" required />
+                    <div class="hint">Tên file test zip trong S3: <code>data/test/&lt;test_id&gt;.zip</code></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="time_limit_ms">Time limit (ms)</label>
+                    <input type="number" id="time_limit_ms" name="time_limit_ms" value="2000" required />
+                    <div class="hint">Giới hạn thời gian cho mỗi test (milliseconds)</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="memory_limit_kb">Memory limit (KB)</label>
+                    <input type="number" id="memory_limit_kb" name="memory_limit_kb" value="262144" required />
+                    <div class="hint">Giới hạn bộ nhớ (KB), ví dụ 262144 = 256MB</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="input_mode">Input mode</label>
+                    <input type="text" id="input_mode" name="input_mode" placeholder="stdin hoặc file" value="stdin" required />
+                    <div class="hint"><code>stdin</code> = code đọc từ stdin; <code>file</code> = code tự mở file .in</div>
+                </div>
+
+                <button type="submit" class="btn">Đẩy Job Vào Redis</button>
+            </form>
+            <div id="status" class="message"></div>
+        </div>
+
+        <div class="timeline-section">
+            <h2>📋 Lịch sử Job</h2>
+            <div id="timeline" class="timeline-list">
+                <div class="empty">Chưa có job nào được đẩy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('job-form');
+        const statusEl = document.getElementById('status');
+        const timelineEl = document.getElementById('timeline');
+
+        function addTimelineItem(data) {
+            // Xóa empty message nếu có
+            const empty = timelineEl.querySelector('.empty');
+            if (empty) empty.remove();
+
+            const time = new Date();
+            const ts = time.toLocaleTimeString('vi-VN');
+            const div = document.createElement('div');
+            div.className = 'timeline-item';
+            div.innerHTML = `
+                <div class="timeline-header">
+                    <strong>${data.code_id} / ${data.test_id}</strong>
+                    <span class="timeline-time">${ts}</span>
+                </div>
+                <div class="timeline-body">
+                    Limit: <code>${data.time_limit_ms} ms</code>, 
+                    <code>${data.memory_limit_kb} KB</code>, 
+                    mode: <code>${data.input_mode}</code>
+                </div>
+            `;
+            timelineEl.insertBefore(div, timelineEl.firstChild);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            statusEl.className = 'message';
+            statusEl.textContent = 'Đang đẩy job vào Redis...';
+            statusEl.style.display = 'block';
+
+            const formData = new FormData(form);
+            const payload = new URLSearchParams(formData);
+            
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    body: payload,
+                });
+
+                if (!res.ok) {
+                    throw new Error('HTTP ' + res.status);
+                }
+
+                statusEl.className = 'message success';
+                statusEl.textContent = '✅ Đã đẩy job vào Redis thành công!';
+                
+                addTimelineItem({
+                    code_id: formData.get('code_id') || '',
+                    test_id: formData.get('test_id') || '',
+                    time_limit_ms: formData.get('time_limit_ms') || '',
+                    memory_limit_kb: formData.get('memory_limit_kb') || '',
+                    input_mode: formData.get('input_mode') || '',
+                });
+
+                // Reset form sau 2 giây
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                statusEl.className = 'message error';
+                statusEl.textContent = '❌ Lỗi khi đẩy job: ' + err;
+            }
+        });
+    </script>
+</body>
+</html>

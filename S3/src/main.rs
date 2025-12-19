@@ -29,6 +29,11 @@ struct Params {
     name: String,
 }
 
+#[derive(Deserialize)]
+struct DownloadParams {
+    id: String,
+}
+
 async fn download_zip(Query(params): Query<Params>, 
         Extension(tx): Extension<mpsc::Sender<StatEvent>>) -> impl IntoResponse {
     let monitor = Monitor::start();
@@ -125,6 +130,88 @@ fn merge_zip_and_code_sync(test_zip_path: &Path, code_path: &Path) -> std::io::R
 
 fn is_safe_name(s: &str) -> bool {
     s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+}
+
+// Download file code .cpp theo id
+async fn download_code_file(
+    Query(params): Query<DownloadParams>,
+    Extension(tx): Extension<mpsc::Sender<StatEvent>>,
+) -> impl IntoResponse {
+    let monitor = Monitor::start();
+
+    if !is_safe_name(&params.id) {
+        let res = monitor.end();
+        let _ = tx.send(res).await;
+        return (StatusCode::BAD_REQUEST, "Invalid id".to_string()).into_response();
+    }
+
+    let code_path = Path::new(DATA_DIR).join("code").join(format!("{}.cpp", params.id));
+
+    match fs::read(&code_path).await {
+        Ok(content) => {
+            let res = monitor.end();
+            let _ = tx.send(res).await;
+            let mut headers = HeaderMap::new();
+            headers.insert(header::CONTENT_TYPE, "text/plain; charset=utf-8".parse().unwrap());
+            headers.insert(
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{}.cpp\"", params.id)
+                    .parse()
+                    .unwrap(),
+            );
+            (headers, content).into_response()
+        }
+        Err(_) => {
+            let res = monitor.end();
+            let _ = tx.send(res).await;
+            (
+                StatusCode::NOT_FOUND,
+                format!("File code {} không tồn tại", params.id),
+            )
+                .into_response()
+        }
+    }
+}
+
+// Download file test .zip theo id
+async fn download_test_file(
+    Query(params): Query<DownloadParams>,
+    Extension(tx): Extension<mpsc::Sender<StatEvent>>,
+) -> impl IntoResponse {
+    let monitor = Monitor::start();
+
+    if !is_safe_name(&params.id) {
+        let res = monitor.end();
+        let _ = tx.send(res).await;
+        return (StatusCode::BAD_REQUEST, "Invalid id".to_string()).into_response();
+    }
+
+    let test_path = Path::new(DATA_DIR).join("test").join(format!("{}.zip", params.id));
+
+    match fs::read(&test_path).await {
+        Ok(content) => {
+            let res = monitor.end();
+            let _ = tx.send(res).await;
+            let mut headers = HeaderMap::new();
+            headers.insert(header::CONTENT_TYPE, "application/zip".parse().unwrap());
+            headers.insert(
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{}.zip\"", params.id)
+                    .parse()
+                    .unwrap(),
+            );
+            (headers, content).into_response()
+        }
+        Err(_) => {
+            let res = monitor.end();
+            let _ = tx.send(res).await;
+            (
+                StatusCode::NOT_FOUND,
+                format!("File test {} không tồn tại", params.id),
+            )
+                .into_response()
+        }
+    }
 }
 
 // API 1: Upload file .cpp vào thư mục code
@@ -320,12 +407,14 @@ async fn main() {
         .route("/", get(upload_page))
         .route("/upload.html", get(upload_page))
         .route("/download", get(download_zip))
+        .route("/download/code", get(download_code_file))
+        .route("/download/test", get(download_test_file))
         .route("/upload/code", post(upload_code))
         .route("/upload/test", post(upload_test))
         .layer(Extension(tx.clone()));
 
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("Server chạy tại http://127.0.0.1:3000");
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
+    println!("Server chạy tại http://127.0.0.1:3001");
     axum::serve(listener, app).await.unwrap();
 }

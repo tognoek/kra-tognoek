@@ -1,13 +1,29 @@
 //! Các kiểu dữ liệu dùng chung trong module `tog`.
 pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
+/// Cách bài toán đọc input.
+#[derive(Debug, Clone)]
+pub enum InputMode {
+    /// Đọc từ stdin (nhập từ bàn phím) – Kra sẽ pipe dữ liệu test vào stdin.
+    Stdin,
+    /// Đọc từ file – chương trình tự mở file `.in` (Kra không pipe stdin).
+    File,
+}
+
 #[derive(Debug, Clone)]
 pub struct JobConfig {
-    pub id: String,          // id bài (trùng tên file code)
-    pub name: String,        // tên bộ test
-    pub s3_base_url: String, // ví dụ: http://127.0.0.1:3000
-    pub time_limit_ms: u64,  // giới hạn thời gian mỗi test
-    pub memory_limit_kb: u64, // giới hạn RAM (chưa enforce, chỉ báo cáo)
+    /// id code – trùng tên file code trong S3 (data/code/{id}.cpp)
+    pub id: String,
+    /// id test – trùng tên file zip test trong S3 (data/test/{name}.zip)
+    pub name: String,
+    /// URL S3 service, ví dụ: http://127.0.0.1:3001
+    pub s3_base_url: String,
+    /// Giới hạn thời gian mỗi test (ms)
+    pub time_limit_ms: u64,
+    /// Giới hạn RAM ước lượng (KB)
+    pub memory_limit_kb: u64,
+    /// Kiểu đọc input cho bài này.
+    pub input_mode: InputMode,
 }
 
 #[derive(Debug, Clone)]

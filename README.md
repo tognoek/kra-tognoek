@@ -138,18 +138,19 @@ cd Server
 npm run dev
 
 # Terminal 4 - Frontend
-cd FE
-npm run dev
+cd FE/public
+npx http-server -p 3000 -c-1
 ```
 
 ## 🌐 Ports và URLs
 
 Sau khi chạy, các services sẽ chạy trên:
 
-- **S3**: `http://127.0.0.1:3000` (file storage)
-- **Server API**: `http://localhost:3000/api` (hoặc port khác nếu 3000 bị chiếm)
-- **Frontend**: `http://localhost:3000` (hoặc port khác)
-- **Kra**: Worker chạy background, không có HTTP server
+- **Frontend**: `http://localhost:3000` (web UI)
+- **Server API**: `http://localhost:5000/api` (REST API)
+- **S3**: `http://127.0.0.1:3001` (file storage)
+- **Kra Web UI**: `http://127.0.0.1:4000` (test UI cho Kra worker)
+- **Kra Worker**: Chạy background, không có HTTP server
 
 ## 📡 API Endpoints
 
@@ -162,7 +163,7 @@ Sau khi chạy, các services sẽ chạy trên:
 
 ### Server API
 
-Base URL: `http://localhost:3000/api`
+Base URL: `http://localhost:5000/api`
 
 #### Problems
 - `GET /problems` - Lấy danh sách problems

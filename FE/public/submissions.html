@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài nộp - Online Judge</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🏆 Online Judge</h1>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <a href="/index.html" class="nav-link">Trang chủ</a>
+                <a href="/problems.html" class="nav-link">Đề bài</a>
+                <a href="/contests.html" class="nav-link">Cuộc thi</a>
+                <a href="/submissions.html" class="nav-link active">Bài nộp</a>
+                <span id="userMenu" style="display: none;">
+                    <a href="/admin.html" class="nav-link" id="adminLink" style="display: none;">Admin</a>
+                    <span class="nav-link" id="userName"></span>
+                    <button class="btn btn-sm" onclick="logout()">Đăng xuất</button>
+                </span>
+                <span id="guestMenu">
+                    <a href="/login.html" class="btn btn-primary">Đăng nhập</a>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div style="background: white; padding: 2rem; border-radius: 1rem; margin: 2rem 0; box-shadow: var(--shadow-lg);">
+            <h2 style="margin-bottom: 1.5rem;">Danh sách bài nộp</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Đề bài</th>
+                            <th>Người nộp</th>
+                            <th>Ngôn ngữ</th>
+                            <th>Trạng thái</th>
+                            <th>Thời gian</th>
+                            <th>Bộ nhớ</th>
+                            <th>Ngày nộp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissionsTableBody">
+                        <tr><td colspan="8" class="loading">Đang tải...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Online Judge System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        function getStatusBadge(status) {
+            if (!status) return '<span class="badge badge-medium">Đang chấm...</span>';
+            const s = status.toLowerCase();
+            if (s.includes('accepted') || s.includes('đúng')) {
+                return '<span class="badge badge-easy">Accepted</span>';
+            } else if (s.includes('wrong') || s.includes('sai')) {
+                return '<span class="badge badge-hard">Wrong Answer</span>';
+            } else if (s.includes('timeout') || s.includes('time')) {
+                return '<span class="badge badge-hard">Time Limit</span>';
+            } else if (s.includes('compile') || s.includes('biên dịch')) {
+                return '<span class="badge badge-hard">Compile Error</span>';
+            }
+            return `<span class="badge badge-medium">${escapeHtml(status)}</span>`;
+        }
+
+        async function loadSubmissions() {
+            try {
+                const submissions = await api.get('/submissions?limit=50');
+                const tbody = document.getElementById('submissionsTableBody');
+                
+                if (submissions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Chưa có bài nộp nào.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = submissions.map(s => `
+                    <tr>
+                        <td>${s.IdBaiNop}</td>
+                        <td>${s.deBai ? escapeHtml(s.deBai.TieuDe) : 'N/A'}</td>
+                        <td>${s.taiKhoan ? escapeHtml(s.taiKhoan.HoTen || s.taiKhoan.TenDangNhap) : 'N/A'}</td>
+                        <td>${s.ngonNgu ? escapeHtml(s.ngonNgu.TenNgonNgu) : 'N/A'}</td>
+                        <td>${getStatusBadge(s.TrangThaiCham)}</td>
+                        <td>${s.ThoiGianThucThi ? s.ThoiGianThucThi + 'ms' : '-'}</td>
+                        <td>${s.BoNhoSuDung ? (s.BoNhoSuDung / 1024).toFixed(2) + 'MB' : '-'}</td>
+                        <td>${new Date(s.NgayNop).toLocaleString('vi-VN')}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load submissions:', e);
+                document.getElementById('submissionsTableBody').innerHTML = '<tr><td colspan="8" class="text-error">Lỗi khi tải bài nộp.</td></tr>';
+            }
+        }
+
+        checkAuth();
+        loadSubmissions();
+    </script>
+</body>
+</html>
+

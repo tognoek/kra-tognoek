@@ -7,7 +7,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
-use crate::tog::types::{BoxError, TestCaseResult};
+use crate::tog::types::{BoxError, TestCaseResult, InputMode};
 
 /// Biên dịch file cpp thành binary.
 pub async fn compile_cpp(src: &Path, out_bin: &Path, log: &mut String) -> Result<(), BoxError> {
@@ -49,6 +49,7 @@ pub async fn run_single_test(
     answer_path: Option<&Path>,
     time_limit_ms: u64,
     _memory_limit_kb: u64,
+    input_mode: InputMode,
 ) -> TestCaseResult {
     let case_name = input_path
         .file_name()
@@ -61,27 +62,37 @@ pub async fn run_single_test(
     let mut time_ms = 0u128;
     let memory_kb = None; // đo RAM có thể bổ sung sau
 
-    // Đọc input
-    let input_data = match tokio::fs::read(input_path).await {
-        Ok(d) => d,
-        Err(e) => {
-            stderr_log = Some(format!("Không đọc được input: {}", e));
-            return TestCaseResult {
-                case_name,
-                passed,
-                time_ms,
-                memory_kb,
-                checker_exit_ok,
-                stderr: stderr_log,
-            };
+    // Đọc input (chỉ khi chạy ở mode stdin)
+    let input_data = if let InputMode::Stdin = input_mode {
+        match tokio::fs::read(input_path).await {
+            Ok(d) => Some(d),
+            Err(e) => {
+                stderr_log = Some(format!("Không đọc được input: {}", e));
+                return TestCaseResult {
+                    case_name,
+                    passed,
+                    time_ms,
+                    memory_kb,
+                    checker_exit_ok,
+                    stderr: stderr_log,
+                };
+            }
         }
+    } else {
+        None
     };
 
     // Chạy binary thí sinh
     let start = Instant::now();
     let run = async {
-        let mut child = match Command::new(submission_bin)
-            .stdin(std::process::Stdio::piped())
+        let mut cmd = Command::new(submission_bin);
+
+        // Nếu bài đọc từ stdin => pipe input, ngược lại để stdin mặc định.
+        if let InputMode::Stdin = input_mode {
+            cmd.stdin(std::process::Stdio::piped());
+        }
+
+        let mut child = match cmd
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .spawn()
@@ -92,10 +103,12 @@ pub async fn run_single_test(
             }
         };
 
-        // ghi stdin
-        if let Some(mut stdin) = child.stdin.take() {
-            if let Err(e) = stdin.write_all(&input_data).await {
-                return Err(format!("Ghi stdin lỗi: {}", e));
+        // ghi stdin nếu dùng mode stdin
+        if let (InputMode::Stdin, Some(data)) = (input_mode.clone(), input_data) {
+            if let Some(mut stdin) = child.stdin.take() {
+                if let Err(e) = stdin.write_all(&data).await {
+                    return Err(format!("Ghi stdin lỗi: {}", e));
+                }
             }
         }
 
@@ -135,7 +148,13 @@ pub async fn run_single_test(
     // Nếu có checker, chạy checker
     if let Some(checker) = checker_bin {
         if let Some(ans) = answer_path {
-            let user_out_path = input_path.with_extension("user.out");
+            // Tạo file [mã test-sv].out cùng thư mục với file input
+            let stem = input_path
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| "user".to_string());
+            let user_out_name = format!("{stem}-sv.out");
+            let user_out_path = input_path.with_file_name(user_out_name);
             if let Err(e) = tokio::fs::write(&user_out_path, &output.stdout).await {
                 stderr_log = Some(format!("Ghi user.out lỗi: {}", e));
                 return TestCaseResult {
@@ -160,7 +179,29 @@ pub async fn run_single_test(
             match checker_run {
                 Ok(co) => {
                     checker_exit_ok = co.status.success();
-                    passed = checker_exit_ok;
+
+                    // Diễn giải kết quả checker: in ra "0" hoặc "1" trên stdout.
+                    // 1 = đúng, 0 = sai. Các trường hợp khác coi là sai và ghi vào stderr.
+                    let stdout_str = String::from_utf8_lossy(&co.stdout);
+                    let token = stdout_str.split_whitespace().next().unwrap_or("");
+                    match token {
+                        "1" => {
+                            passed = true;
+                        }
+                        "0" => {
+                            passed = false;
+                        }
+                        _ => {
+                            passed = false;
+                            let err = format!(
+                                "Checker output không hợp lệ (mong đợi '0' hoặc '1'): {:?}",
+                                stdout_str
+                            );
+                            stderr_log = Some(err);
+                        }
+                    }
+
+                    // Nếu exit code != 0, lưu thêm stderr nếu có (để debug).
                     if !checker_exit_ok {
                         let err = String::from_utf8_lossy(&co.stderr).to_string();
                         if !err.is_empty() {

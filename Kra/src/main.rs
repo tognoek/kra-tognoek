@@ -1,13 +1,300 @@
 mod tog;
 
-use redis::{Client, Commands, Connection, RedisResult};
+use axum::{
+    extract::Form,
+    response::Html,
+    routing::{get, post},
+    Router,
+};
+use redis::AsyncCommands;
+use serde::Deserialize;
+use serde_json::{json, Value};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::net::TcpListener;
+use tokio::select;
+use tog::{Executor, BoxError, JobConfig, ExecResult, InputMode};
 
-fn main() -> RedisResult<()> {
-    let client: Client = redis::Client::open("redis://127.0.0.1/")?;
-    let mut con: Connection = client.get_connection()?;
-    let _: () = con.set("my_key", 42)?;
-    let val: i32 = con.get("my_key")?;
-    println!("mykey = {}", val);
+/// Job envelope giống với cấu trúc bên UI/Server push vào Redis.
+#[derive(Debug, Deserialize)]
+struct JobEnvelope {
+    id: String,
+    task: String,
+    data: Value,
+    timestamp: u64,
+}
+
+/// Dữ liệu job `judge` mà Kra thật sự cần để chấm.
+#[derive(Debug, Deserialize)]
+struct JudgeData {
+    /// Id code – dùng để gọi S3 (data/code/{codeId}.cpp)
+    #[serde(rename = "codeId")]
+    code_id: String,
+    /// Id test – dùng để gọi S3 (data/test/{testId}.zip)
+    #[serde(rename = "testId")]
+    test_id: String,
+    /// Giới hạn thời gian mỗi test (ms)
+    #[serde(rename = "timeLimitMs")]
+    time_limit_ms: u64,
+    /// Giới hạn RAM (KB)
+    #[serde(rename = "memoryLimitKb")]
+    memory_limit_kb: u64,
+    /// Kiểu đọc input: \"stdin\" hoặc \"file\"
+    #[serde(rename = "inputMode")]
+    input_mode: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct JudgeForm {
+    code_id: String,
+    test_id: String,
+    time_limit_ms: u64,
+    memory_limit_kb: u64,
+    input_mode: String,
+}
+
+async fn index_page() -> Html<String> {
+    match tokio::fs::read_to_string("ui/index.html").await {
+        Ok(content) => Html(content),
+        Err(e) => Html(format!(
+            "<h1>Lỗi đọc ui/index.html</h1><pre>{}</pre>",
+            e
+        )),
+    }
+}
+
+async fn enqueue_job(Form(form): Form<JudgeForm>) -> Html<String> {
+    let redis_url = std::env::var("REDIS_URL")
+        .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let queue_name =
+        std::env::var("REDIS_QUEUE").unwrap_or_else(|_| "job_queue".to_string());
+
+    let client = match redis::Client::open(redis_url) {
+        Ok(c) => c,
+        Err(e) => {
+            return Html(format!("Redis client error: {}", e));
+        }
+    };
+
+    let mut conn = match client.get_async_connection().await {
+        Ok(c) => c,
+        Err(e) => {
+            return Html(format!("Redis connection error: {}", e));
+        }
+    };
+
+    let now_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+    let job_id = format!("manual-{}", now_ms);
+
+    let job = json!({
+        "id": job_id,
+        "task": "judge",
+        "data": {
+            "codeId": form.code_id,
+            "testId": form.test_id,
+            "timeLimitMs": form.time_limit_ms,
+            "memoryLimitKb": form.memory_limit_kb,
+            "inputMode": form.input_mode,
+        },
+        "timestamp": now_ms,
+    });
+
+    let job_str = job.to_string();
+
+    let push_res: redis::RedisResult<()> =
+        conn.rpush(&queue_name, job_str.clone()).await;
+
+    match push_res {
+        Ok(_) => Html(format!(
+            r#"<html><body style="font-family: system-ui; padding: 20px;">
+            <h2>✅ Đã đẩy job vào Redis thành công!</h2>
+            <p>Job ID: <code>{}</code></p>
+            <p><a href="/">← Quay lại form</a></p>
+            </body></html>"#,
+            job_id
+        )),
+        Err(e) => Html(format!(
+            r#"<html><body style="font-family: system-ui; padding: 20px;">
+            <h2 style="color: red;">❌ Lỗi khi đẩy job vào Redis</h2>
+            <pre>{}</pre>
+            <p><a href="/">← Quay lại form</a></p>
+            </body></html>"#,
+            e
+        )),
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), BoxError> {
+    // Các config cơ bản
+    let redis_url = std::env::var("REDIS_URL")
+        .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let queue_name =
+        std::env::var("REDIS_QUEUE").unwrap_or_else(|_| "job_queue".to_string());
+    let s3_base_url =
+        std::env::var("S3_BASE_URL").unwrap_or_else(|_| "http://127.0.0.1:3001".to_string());
+    let web_port: u16 = std::env::var("KRA_WEB_PORT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(4000);
+
+    println!("🚀 Kra worker + Web UI starting...");
+    println!("Redis URL: {}", redis_url);
+    println!("Queue    : {}", queue_name);
+    println!("S3 base  : {}", s3_base_url);
+    println!("Web UI   : http://127.0.0.1:{}", web_port);
+
+    // Setup Redis client cho worker
+    let redis_client = redis::Client::open(redis_url.clone())?;
+    let mut worker_conn = redis_client.get_async_connection().await?;
+
+    // Setup web server
+    let web_app = Router::new()
+        .route("/", get(index_page))
+        .route("/enqueue", post(enqueue_job));
+
+    let web_listener = TcpListener::bind(format!("127.0.0.1:{}", web_port))
+        .await
+        .map_err(|e| format!("Failed to bind web port {}: {}", web_port, e))?;
+
+    // Chạy song song: worker loop + web server
+    select! {
+        _ = async {
+            let _ = axum::serve(web_listener, web_app).await;
+        } => {
+            eprintln!("Web server stopped");
+        }
+        _ = async {
+            loop {
+                let res: Option<(String, String)> = match redis::cmd("BLPOP")
+                    .arg(&queue_name)
+                    .arg(0)
+                    .query_async(&mut worker_conn)
+                    .await
+                {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("❌ Redis BLPOP error: {}", e);
+                        continue;
+                    }
+                };
+
+                if let Some((_, job_json)) = res {
+                    println!("📥 Nhận job từ Redis: {}", job_json);
+                    if let Err(e) = handle_job(&job_json, &s3_base_url).await {
+                        eprintln!("❌ Lỗi xử lý job: {}", e);
+                    }
+                }
+            }
+        } => {
+            eprintln!("Worker stopped");
+        }
+    }
 
     Ok(())
 }
+
+async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
+    let env: JobEnvelope = serde_json::from_str(job_json)?;
+
+    if env.task != "judge" {
+        println!("Bỏ qua job với task khác 'judge': {}", env.task);
+        return Ok(());
+    }
+
+    let data: JudgeData = serde_json::from_value(env.data)?;
+    println!(
+        "Xử lý job với codeId={} testId={}",
+        data.code_id, data.test_id
+    );
+
+    // Map string input mode -> enum
+    let input_mode = match data.input_mode.to_lowercase().as_str() {
+        "file" => InputMode::File,
+        _ => InputMode::Stdin,
+    };
+
+    let cfg = JobConfig {
+        id: data.code_id.clone(),
+        name: data.test_id.clone(),
+        s3_base_url: s3_base_url.to_string(),
+        time_limit_ms: data.time_limit_ms,
+        memory_limit_kb: data.memory_limit_kb,
+        input_mode,
+    };
+
+    println!("Chạy Executor::run_job với config: {:?}", cfg);
+    let exec_res = Executor::run_job(cfg).await;
+
+    // In mảng kết quả theo từng test: 0=đúng, 1=sai, 2=timeout, 3=lỗi khác/biên dịch
+    let codes = build_result_codes(&exec_res);
+    println!("KRA_RESULT_CODES {:?}", codes);
+
+    let (_status, _total_time_ms, _total_mem_kb) = summarize_result(&exec_res);
+
+    Ok(())
+}
+
+fn summarize_result(res: &Result<ExecResult, BoxError>) -> (&'static str, i32, i32) {
+    match res {
+        Err(_) => ("error", 0, 0),
+        Ok(exec) => {
+            if !exec.compile_ok {
+                return ("compile_error", 0, 0);
+            }
+
+            let mut ok = true;
+            let mut max_time = 0i32;
+            let mut max_mem = 0i32;
+
+            for t in &exec.tests {
+                if !t.passed {
+                    ok = false;
+                }
+                if t.time_ms > max_time as u128 {
+                    max_time = t.time_ms as i32;
+                }
+                if let Some(m) = t.memory_kb {
+                    if m as i32 > max_mem {
+                        max_mem = m as i32;
+                    }
+                }
+            }
+
+            let status = if ok { "accepted" } else { "wrong_answer" };
+            (status, max_time, max_mem)
+        }
+    }
+}
+
+/// Xây dựng mảng code kết quả cho từng test:
+/// 0 = đúng, 1 = sai, 2 = quá thời gian, 3 = lỗi khác / biên dịch.
+fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<u8> {
+    match res {
+        Err(_) => vec![3],
+        Ok(exec) => {
+            if !exec.compile_ok {
+                return vec![3];
+            }
+
+            exec.tests
+                .iter()
+                .map(|t| {
+                    if !t.passed {
+                        if let Some(msg) = &t.stderr {
+                            if msg.contains("Timeout") {
+                                return 2;
+                            }
+                        }
+                        return 1;
+                    }
+                    0
+                })
+                .collect()
+        }
+    }
+}
+
+// summarize_result + build_result_codes vẫn dùng nội bộ để log thống kê.

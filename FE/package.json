@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:static": "npx http-server public -p 3000 -c-1",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
