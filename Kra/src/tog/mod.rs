@@ -8,9 +8,9 @@ mod types;
 
 use tokio::fs;
 
-pub use types::{BoxError, ExecResult, JobConfig, InputMode, exec_name};
+pub use types::{BoxError, ExecResult, JobConfig, InputMode, Language, exec_name};
 use fetch::{collect_testcases, download_bundle, find_checker, find_code_file, unzip_bundle};
-use run::{compile_cpp, run_single_test};
+use run::{compile_cpp, compile_c, run_single_test};
 
 pub struct Executor;
 
@@ -60,11 +60,22 @@ impl Executor {
         fs::create_dir_all(&bin_dir).await?;
         let submission_bin = bin_dir.join(exec_name("submission"));
         let mut compile_log = String::new();
-        compile_cpp(&code_path, &submission_bin, &mut compile_log).await
-            .map_err(|e| {
-                eprintln!("[ERROR] Lỗi biên dịch code thí sinh: {}", e);
-                e
-            })?;
+        match cfg.language {
+            Language::C => {
+                compile_c(&code_path, &submission_bin, &mut compile_log).await
+                    .map_err(|e| {
+                        eprintln!("[ERROR] Lỗi biên dịch code C thí sinh: {}", e);
+                        e
+                    })?;
+            }
+            Language::Cpp => {
+                compile_cpp(&code_path, &submission_bin, &mut compile_log).await
+                    .map_err(|e| {
+                        eprintln!("[ERROR] Lỗi biên dịch code C++ thí sinh: {}", e);
+                        e
+                    })?;
+            }
+        }
 
         // 5) Biên dịch checker nếu có
         let checker_bin = if let Some(checker_src) = checker_path {

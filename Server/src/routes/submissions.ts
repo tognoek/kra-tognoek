@@ -54,6 +54,10 @@ router.post("/", async (req, res) => {
         submissionId: submission.IdBaiNop.toString(),
         problemId: IdDeBai.toString(),
         codePath: DuongDanCode,
+        // Suy đoán ngôn ngữ từ đường dẫn hoặc IdNgonNgu (tạm thời: theo đuôi file)
+        language: typeof DuongDanCode === "string" && DuongDanCode.toLowerCase().endsWith(".c")
+          ? "c"
+          : "cpp",
       },
     });
   } catch (err) {

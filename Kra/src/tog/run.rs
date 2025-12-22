@@ -9,7 +9,7 @@ use tokio::time::{timeout, Duration};
 
 use crate::tog::types::{BoxError, TestCaseResult, InputMode};
 
-/// Biên dịch file cpp thành binary.
+/// Biên dịch file C++ thành binary.
 pub async fn compile_cpp(src: &Path, out_bin: &Path, log: &mut String) -> Result<(), BoxError> {
     tokio::fs::create_dir_all(
         out_bin
@@ -37,6 +37,38 @@ pub async fn compile_cpp(src: &Path, out_bin: &Path, log: &mut String) -> Result
 
     if !output.status.success() {
         return Err(format!("Compile failed for {}", src.display()).into());
+    }
+    Ok(())
+}
+
+/// Biên dịch file C thành binary.
+pub async fn compile_c(src: &Path, out_bin: &Path, log: &mut String) -> Result<(), BoxError> {
+    tokio::fs::create_dir_all(
+        out_bin
+            .parent()
+            .ok_or_else(|| "binary path missing parent")?,
+    )
+    .await?;
+
+    let mut cmd = Command::new("gcc");
+    cmd.arg("-std=c11")
+        .arg("-O2")
+        .arg(src)
+        .arg("-o")
+        .arg(out_bin);
+
+    let output = cmd.output().await?;
+    log.push_str(&format!(
+        "Compile C {} -> {:?}\nstatus: {:?}\nstdout:\n{}\nstderr:\n{}\n",
+        src.display(),
+        out_bin,
+        output.status.code(),
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    ));
+
+    if !output.status.success() {
+        return Err(format!("Compile C failed for {}", src.display()).into());
     }
     Ok(())
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import StatusBadge from "../components/StatusBadge";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 async function fetchContests() {
   const res = await fetch(`${API_BASE}/api/contests`, { cache: "no-store" });
@@ -143,7 +144,11 @@ export default function ContestsPage() {
                 const status = getContestStatus(c);
                 return (
                   <tr key={c.IdCuocThi}>
-                    <td style={{ fontWeight: 600 }}>{c.TenCuocThi || `Contest ${c.IdCuocThi}`}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      <Link href={`/contests/${c.IdCuocThi}`} className="problem-link">
+                        {c.TenCuocThi || `Contest ${c.IdCuocThi}`}
+                      </Link>
+                    </td>
                     <td>{new Date(c.ThoiGianBatDau).toLocaleString("vi-VN")}</td>
                     <td>{new Date(c.ThoiGianKetThuc).toLocaleString("vi-VN")}</td>
                     <td>

@@ -12,7 +12,7 @@ use serde_json::{json, Value};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::net::TcpListener;
 use tokio::select;
-use tog::{Executor, BoxError, JobConfig, ExecResult, InputMode};
+use tog::{Executor, BoxError, JobConfig, ExecResult, InputMode, Language};
 
 /// Job envelope giống với cấu trúc bên UI/Server push vào Redis.
 #[derive(Debug, Deserialize)]
@@ -41,6 +41,9 @@ struct JudgeData {
     /// Kiểu đọc input: \"stdin\" hoặc \"file\"
     #[serde(rename = "inputMode")]
     input_mode: String,
+    /// Ngôn ngữ: \"c\" hoặc \"cpp\" (mặc định: cpp nếu thiếu)
+    #[serde(rename = "language")]
+    language: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -50,6 +53,7 @@ struct JudgeForm {
     time_limit_ms: u64,
     memory_limit_kb: u64,
     input_mode: String,
+    language: Option<String>,
 }
 
 async fn index_page() -> Html<String> {
@@ -97,6 +101,7 @@ async fn enqueue_job(Form(form): Form<JudgeForm>) -> Html<String> {
             "timeLimitMs": form.time_limit_ms,
             "memoryLimitKb": form.memory_limit_kb,
             "inputMode": form.input_mode,
+            "language": form.language.unwrap_or_else(|| "cpp".to_string()),
         },
         "timestamp": now_ms,
     });
@@ -147,8 +152,24 @@ async fn main() -> Result<(), BoxError> {
     println!("Web UI   : http://127.0.0.1:{}", web_port);
 
     // Setup Redis client cho worker
-    let redis_client = redis::Client::open(redis_url.clone())?;
-    let mut worker_conn = redis_client.get_async_connection().await?;
+    let redis_client = match redis::Client::open(redis_url.clone()) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("❌ Không tạo được Redis client với URL {}: {}", redis_url, e);
+            eprintln!("💡 Kiểm tra lại REDIS_URL hoặc cài đặt Redis.");
+            return Err(format!("Redis client init failed: {}", e).into());
+        }
+    };
+    let mut worker_conn = match redis_client.get_async_connection().await {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("❌ Không kết nối được Redis tại {}: {}", redis_url, e);
+            if e.to_string().contains("Connection refused") {
+                eprintln!("💡 Có thể Redis chưa được start trên 127.0.0.1:6379 (os error 10061).");
+            }
+            return Err(format!("Redis connection failed: {}", e).into());
+        }
+    };
 
     // Setup web server
     let web_app = Router::new()
@@ -216,6 +237,18 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
         _ => InputMode::Stdin,
     };
 
+    // Map string language -> enum (mặc định: Cpp)
+    let language = match data
+        .language
+        .as_ref()
+        .map(|s| s.to_lowercase())
+        .as_deref()
+    {
+        Some("c") => Language::C,
+        Some("cpp") => Language::Cpp,
+        _ => Language::Cpp,
+    };
+
     let cfg = JobConfig {
         id: data.code_id.clone(),
         name: data.test_id.clone(),
@@ -223,6 +256,7 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
         time_limit_ms: data.time_limit_ms,
         memory_limit_kb: data.memory_limit_kb,
         input_mode,
+        language,
     };
 
     println!("Chạy Executor::run_job với config: {:?}", cfg);

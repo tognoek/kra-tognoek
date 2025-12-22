@@ -1,4 +1,9 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import rehypeHighlight from "rehype-highlight";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 async function fetchProblem(id: string) {
   const res = await fetch(`${API_BASE}/api/problems`, { cache: "no-store" });
@@ -47,16 +52,14 @@ export default async function ProblemDetailPage({ params }: { params: { id: stri
 
       <div className="form-card">
         <h2 style={{ fontSize: "20px", fontWeight: 600, marginBottom: "16px" }}>Problem Statement</h2>
-        <div
-          style={{
-            lineHeight: "1.8",
-            color: "#333",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-          }}
-        >
-          {problem?.NoiDungDeBai || "Nội dung đề bài chưa có."}
-        </div>
+        <article className="markdown-body">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw, rehypeHighlight]}
+          >
+            {problem?.NoiDungDeBai || "Nội dung đề bài chưa có."}
+          </ReactMarkdown>
+        </article>
       </div>
 
       <div className="form-card" style={{ marginTop: "20px" }}>

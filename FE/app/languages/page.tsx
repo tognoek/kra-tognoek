@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import StatusBadge from "../components/StatusBadge";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 async function fetchLanguages() {
   const res = await fetch(`${API_BASE}/api/languages`, { cache: "no-store" });

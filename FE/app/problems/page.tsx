@@ -5,7 +5,7 @@ import Link from "next/link";
 import StatusBadge from "../components/StatusBadge";
 import DifficultyBadge from "../components/DifficultyBadge";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 async function fetchProblems() {
   const res = await fetch(`${API_BASE}/api/problems`, { cache: "no-store" });

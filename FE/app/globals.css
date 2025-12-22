@@ -376,6 +376,53 @@ tbody tr:last-child td {
   color: #666;
 }
 
+/* Markdown content */
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.markdown-body p {
+  margin: 0 0 10px;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 20px;
+  margin: 0 0 10px;
+}
+
+.markdown-body code {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: #f1f3f4;
+  font-size: 13px;
+}
+
+.markdown-body pre {
+  background: #0f172a;
+  color: #e5e7eb;
+  padding: 12px 14px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page {

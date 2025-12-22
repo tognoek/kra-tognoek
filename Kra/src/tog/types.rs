@@ -11,6 +11,14 @@ pub enum InputMode {
 }
 
 #[derive(Debug, Clone)]
+pub enum Language {
+    /// Ngôn ngữ C (biên dịch bằng gcc)
+    C,
+    /// Ngôn ngữ C++ (biên dịch bằng g++)
+    Cpp,
+}
+
+#[derive(Debug, Clone)]
 pub struct JobConfig {
     /// id code – trùng tên file code trong S3 (data/code/{id}.cpp)
     pub id: String,
@@ -24,6 +32,8 @@ pub struct JobConfig {
     pub memory_limit_kb: u64,
     /// Kiểu đọc input cho bài này.
     pub input_mode: InputMode,
+    /// Ngôn ngữ dùng để biên dịch (C hoặc C++)
+    pub language: Language,
 }
 
 #[derive(Debug, Clone)]
