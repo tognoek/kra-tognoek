@@ -53,11 +53,16 @@ cd DoAn
 
 ### 2. Cấu hình Database
 
-Tạo database MySQL:
-```sql
-CREATE DATABASE oj_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+Chạy Redis server:
+```shell
+sudo systemctl start redis-server
 ```
-
+Chạy MySQL
+```shell
+sudo systemctl status mysql
+sudo systemctl start apache2
+```
+Open web [UI MySQL](http://localhost/phpmyadmin/)
 ### 3. Cấu hình Environment Variables
 
 #### S3 Service (`S3/.env`):

@@ -3,23 +3,42 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
 
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 async function fetchProblem(id: string) {
-  const res = await fetch(`${API_BASE}/api/problems`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Không tải được đề bài");
-  const problems = await res.json();
-  const problem = problems.find((p: any) => p.IdDeBai.toString() === id);
-  if (!problem) throw new Error("Không tìm thấy đề bài");
+  const url = `${API_BASE}/api/problems/${id}`;
+  
+  console.log("Fetching:", url);
+
+  const res = await fetch(url, { 
+    cache: "no-store"
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    const message = errorBody.error || `Lỗi tải đề (Mã lỗi: ${res.status})`;
+    throw new Error(message);
+  }
+
+  const problem = await res.json();
+  
   return problem;
 }
 
-export default async function ProblemDetailPage({ params }: { params: { id: string } }) {
+export default async function ProblemDetailPage(props: Props) {
   let problem: any = null;
   let error: string | null = null;
 
   try {
-    problem = await fetchProblem(params.id);
+    const params = await props.params;
+    
+    const id = params.id;
+
+    problem = await fetchProblem(id);
   } catch (e: any) {
     error = e.message;
   }

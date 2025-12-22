@@ -70,5 +70,43 @@ router.post("/", async (req, res) => {
   res.json(created);
 });
 
+// GET /api/problems/:id
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const problem = await prisma.deBai.findUnique({
+      where: {
+        IdDeBai: BigInt(id),
+      },
+    });
+
+    if (!problem) {
+      return res.status(404).json({ error: "Bài tập không tồn tại" });
+    }
+
+    res.json({
+      IdDeBai: problem.IdDeBai.toString(),
+      IdTaiKhoan: problem.IdTaiKhoan.toString(), 
+      TieuDe: problem.TieuDe,
+      NoiDungDeBai: problem.NoiDungDeBai,
+      DoKho: problem.DoKho,
+      GioiHanThoiGian: problem.GioiHanThoiGian,
+      GioiHanBoNho: problem.GioiHanBoNho,
+      DangCongKhai: problem.DangCongKhai,
+      NgayTao: problem.NgayTao,
+      TrangThai: problem.TrangThai,
+    });
+  } catch (error: any) {
+    console.error("Error fetching problem:", error);
+    
+    if (error.name === 'PrismaClientValidationError' || error.message.includes('BigInt')) {
+         return res.status(400).json({ error: "ID không hợp lệ" });
+    }
+
+    res.status(500).json({ error: "Lỗi server khi lấy chi tiết bài tập" });
+  }
+});
+
 export default router;
 

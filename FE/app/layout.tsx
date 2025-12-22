@@ -13,7 +13,7 @@ const nav = [
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi">
+    <html lang="vi" suppressHydrationWarning>
       <body>
         <header className="header">
           <div className="header-content">
