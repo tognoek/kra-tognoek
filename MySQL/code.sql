@@ -135,3 +135,91 @@ ALTER TABLE `BaiNop` ADD FOREIGN KEY (`IdDeBai`) REFERENCES `DeBai` (`IdDeBai`);
 ALTER TABLE `BaiNop` ADD FOREIGN KEY (`IdNgonNgu`) REFERENCES `NgonNgu` (`IdNgonNgu`);
 
 ALTER TABLE `BaiNop` ADD FOREIGN KEY (`IdCuocThi`) REFERENCES `CuocThi` (`IdCuocThi`);
+
+
+-- Dữ liệu mẫu
+-- Lưu ý: MatKhau nên là hash bcrypt. Ở đây đặt placeholder, bạn thay bằng hash thực tế
+INSERT INTO VaiTro (IdVaiTro, TenVaiTro, MoTa) VALUES
+(1, 'Admin', 'Quản trị viên hệ thống'),
+(2, 'User', 'Người dùng thông thường'),
+(3, 'Banned', 'Tài khoản bị khóa');
+
+INSERT INTO TaiKhoan (IdTaiKhoan, IdVaiTro, TenDangNhap, MatKhau, HoTen, Email, TrangThai, NgayTao) VALUES
+(1, 1, 'admin',  'HASH_BCRYPT_ADMIN123',  'Administrator', 'admin@oj.local', TRUE,  NOW()),
+(2, 2, 'user1',  'HASH_BCRYPT_USER123',   'Người Dùng 1',  'user1@example.com', TRUE, NOW()),
+(3, 3, 'banned1','HASH_BCRYPT_BANNED123', 'User Bị Khóa',  'banned1@example.com', FALSE, NOW());
+
+INSERT INTO ChuDe (IdChuDe, TenChuDe, MoTa) VALUES
+(1, 'Array', 'Các bài toán về mảng'),
+(2, 'Math', 'Các bài toán toán học'),
+(3, 'String', 'Xử lý chuỗi');
+
+INSERT INTO NgonNgu (IdNgonNgu, TenNgonNgu, TenNhanDien, TrangThai) VALUES
+(1, 'C++', 'cpp', TRUE),
+(2, 'C',   'c',   TRUE),
+(3, 'Python', 'py', TRUE),
+(4, 'Java', 'java', FALSE);
+
+INSERT INTO DeBai (IdDeBai, IdTaiKhoan, TieuDe, NoiDungDeBai, DoKho,
+                   GioiHanThoiGian, GioiHanBoNho, DangCongKhai, NgayTao, TrangThai) VALUES
+(1, 1, 'A + B Problem',
+'# A + B Problem
+
+Cho hai số nguyên **A** và **B**.
+
+## Input
+- Một dòng chứa hai số nguyên A và B.
+
+## Output
+- In ra `A + B`.
+
+### Giới hạn
+- \\( -10^9 \\le A, B \\le 10^9 \\)
+
+### Ví dụ
+
+| Input    | Output |
+|----------|--------|
+| `1 2`    | `3`    |
+| `-5 10`  | `5`    |
+',
+ 'Easy', 1000, 262144, TRUE, NOW(), TRUE);
+
+INSERT INTO DeBai_ChuDe (IdDeBai, IdChuDe) VALUES
+(1, 1), (1, 2);
+
+INSERT INTO BoTest (IdBoTest, IdDeBai, DuongDanInput, DuongDanOutput, DuongDanCode, NgayTao) VALUES
+(1, 1,
+ 'http://127.0.0.1:3001/data/test/sum/sum.zip',
+ 'http://127.0.0.1:3001/data/test/sum/sum.zip',
+ 'http://127.0.0.1:3001/data/code/1.cpp',
+ NOW());
+
+INSERT INTO CuocThi (IdCuocThi, IdTaiKhoan, TenCuocThi, MoTa,
+                     ThoiGianBatDau, ThoiGianKetThuc, TrangThai, NgayTao, ChuY) VALUES
+(1, 1, 'Weekly Contest #1',
+'# Weekly Contest #1
+
+Cuộc thi luyện tập lập trình hàng tuần.
+
+## Thể lệ
+- Thời gian: 120 phút
+- Chấm tự động bằng hệ thống Kra + S3
+- Ngôn ngữ cho phép: C, C++
+
+## Lưu ý
+- Không chia sẻ code khi contest còn đang diễn ra.',
+ NOW(), DATE_ADD(NOW(), INTERVAL 2 HOUR), TRUE, NOW(),
+ 'Mở cho tất cả user đã verify email.');
+
+INSERT INTO CuocThi_DeBai (IdCuocThi, IdDeBai, TenHienThi) VALUES
+(1, 1, 'Problem A - A + B');
+
+INSERT INTO CuocThi_DangKy (IdCuocThi, IdTaiKhoan, TrangThai) VALUES
+(1, 2, TRUE);
+
+INSERT INTO BaiNop (IdBaiNop, IdTaiKhoan, IdDeBai, IdNgonNgu, IdCuocThi,
+                    DuongDanCode, TrangThaiCham, ThoiGianThucThi, BoNhoSuDung, NgayNop) VALUES
+(1, 2, 1, 1, 1,
+ 'http://127.0.0.1:3001/data/code/1.cpp',
+ 'pending', NULL, NULL, NOW());

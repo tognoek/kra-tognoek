@@ -5,11 +5,29 @@ const router = Router();
 
 // GET /api/problems
 router.get("/", async (_req, res) => {
-  const data = await prisma.deBai.findMany({
-    include: { taiKhoan: true, deBaiChuDes: { include: { chuDe: true } } },
-    orderBy: { NgayTao: "desc" },
-  });
-  res.json(data);
+  try {
+    const data = await prisma.deBai.findMany({
+      orderBy: { NgayTao: "desc" },
+    });
+
+    // Tránh BigInt trong JSON response
+    res.json(
+      data.map((p) => ({
+        IdDeBai: p.IdDeBai.toString(),
+        IdTaiKhoan: p.IdTaiKhoan.toString(),
+        TieuDe: p.TieuDe,
+        NoiDungDeBai: p.NoiDungDeBai,
+        DoKho: p.DoKho,
+        GioiHanThoiGian: p.GioiHanThoiGian,
+        GioiHanBoNho: p.GioiHanBoNho,
+        DangCongKhai: p.DangCongKhai,
+        NgayTao: p.NgayTao,
+        TrangThai: p.TrangThai,
+      }))
+    );
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to load problems" });
+  }
 });
 
 // POST /api/problems

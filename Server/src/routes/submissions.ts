@@ -17,14 +17,45 @@ router.get("/", async (req, res) => {
   const data = await prisma.baiNop.findMany({
     where,
     include: {
-      deBai: { select: { TieuDe: true } },
-      taiKhoan: { select: { TenTaiKhoan: true } },
-      ngonNgu: { select: { TenNhanDien: true } },
+      deBai: { select: { IdDeBai: true, TieuDe: true } },
+      taiKhoan: { select: { IdTaiKhoan: true, TenDangNhap: true } },
+      ngonNgu: { select: { IdNgonNgu: true, TenNhanDien: true } },
     },
     orderBy: { NgayNop: "desc" },
     take: 100,
   });
-  res.json(data);
+  res.json(
+    data.map((s) => ({
+      IdBaiNop: s.IdBaiNop.toString(),
+      IdTaiKhoan: s.IdTaiKhoan.toString(),
+      IdDeBai: s.IdDeBai.toString(),
+      IdNgonNgu: s.IdNgonNgu.toString(),
+      IdCuocThi: s.IdCuocThi ? s.IdCuocThi.toString() : null,
+      DuongDanCode: s.DuongDanCode,
+      TrangThaiCham: s.TrangThaiCham,
+      ThoiGianThucThi: s.ThoiGianThucThi,
+      BoNhoSuDung: s.BoNhoSuDung,
+      NgayNop: s.NgayNop,
+      deBai: s.deBai
+        ? {
+            IdDeBai: s.deBai.IdDeBai.toString(),
+            TieuDe: s.deBai.TieuDe,
+          }
+        : null,
+      taiKhoan: s.taiKhoan
+        ? {
+            IdTaiKhoan: s.taiKhoan.IdTaiKhoan.toString(),
+            TenDangNhap: s.taiKhoan.TenDangNhap,
+          }
+        : null,
+      ngonNgu: s.ngonNgu
+        ? {
+            IdNgonNgu: s.ngonNgu.IdNgonNgu.toString(),
+            TenNhanDien: s.ngonNgu.TenNhanDien,
+          }
+        : null,
+    }))
+  );
 });
 
 // POST /api/submissions

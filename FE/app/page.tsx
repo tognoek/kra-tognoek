@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 const cards = [
@@ -5,6 +7,7 @@ const cards = [
   { title: "🏆 Contests", href: "/contests", desc: "Tham gia các cuộc thi lập trình", icon: "🏆" },
   { title: "📝 Submissions", href: "/submissions", desc: "Nộp bài và xem kết quả chấm", icon: "📝" },
   { title: "💻 Languages", href: "/languages", desc: "Xem các ngôn ngữ lập trình được hỗ trợ", icon: "💻" },
+  { title: "🔐 Auth", href: "/auth/login", desc: "Đăng nhập / Đăng ký tài khoản", icon: "🔐" },
 ];
 
 export default function Home() {
@@ -12,7 +15,7 @@ export default function Home() {
     <div>
       <h1 className="section-title">Online Judge Portal</h1>
       <p className="section-sub">Hệ thống chấm bài tự động - Nơi bạn có thể luyện tập và thi đấu lập trình</p>
-      
+
       <div className="card-grid">
         {cards.map((c) => (
           <Link key={c.href} href={c.href} className="card">
@@ -36,6 +39,7 @@ export default function Home() {
           <div className="stat-value">-</div>
         </div>
       </div>
+
     </div>
   );
 }

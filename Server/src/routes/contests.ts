@@ -5,15 +5,41 @@ const router = Router();
 
 // GET /api/contests
 router.get("/", async (_req, res) => {
-  const data = await prisma.cuocThi.findMany({
-    include: {
-      taiKhoan: true,
-      deBais: { include: { deBai: true } },
-      dangKys: true,
-    },
-    orderBy: { NgayTao: "desc" },
-  });
-  res.json(data);
+  try {
+    const data = await prisma.cuocThi.findMany({
+      include: {
+        deBais: { include: { deBai: true } },
+      },
+      orderBy: { NgayTao: "desc" },
+    });
+
+    res.json(
+      data.map((c) => ({
+        IdCuocThi: c.IdCuocThi.toString(),
+        IdTaiKhoan: c.IdTaiKhoan.toString(),
+        TenCuocThi: c.TenCuocThi,
+        MoTa: c.MoTa,
+        ThoiGianBatDau: c.ThoiGianBatDau,
+        ThoiGianKetThuc: c.ThoiGianKetThuc,
+        TrangThai: c.TrangThai,
+        NgayTao: c.NgayTao,
+        ChuY: c.ChuY,
+        deBais: c.deBais.map((d) => ({
+          IdCuocThi: d.IdCuocThi.toString(),
+          IdDeBai: d.IdDeBai.toString(),
+          TenHienThi: d.TenHienThi,
+          deBai: d.deBai
+            ? {
+                IdDeBai: d.deBai.IdDeBai.toString(),
+                TieuDe: d.deBai.TieuDe,
+              }
+            : null,
+        })),
+      }))
+    );
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to load contests" });
+  }
 });
 
 // POST /api/contests

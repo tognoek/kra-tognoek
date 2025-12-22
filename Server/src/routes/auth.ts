@@ -153,7 +153,6 @@ router.get("/me", async (req: Request, res: Response) => {
 
     const user = await prisma.taiKhoan.findUnique({
       where: { IdTaiKhoan: BigInt(decoded.userId) },
-      include: { vaiTro: true },
       select: {
         IdTaiKhoan: true,
         TenDangNhap: true,

@@ -5,8 +5,19 @@ const router = Router();
 
 // GET /api/languages
 router.get("/", async (_req, res) => {
-  const data = await prisma.ngonNgu.findMany();
-  res.json(data);
+  try {
+    const data = await prisma.ngonNgu.findMany();
+    res.json(
+      data.map((l) => ({
+        IdNgonNgu: l.IdNgonNgu.toString(),
+        TenNgonNgu: l.TenNgonNgu,
+        TenNhanDien: l.TenNhanDien,
+        TrangThai: l.TrangThai,
+      }))
+    );
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to load languages" });
+  }
 });
 
 // POST /api/languages

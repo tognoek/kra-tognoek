@@ -46,12 +46,14 @@ export default function SubmissionsPage() {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (s) =>
+      result = result.filter((s) => {
+        const username = s.taiKhoan?.TenDangNhap || s.taiKhoan?.TenTaiKhoan || "";
+        return (
           s.IdBaiNop?.toString().includes(query) ||
           s.deBai?.TieuDe?.toLowerCase().includes(query) ||
-          s.taiKhoan?.TenTaiKhoan?.toLowerCase().includes(query)
-      );
+          username.toLowerCase().includes(query)
+        );
+      });
     }
 
     // Status filter
@@ -165,7 +167,7 @@ export default function SubmissionsPage() {
                       {s.deBai?.TieuDe || `Problem ${s.IdDeBai}`}
                     </a>
                   </td>
-                  <td>{s.taiKhoan?.TenTaiKhoan || `User ${s.IdTaiKhoan}`}</td>
+                  <td>{s.taiKhoan?.TenDangNhap || s.taiKhoan?.TenTaiKhoan || `User ${s.IdTaiKhoan}`}</td>
                   <td>{s.ngonNgu?.TenNhanDien || `Lang ${s.IdNgonNgu}`}</td>
                   <td>
                     <StatusBadge status={s.TrangThaiCham || "pending"} />

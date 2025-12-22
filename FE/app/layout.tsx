@@ -1,6 +1,7 @@
 import "./globals.css";
 import Link from "next/link";
 import { ReactNode } from "react";
+import AuthBar from "./components/AuthBar";
 
 const nav = [
   { href: "/", label: "Home" },
@@ -20,13 +21,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <span>⚡</span>
               <span>OJ Portal</span>
             </Link>
-            <nav className="nav">
-              {nav.map((item) => (
-                <Link key={item.href} href={item.href} className="nav-link">
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            <div className="header-right">
+              <nav className="nav">
+                {nav.map((item) => (
+                  <Link key={item.href} href={item.href} className="nav-link">
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+              <AuthBar />
+            </div>
           </div>
         </header>
         <main className="page">{children}</main>
