@@ -20,6 +20,10 @@ export default function LanguagesPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
 
   useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = "Ngôn ngữ lập trình - OJ Portal";
+    }
+    
     fetchLanguages()
       .then((d) => {
         setData(d);

@@ -26,6 +26,12 @@ struct JobEnvelope {
 /// Dữ liệu job `judge` mà Kra thật sự cần để chấm.
 #[derive(Debug, Deserialize)]
 struct JudgeData {
+    /// Submission ID để gửi callback
+    #[serde(rename = "submissionId")]
+    submission_id: Option<String>,
+    /// Problem ID
+    #[serde(rename = "problemId")]
+    problem_id: Option<String>,
     /// Id code – dùng để gọi S3 (data/code/{codeId}.cpp)
     #[serde(rename = "codeId")]
     code_id: String,
@@ -44,6 +50,9 @@ struct JudgeData {
     /// Ngôn ngữ: \"c\" hoặc \"cpp\" (mặc định: cpp nếu thiếu)
     #[serde(rename = "language")]
     language: Option<String>,
+    /// Server base URL để gửi callback
+    #[serde(rename = "serverBaseUrl")]
+    server_base_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -266,9 +275,83 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
     let codes = build_result_codes(&exec_res);
     println!("KRA_RESULT_CODES {:?}", codes);
 
-    let (_status, _total_time_ms, _total_mem_kb) = summarize_result(&exec_res);
+    let (status, total_time_ms, total_mem_kb) = summarize_result(&exec_res);
+
+    // Gửi callback về Server nếu có submissionId
+    if let Some(submission_id) = &data.submission_id {
+        if let Some(server_url) = &data.server_base_url {
+            send_callback(
+                server_url,
+                submission_id,
+                &exec_res,
+                status,
+                total_time_ms,
+                total_mem_kb,
+            )
+            .await;
+        }
+    }
 
     Ok(())
+}
+
+async fn send_callback(
+    server_url: &str,
+    submission_id: &str,
+    exec_res: &Result<ExecResult, BoxError>,
+    status: &str,
+    max_time_ms: i32,
+    max_mem_kb: i32,
+) {
+    let client = reqwest::Client::new();
+    let callback_url = format!("{}/api/submissions/{}/callback", server_url, submission_id);
+
+    let mut body = serde_json::json!({
+        "TrangThaiCham": status,
+        "ThoiGianThucThi": max_time_ms,
+        "BoNhoSuDung": max_mem_kb,
+    });
+
+    // Xử lý kết quả chi tiết
+    match exec_res {
+        Err(e) => {
+            body["TrangThaiCham"] = serde_json::json!("error");
+            body["compileError"] = serde_json::json!(e.to_string());
+        }
+        Ok(exec) => {
+            if !exec.compile_ok {
+                body["TrangThaiCham"] = serde_json::json!("compile_error");
+                body["compileError"] = serde_json::json!(exec.compile_log);
+            } else {
+                // Tìm test case đầu tiên bị sai
+                let mut failed_index: Option<usize> = None;
+                for (idx, test) in exec.tests.iter().enumerate() {
+                    if !test.passed {
+                        failed_index = Some(idx);
+                        break;
+                    }
+                }
+
+                if let Some(idx) = failed_index {
+                    body["failedTestIndex"] = serde_json::json!(idx);
+                    body["totalTests"] = serde_json::json!(exec.tests.len());
+                }
+            }
+        }
+    }
+
+    match client.post(&callback_url).json(&body).send().await {
+        Ok(res) => {
+            if res.status().is_success() {
+                println!("✅ Callback sent successfully to {}", callback_url);
+            } else {
+                eprintln!("⚠️ Callback returned status: {}", res.status());
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to send callback to {}: {}", callback_url, e);
+        }
+    }
 }
 
 fn summarize_result(res: &Result<ExecResult, BoxError>) -> (&'static str, i32, i32) {

@@ -2,6 +2,15 @@ import "./globals.css";
 import Link from "next/link";
 import { ReactNode } from "react";
 import AuthBar from "./components/AuthBar";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "OJ Portal - Hệ thống chấm bài tự động",
+  description: "Hệ thống chấm bài tự động - Nơi bạn có thể luyện tập và thi đấu lập trình",
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
 
 const nav = [
   { href: "/", label: "Home" },

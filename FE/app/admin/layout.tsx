@@ -2,22 +2,53 @@
 
 import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+interface UserInfo {
+  IdTaiKhoan: string;
+  TenDangNhap: string;
+  HoTen: string;
+  Email: string;
+  VaiTro: string;
+}
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState("");
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = window.localStorage.getItem("oj_admin_token") || "";
-      setToken(saved);
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("oj_user");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setUser(parsed);
+      } catch (e) {
+        console.error("Parse user failed", e);
+        setUser(null);
+      }
     }
+    setLoading(false);
   }, []);
 
-  const onSaveToken = () => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("oj_admin_token", token.trim());
-    }
-  };
+  const isAdmin = user?.VaiTro?.toLowerCase() === "admin";
+
+  if (loading) {
+    return <div style={{ padding: 24 }}>Đang kiểm tra quyền...</div>;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="form-card" style={{ marginTop: 24 }}>
+        <h2 style={{ marginTop: 0 }}>Bạn không có quyền truy cập trang Admin</h2>
+        <p>Vui lòng đăng nhập bằng tài khoản Admin.</p>
+        <Link href="/" className="button" style={{ marginTop: 12, display: "inline-block" }}>
+          ← Về trang chủ
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -32,18 +63,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <Link href="/admin/languages" className="nav-link">
             Languages
           </Link>
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", maxWidth: 480, width: "100%" }}>
-          <input
-            type="text"
-            className="input"
-            placeholder="JWT token (Authorization: Bearer ...)"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-          />
-          <button type="button" className="button" onClick={onSaveToken}>
-            Lưu
-          </button>
         </div>
       </div>
       {children}

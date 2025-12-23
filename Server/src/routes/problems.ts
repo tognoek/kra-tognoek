@@ -7,6 +7,15 @@ const router = Router();
 router.get("/", async (_req, res) => {
   try {
     const data = await prisma.deBai.findMany({
+      include: {
+        taiKhoan: {
+          select: {
+            IdTaiKhoan: true,
+            TenDangNhap: true,
+            HoTen: true,
+          },
+        },
+      },
       orderBy: { NgayTao: "desc" },
     });
 
@@ -23,6 +32,13 @@ router.get("/", async (_req, res) => {
         DangCongKhai: p.DangCongKhai,
         NgayTao: p.NgayTao,
         TrangThai: p.TrangThai,
+        taiKhoan: p.taiKhoan
+          ? {
+              IdTaiKhoan: p.taiKhoan.IdTaiKhoan.toString(),
+              TenDangNhap: p.taiKhoan.TenDangNhap,
+              HoTen: p.taiKhoan.HoTen,
+            }
+          : null,
       }))
     );
   } catch (error: any) {
@@ -42,6 +58,7 @@ router.post("/", async (req, res) => {
     DangCongKhai,
     TrangThai,
     topicIds,
+    TestPath,
   } = req.body;
 
   if (!IdTaiKhoan || !TieuDe || !NoiDungDeBai || !DoKho || !GioiHanThoiGian || !GioiHanBoNho) {
@@ -50,7 +67,7 @@ router.post("/", async (req, res) => {
 
   const created = await prisma.deBai.create({
     data: {
-      IdTaiKhoan,
+      IdTaiKhoan: BigInt(IdTaiKhoan),
       TieuDe,
       NoiDungDeBai,
       DoKho,
@@ -65,9 +82,30 @@ router.post("/", async (req, res) => {
             })),
           }
         : undefined,
+      boTests: TestPath
+        ? {
+            create: {
+              DuongDanInput: TestPath,
+              DuongDanOutput: "",
+              DuongDanCode: "",
+            },
+          }
+        : undefined,
     },
   });
-  res.json(created);
+
+  res.json({
+    IdDeBai: created.IdDeBai.toString(),
+    IdTaiKhoan: created.IdTaiKhoan.toString(),
+    TieuDe: created.TieuDe,
+    NoiDungDeBai: created.NoiDungDeBai,
+    DoKho: created.DoKho,
+    GioiHanThoiGian: created.GioiHanThoiGian,
+    GioiHanBoNho: created.GioiHanBoNho,
+    DangCongKhai: created.DangCongKhai,
+    TrangThai: created.TrangThai,
+    NgayTao: created.NgayTao,
+  });
 });
 
 // GET /api/problems/:id
@@ -78,6 +116,16 @@ router.get("/:id", async (req, res) => {
     const problem = await prisma.deBai.findUnique({
       where: {
         IdDeBai: BigInt(id),
+      },
+      include: {
+        taiKhoan: {
+          select: {
+            IdTaiKhoan: true,
+            TenDangNhap: true,
+            HoTen: true,
+            Email: true,
+          },
+        },
       },
     });
 
@@ -96,6 +144,14 @@ router.get("/:id", async (req, res) => {
       DangCongKhai: problem.DangCongKhai,
       NgayTao: problem.NgayTao,
       TrangThai: problem.TrangThai,
+      taiKhoan: problem.taiKhoan
+        ? {
+            IdTaiKhoan: problem.taiKhoan.IdTaiKhoan.toString(),
+            TenDangNhap: problem.taiKhoan.TenDangNhap,
+            HoTen: problem.taiKhoan.HoTen,
+            Email: problem.taiKhoan.Email,
+          }
+        : null,
     });
   } catch (error: any) {
     console.error("Error fetching problem:", error);

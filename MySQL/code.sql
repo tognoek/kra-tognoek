@@ -44,6 +44,7 @@ CREATE TABLE `BinhLuan` (
   `IdBinhLuan` bigint PRIMARY KEY AUTO_INCREMENT,
   `IdDeBai` bigint NOT NULL,
   `IdTaiKhoan` bigint NOT NULL,
+  `IdBinhLuanCha` bigint NULL,
   `NoiDung` text NOT NULL,
   `NgayTao` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   `TrangThai` boolean NOT NULL DEFAULT true
@@ -115,6 +116,8 @@ ALTER TABLE `DeBai_ChuDe` ADD FOREIGN KEY (`IdChuDe`) REFERENCES `ChuDe` (`IdChu
 ALTER TABLE `BinhLuan` ADD FOREIGN KEY (`IdDeBai`) REFERENCES `DeBai` (`IdDeBai`);
 
 ALTER TABLE `BinhLuan` ADD FOREIGN KEY (`IdTaiKhoan`) REFERENCES `TaiKhoan` (`IdTaiKhoan`);
+
+ALTER TABLE `BinhLuan` ADD FOREIGN KEY (`IdBinhLuanCha`) REFERENCES `BinhLuan` (`IdBinhLuan`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `BoTest` ADD FOREIGN KEY (`IdDeBai`) REFERENCES `DeBai` (`IdDeBai`);
 

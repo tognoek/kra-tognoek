@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 
 const cards = [
@@ -11,6 +12,12 @@ const cards = [
 ];
 
 export default function Home() {
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = "OJ Portal - Hệ thống chấm bài tự động";
+    }
+  }, []);
+
   return (
     <div>
       <h1 className="section-title">Online Judge Portal</h1>

@@ -5,8 +5,20 @@ const router = Router();
 
 // GET /api/roles
 router.get("/", async (_req, res) => {
-  const data = await prisma.vaiTro.findMany();
-  res.json(data);
+  try {
+    const data = await prisma.vaiTro.findMany();
+    // Tránh BigInt trong JSON response
+    res.json(
+      data.map((r) => ({
+        IdVaiTro: r.IdVaiTro.toString(),
+        TenVaiTro: r.TenVaiTro,
+        MoTa: r.MoTa,
+      }))
+    );
+  } catch (error: any) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({ error: error.message || "Failed to load roles" });
+  }
 });
 
 // POST /api/roles

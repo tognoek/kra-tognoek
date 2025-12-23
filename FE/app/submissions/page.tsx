@@ -21,7 +21,58 @@ export default function SubmissionsPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "accepted" | "rejected">("all");
   const [showForm, setShowForm] = useState(false);
 
+  // Format status display
+  const getStatusDisplay = (status: string | null) => {
+    if (!status || status === "null") {
+      return (
+        <span style={{ color: "#ff9800", fontWeight: 600 }}>
+          ⏳ Đang chấm...
+        </span>
+      );
+    }
+
+    // Parse status
+    if (status.startsWith("compile_error:")) {
+      const error = status.replace("compile_error:", "");
+      return (
+        <div>
+          <StatusBadge status="compile_error" />
+          <div style={{ fontSize: "11px", color: "#c62828", marginTop: "4px" }}>
+            {error.length > 50 ? error.substring(0, 50) + "..." : error}
+          </div>
+        </div>
+      );
+    }
+
+    if (status.startsWith("wrong_answer:")) {
+      const match = status.match(/wrong_answer:(\d+)\/(\d+)/);
+      if (match) {
+        const testNum = match[1];
+        const totalTests = match[2];
+        return (
+          <span style={{ color: "#c62828", fontWeight: 600 }}>
+            ❌ Sai ở test {testNum} trên tổng {totalTests}
+          </span>
+        );
+      }
+    }
+
+    if (status === "accepted") {
+      return (
+        <span style={{ color: "#2e7d32", fontWeight: 600 }}>
+          ✅ Hoàn tất
+        </span>
+      );
+    }
+
+    return <StatusBadge status={status} />;
+  };
+
   useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = "Danh sách bài nộp - OJ Portal";
+    }
+    
     loadSubmissions();
     const interval = setInterval(loadSubmissions, 5000); // Refresh every 5 seconds
     return () => clearInterval(interval);
@@ -58,12 +109,14 @@ export default function SubmissionsPage() {
 
     // Status filter
     if (filterStatus === "pending") {
-      result = result.filter((s) => s.TrangThaiCham === "pending");
+      result = result.filter((s) => !s.TrangThaiCham || s.TrangThaiCham === "null" || s.TrangThaiCham === "pending");
     } else if (filterStatus === "accepted") {
       result = result.filter((s) => s.TrangThaiCham === "accepted" || s.TrangThaiCham === "AC");
     } else if (filterStatus === "rejected") {
       result = result.filter(
         (s) =>
+          s.TrangThaiCham &&
+          s.TrangThaiCham !== "null" &&
           s.TrangThaiCham !== "accepted" &&
           s.TrangThaiCham !== "AC" &&
           s.TrangThaiCham !== "pending"
@@ -167,10 +220,18 @@ export default function SubmissionsPage() {
                       {s.deBai?.TieuDe || `Problem ${s.IdDeBai}`}
                     </a>
                   </td>
-                  <td>{s.taiKhoan?.TenDangNhap || s.taiKhoan?.TenTaiKhoan || `User ${s.IdTaiKhoan}`}</td>
+                  <td>
+                    {s.taiKhoan?.IdTaiKhoan ? (
+                      <a href={`/users/${s.taiKhoan.IdTaiKhoan}`} className="problem-link">
+                        {s.taiKhoan?.TenDangNhap || `User ${s.IdTaiKhoan}`}
+                      </a>
+                    ) : (
+                      `User ${s.IdTaiKhoan}`
+                    )}
+                  </td>
                   <td>{s.ngonNgu?.TenNhanDien || `Lang ${s.IdNgonNgu}`}</td>
                   <td>
-                    <StatusBadge status={s.TrangThaiCham || "pending"} />
+                    {getStatusDisplay(s.TrangThaiCham)}
                   </td>
                   <td>
                     {s.ThoiGianThucThi ? `${s.ThoiGianThucThi}ms` : "-"}

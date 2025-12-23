@@ -10,6 +10,7 @@ import languages from "./languages";
 import health from "./health";
 import auth from "./auth";
 import admin from "./admin";
+import upload from "./upload";
 
 export const router = Router();
 
@@ -24,4 +25,5 @@ router.use("/contests", contests);
 router.use("/submissions", submissions);
 router.use("/languages", languages);
 router.use("/admin", admin);
+router.use("/upload", upload);
 

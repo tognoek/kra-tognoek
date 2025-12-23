@@ -11,9 +11,10 @@ body {
 a { color: inherit; text-decoration: none; }
 
 .page {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
+  width: 100%;
 }
 
 /* Header & Navigation */
@@ -208,7 +209,7 @@ tbody tr:last-child td {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 24px;
-  max-width: 600px;
+  width: 100%;
   margin-top: 20px;
 }
 
@@ -241,6 +242,15 @@ tbody tr:last-child td {
 .input:focus, .select:focus, .textarea:focus {
   outline: none;
   border-color: #1a73e8;
+}
+
+.input-error {
+  border-color: #c62828 !important;
+}
+
+.input-error:focus {
+  border-color: #c62828 !important;
+  box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.1);
 }
 
 .textarea {

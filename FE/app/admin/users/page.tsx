@@ -21,7 +21,8 @@ interface Role {
 
 function getToken() {
   if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("oj_admin_token") || "";
+  // Dùng JWT khi đăng nhập bình thường (oj_token)
+  return window.localStorage.getItem("oj_token") || "";
 }
 
 export default function AdminUsersPage() {
@@ -43,7 +44,7 @@ export default function AdminUsersPage() {
         fetch(`${API_BASE}/api/roles`),
       ]);
       if (!usersRes.ok) {
-        throw new Error("Không tải được danh sách users (có thể thiếu JWT Admin).");
+        throw new Error("Không tải được danh sách users (cần đăng nhập bằng tài khoản Admin).");
       }
       const [usersData, rolesData] = await Promise.all([usersRes.json(), rolesRes.json()]);
       setUsers(usersData);

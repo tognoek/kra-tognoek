@@ -75,15 +75,18 @@ model DeBai_ChuDe {
 }
 
 model BinhLuan {
-  IdBinhLuan BigInt   @id @default(autoincrement())
-  IdDeBai    BigInt
-  IdTaiKhoan BigInt
-  NoiDung    String   @db.Text
-  NgayTao    DateTime @default(now())
-  TrangThai  Boolean  @default(true)
+  IdBinhLuan     BigInt    @id @default(autoincrement())
+  IdDeBai        BigInt
+  IdTaiKhoan     BigInt
+  IdBinhLuanCha  BigInt?   // Null nếu là comment gốc, có giá trị nếu là reply
+  NoiDung        String    @db.Text
+  NgayTao        DateTime  @default(now())
+  TrangThai      Boolean   @default(true)
 
-  deBai    DeBai    @relation(fields: [IdDeBai], references: [IdDeBai])
-  taiKhoan TaiKhoan @relation(fields: [IdTaiKhoan], references: [IdTaiKhoan])
+  deBai          DeBai     @relation(fields: [IdDeBai], references: [IdDeBai])
+  taiKhoan       TaiKhoan  @relation(fields: [IdTaiKhoan], references: [IdTaiKhoan])
+  binhLuanCha    BinhLuan? @relation("BinhLuanReply", fields: [IdBinhLuanCha], references: [IdBinhLuan])
+  binhLuanCon    BinhLuan[] @relation("BinhLuanReply")
 }
 
 model BoTest {

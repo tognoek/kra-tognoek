@@ -21,6 +21,10 @@ export default function ContestsPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "closed">("all");
 
   useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = "Danh sách cuộc thi - OJ Portal";
+    }
+    
     fetchContests()
       .then((d) => {
         setData(d);

@@ -11,8 +11,75 @@ router.post("/register", async (req: Request, res: Response) => {
   try {
     const { TenDangNhap, MatKhau, HoTen, Email } = req.body;
 
+    // Validation chi tiết
     if (!TenDangNhap || !MatKhau || !HoTen || !Email) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({ 
+        error: "Vui lòng điền đầy đủ thông tin",
+        field: !TenDangNhap ? "TenDangNhap" : !MatKhau ? "MatKhau" : !HoTen ? "HoTen" : "Email"
+      });
+    }
+
+    // Validate username
+    if (TenDangNhap.length < 3) {
+      return res.status(400).json({ 
+        error: "Tên đăng nhập phải có ít nhất 3 ký tự",
+        field: "TenDangNhap"
+      });
+    }
+    if (TenDangNhap.length > 50) {
+      return res.status(400).json({ 
+        error: "Tên đăng nhập không được vượt quá 50 ký tự",
+        field: "TenDangNhap"
+      });
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(TenDangNhap)) {
+      return res.status(400).json({ 
+        error: "Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới",
+        field: "TenDangNhap"
+      });
+    }
+
+    // Validate password
+    if (MatKhau.length < 6) {
+      return res.status(400).json({ 
+        error: "Mật khẩu phải có ít nhất 6 ký tự",
+        field: "MatKhau"
+      });
+    }
+    if (MatKhau.length > 100) {
+      return res.status(400).json({ 
+        error: "Mật khẩu không được vượt quá 100 ký tự",
+        field: "MatKhau"
+      });
+    }
+
+    // Validate họ tên
+    if (HoTen.trim().length < 2) {
+      return res.status(400).json({ 
+        error: "Họ tên phải có ít nhất 2 ký tự",
+        field: "HoTen"
+      });
+    }
+    if (HoTen.length > 50) {
+      return res.status(400).json({ 
+        error: "Họ tên không được vượt quá 50 ký tự",
+        field: "HoTen"
+      });
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(Email)) {
+      return res.status(400).json({ 
+        error: "Email không hợp lệ",
+        field: "Email"
+      });
+    }
+    if (Email.length > 255) {
+      return res.status(400).json({ 
+        error: "Email không được vượt quá 255 ký tự",
+        field: "Email"
+      });
     }
 
     // Tìm role "User" mặc định (IdVaiTro = 2 thường là User)
@@ -24,17 +91,28 @@ router.post("/register", async (req: Request, res: Response) => {
       return res.status(500).json({ error: "User role not found" });
     }
 
-    // Kiểm tra username và email đã tồn tại chưa
-    const existingUser = await prisma.taiKhoan.findFirst({
-      where: {
-        OR: [{ TenDangNhap }, { Email }],
-      },
+    // Kiểm tra username đã tồn tại chưa
+    const existingUsername = await prisma.taiKhoan.findUnique({
+      where: { TenDangNhap },
     });
 
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ error: "Username or email already exists" });
+    if (existingUsername) {
+      return res.status(400).json({ 
+        error: "Tên đăng nhập đã được sử dụng",
+        field: "TenDangNhap"
+      });
+    }
+
+    // Kiểm tra email đã tồn tại chưa
+    const existingEmail = await prisma.taiKhoan.findUnique({
+      where: { Email },
+    });
+
+    if (existingEmail) {
+      return res.status(400).json({ 
+        error: "Email đã được sử dụng",
+        field: "Email"
+      });
     }
 
     // Hash password
@@ -85,8 +163,26 @@ router.post("/login", async (req: Request, res: Response) => {
   try {
     const { TenDangNhap, MatKhau } = req.body;
 
+    // Validation
     if (!TenDangNhap || !MatKhau) {
-      return res.status(400).json({ error: "Username and password required" });
+      return res.status(400).json({ 
+        error: "Vui lòng nhập tên đăng nhập và mật khẩu",
+        field: !TenDangNhap ? "TenDangNhap" : "MatKhau"
+      });
+    }
+
+    if (TenDangNhap.trim().length === 0) {
+      return res.status(400).json({ 
+        error: "Tên đăng nhập không được để trống",
+        field: "TenDangNhap"
+      });
+    }
+
+    if (MatKhau.trim().length === 0) {
+      return res.status(400).json({ 
+        error: "Mật khẩu không được để trống",
+        field: "MatKhau"
+      });
     }
 
     // Tìm user
@@ -96,19 +192,28 @@ router.post("/login", async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ 
+        error: "Tên đăng nhập hoặc mật khẩu không đúng",
+        field: "general"
+      });
     }
 
     // Kiểm tra password
     const isValidPassword = await bcrypt.compare(MatKhau, user.MatKhau);
 
     if (!isValidPassword) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ 
+        error: "Tên đăng nhập hoặc mật khẩu không đúng",
+        field: "general"
+      });
     }
 
     // Kiểm tra trạng thái tài khoản
     if (!user.TrangThai) {
-      return res.status(403).json({ error: "Account is disabled" });
+      return res.status(403).json({ 
+        error: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên",
+        field: "general"
+      });
     }
 
     // Tạo JWT token

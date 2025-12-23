@@ -23,6 +23,10 @@ export default function ProblemsPage() {
   const [sortBy, setSortBy] = useState<"newest" | "difficulty">("newest");
 
   useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = "Danh sách đề bài - OJ Portal";
+    }
+    
     fetchProblems()
       .then((d) => {
         setData(d);
@@ -137,12 +141,13 @@ export default function ProblemsPage() {
           <table>
             <thead>
               <tr>
-                <th style={{ width: "40%" }}>Title</th>
-                <th style={{ width: "15%" }}>Difficulty</th>
-                <th style={{ width: "12%" }}>Time Limit</th>
-                <th style={{ width: "12%" }}>Memory Limit</th>
-                <th style={{ width: "12%" }}>Status</th>
-                <th style={{ width: "9%" }}>Created</th>
+                <th style={{ width: "30%" }}>Title</th>
+                <th style={{ width: "12%" }}>Difficulty</th>
+                <th style={{ width: "10%" }}>Time Limit</th>
+                <th style={{ width: "10%" }}>Memory Limit</th>
+                <th style={{ width: "10%" }}>Status</th>
+                <th style={{ width: "18%" }}>Người tạo</th>
+                <th style={{ width: "10%" }}>Created</th>
               </tr>
             </thead>
             <tbody>
@@ -160,6 +165,15 @@ export default function ProblemsPage() {
                   <td>{p.GioiHanBoNho ? `${p.GioiHanBoNho}KB` : "-"}</td>
                   <td>
                     <StatusBadge status={p.DangCongKhai ? "Public" : "Private"} />
+                  </td>
+                  <td>
+                    {p.taiKhoan ? (
+                      <Link href={`/users/${p.taiKhoan.IdTaiKhoan}`} className="problem-link">
+                        {p.taiKhoan.TenDangNhap}
+                      </Link>
+                    ) : (
+                      <span style={{ color: "#999" }}>N/A</span>
+                    )}
                   </td>
                   <td style={{ fontSize: "12px", color: "#666" }}>
                     {p.NgayTao ? new Date(p.NgayTao).toLocaleDateString("vi-VN") : "-"}
