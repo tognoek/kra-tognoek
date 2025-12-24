@@ -31,19 +31,6 @@ export default function SubmissionsPage() {
       );
     }
 
-    // Parse status
-    if (status.startsWith("compile_error:")) {
-      const error = status.replace("compile_error:", "");
-      return (
-        <div>
-          <StatusBadge status="compile_error" />
-          <div style={{ fontSize: "11px", color: "#c62828", marginTop: "4px" }}>
-            {error.length > 50 ? error.substring(0, 50) + "..." : error}
-          </div>
-        </div>
-      );
-    }
-
     if (status.startsWith("wrong_answer:")) {
       const match = status.match(/wrong_answer:(\d+)\/(\d+)/);
       if (match) {
@@ -51,7 +38,7 @@ export default function SubmissionsPage() {
         const totalTests = match[2];
         return (
           <span style={{ color: "#c62828", fontWeight: 600 }}>
-            ❌ Sai ở test {testNum} trên tổng {totalTests}
+            ❌ Sai ở test {testNum} / {totalTests}
           </span>
         );
       }
@@ -65,6 +52,39 @@ export default function SubmissionsPage() {
       );
     }
 
+    if (status.startsWith("memory_limit_exceeded:")) {
+      const match = status.match(/memory_limit_exceeded:(\d+)\/(\d+)/);
+      if (match) {
+        const testNum = match[1];
+        const totalTests = match[2];
+        return (
+          <span style={{ color: "#c62828", fontWeight: 600 }}>
+            ❌ Quá bộ nhớ {testNum} / {totalTests}
+          </span>
+        );
+      }
+    }
+
+    if (status.startsWith("time_limit_exceeded:")) {
+      const match = status.match(/time_limit_exceeded:(\d+)\/(\d+)/);
+      if (match) {
+        const testNum = match[1];
+        const totalTests = match[2];
+        return (
+          <span style={{ color: "#c62828", fontWeight: 600 }}>
+            ❌ Quá thời gian {testNum} / {totalTests}
+          </span>
+        );
+      }
+    }
+
+    if (status.startsWith("compile_error")) {
+      return (
+        <span style={{ color: "#c62828", fontWeight: 600 }}>
+          ❌ Lỗi biên dịch
+        </span>
+      );
+    }
     return <StatusBadge status={status} />;
   };
 

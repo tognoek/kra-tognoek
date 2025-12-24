@@ -25,36 +25,87 @@ router.get("/", async (req, res) => {
     take: 100,
   });
   res.json(
-    data.map((s) => ({
-      IdBaiNop: s.IdBaiNop.toString(),
-      IdTaiKhoan: s.IdTaiKhoan.toString(),
-      IdDeBai: s.IdDeBai.toString(),
-      IdNgonNgu: s.IdNgonNgu.toString(),
-      IdCuocThi: s.IdCuocThi ? s.IdCuocThi.toString() : null,
-      DuongDanCode: s.DuongDanCode,
-      TrangThaiCham: s.TrangThaiCham,
-      ThoiGianThucThi: s.ThoiGianThucThi,
-      BoNhoSuDung: s.BoNhoSuDung,
-      NgayNop: s.NgayNop,
-      deBai: s.deBai
-        ? {
-            IdDeBai: s.deBai.IdDeBai.toString(),
-            TieuDe: s.deBai.TieuDe,
+    data.map((s) => {
+      // TrangThaiCham: null = đang chấm, JSON string của mảng codes = "[0,0,1,2,0]"
+      // Parse và format lại cho frontend
+      let trangThaiCham: string | null = s.TrangThaiCham;
+      let ketQuaCham: number[] | null = null;
+
+      if (s.TrangThaiCham) {
+        try {
+          ketQuaCham = JSON.parse(s.TrangThaiCham);
+          if (Array.isArray(ketQuaCham) && ketQuaCham.length > 0) {
+            const codes = ketQuaCham;
+            const totalTests = codes.length;
+
+            // Kiểm tra lỗi biên dịch (code -1)
+            const compileErrorIndex = codes.findIndex((code) => code === -1);
+            if (compileErrorIndex !== -1) {
+              trangThaiCham = "compile_error";
+            } else {
+              // Kiểm tra memory limit exceeded (code 3)
+              const memoryLimitIndex = codes.findIndex((code) => code === 3);
+              if (memoryLimitIndex !== -1) {
+                trangThaiCham = `memory_limit_exceeded:${memoryLimitIndex + 1}/${totalTests}`;
+              } else {
+                // Kiểm tra timeout (code 2)
+                const timeoutIndex = codes.findIndex((code) => code === 2);
+                if (timeoutIndex !== -1) {
+                  trangThaiCham = `time_limit_exceeded:${timeoutIndex + 1}/${totalTests}`;
+                } else {
+                  // Kiểm tra wrong answer (code 1)
+                  const wrongIndex = codes.findIndex((code) => code === 1);
+                  if (wrongIndex !== -1) {
+                    trangThaiCham = `wrong_answer:${wrongIndex + 1}/${totalTests}`;
+                  } else {
+                    // Tất cả đều đúng (code 0)
+                    const allPass = codes.every((code) => code === 0);
+                    if (allPass) {
+                      trangThaiCham = "accepted";
+                    }
+                  }
+                }
+              }
+            }
           }
-        : null,
-      taiKhoan: s.taiKhoan
-        ? {
-            IdTaiKhoan: s.taiKhoan.IdTaiKhoan.toString(),
-            TenDangNhap: s.taiKhoan.TenDangNhap,
-          }
-        : null,
-      ngonNgu: s.ngonNgu
-        ? {
-            IdNgonNgu: s.ngonNgu.IdNgonNgu.toString(),
-            TenNhanDien: s.ngonNgu.TenNhanDien,
-          }
-        : null,
-    }))
+        } catch (e) {
+          console.error("Parse TrangThaiCham error:", e);
+          // Giữ nguyên giá trị nếu parse lỗi
+        }
+      }
+
+      return {
+        IdBaiNop: s.IdBaiNop.toString(),
+        IdTaiKhoan: s.IdTaiKhoan.toString(),
+        IdDeBai: s.IdDeBai.toString(),
+        IdNgonNgu: s.IdNgonNgu.toString(),
+        IdCuocThi: s.IdCuocThi ? s.IdCuocThi.toString() : null,
+        DuongDanCode: s.DuongDanCode,
+        TrangThaiCham: trangThaiCham, // null = đang chấm, hoặc formatted string
+        KetQuaCham: ketQuaCham, // Mảng codes gốc để frontend có thể dùng
+        ThoiGianThucThi: s.ThoiGianThucThi,
+        BoNhoSuDung: s.BoNhoSuDung,
+        NgayNop: s.NgayNop,
+        deBai: s.deBai
+          ? {
+              IdDeBai: s.deBai.IdDeBai.toString(),
+              TieuDe: s.deBai.TieuDe,
+            }
+          : null,
+        taiKhoan: s.taiKhoan
+          ? {
+              IdTaiKhoan: s.taiKhoan.IdTaiKhoan.toString(),
+              TenDangNhap: s.taiKhoan.TenDangNhap,
+            }
+          : null,
+        ngonNgu: s.ngonNgu
+          ? {
+              IdNgonNgu: s.ngonNgu.IdNgonNgu.toString(),
+              TenNhanDien: s.ngonNgu.TenNhanDien,
+            }
+          : null,
+      };
+    })
   );
 });
 
@@ -94,23 +145,36 @@ router.post("/", async (req, res) => {
   const codeIdMatch = typeof DuongDanCode === "string" ? DuongDanCode.match(/\/([^\/]+)\.(cpp|c)$/) : null;
   const codeId = codeIdMatch ? codeIdMatch[1] : `code_${Date.now()}`;
 
-  // Get test ID from BoTest
+  // Get test ID from BoTest và xác định inputMode
   // BoTest có DuongDanInput chứa đường dẫn đến test.zip
   // Format: http://.../data/test/{testId}/testId.zip hoặc http://.../data/test/{testId}.zip
+  // Nếu DuongDanInput hoặc DuongDanOutput là null => chấm từ bàn phím (stdin)
+  // Nếu cả 2 đều có giá trị => chấm từ file (file)
   let testId = IdDeBai.toString();
+  let inputMode = "stdin"; // Default to stdin
+  
   if (problem.boTests.length > 0) {
-    const testPath = problem.boTests[0].DuongDanInput || "";
-    if (typeof testPath === "string") {
-      // Thử extract test ID từ path: /data/test/{testId}/... hoặc /data/test/{testId}.zip
-      const testMatch1 = testPath.match(/\/test\/([^\/]+)\//);
-      const testMatch2 = testPath.match(/\/test\/([^\/]+)\.zip$/);
-      if (testMatch1) {
-        testId = testMatch1[1];
-      } else if (testMatch2) {
-        testId = testMatch2[1];
+    const boTest = problem.boTests[0];
+    const testInputPath = boTest.DuongDanInput;
+    const testOutputPath = boTest.DuongDanOutput;
+    
+    // Xác định inputMode: nếu DuongDanInput hoặc DuongDanOutput là null => stdin, ngược lại => file
+    if (testInputPath && testOutputPath) {
+      inputMode = "file";
+      // Extract test ID từ path nếu có
+      if (typeof testInputPath === "string") {
+        const testMatch1 = testInputPath.match(/\/test\/([^\/]+)\//);
+        const testMatch2 = testInputPath.match(/\/test\/([^\/]+)\.zip$/);
+        if (testMatch1) {
+          testId = testMatch1[1];
+        } else if (testMatch2) {
+          testId = testMatch2[1];
+        }
       }
+    } else {
+      // DuongDanInput hoặc DuongDanOutput là null => chấm từ bàn phím
+      inputMode = "stdin";
     }
-    // Nếu không match, dùng problem ID
   }
 
   const submission = await prisma.baiNop.create({
@@ -138,7 +202,7 @@ router.post("/", async (req, res) => {
         testId: testId,
         timeLimitMs: problem.GioiHanThoiGian,
         memoryLimitKb: problem.GioiHanBoNho,
-        inputMode: "stdin", // Default to stdin
+        inputMode: inputMode, // "stdin" nếu DuongDanInput/Output null, "file" nếu có cả 2
         language: language.TenNhanDien.toLowerCase(),
         serverBaseUrl: SERVER_BASE_URL,
       },
@@ -169,7 +233,68 @@ router.get("/:id", async (req, res) => {
     where: { IdBaiNop: id },
   });
   if (!submission) return res.status(404).json({ error: "Not found" });
-  res.json(submission);
+  
+  // TrangThaiCham: null = đang chấm, JSON string của mảng codes = "[0,0,1,2,0]"
+  // Parse và format lại cho frontend
+  let trangThaiCham: string | null = submission.TrangThaiCham;
+  let ketQuaCham: number[] | null = null;
+
+  if (submission.TrangThaiCham) {
+    try {
+      ketQuaCham = JSON.parse(submission.TrangThaiCham);
+      if (Array.isArray(ketQuaCham) && ketQuaCham.length > 0) {
+        const codes = ketQuaCham;
+        const totalTests = codes.length;
+
+        // Kiểm tra lỗi biên dịch (code -1)
+        const compileErrorIndex = codes.findIndex((code) => code === -1);
+        if (compileErrorIndex !== -1) {
+          trangThaiCham = "compile_error";
+        } else {
+          // Kiểm tra memory limit exceeded (code 3)
+          const memoryLimitIndex = codes.findIndex((code) => code === 3);
+          if (memoryLimitIndex !== -1) {
+            trangThaiCham = `memory_limit_exceeded:${memoryLimitIndex + 1}/${totalTests}`;
+          } else {
+            // Kiểm tra timeout (code 2)
+            const timeoutIndex = codes.findIndex((code) => code === 2);
+            if (timeoutIndex !== -1) {
+              trangThaiCham = `time_limit_exceeded:${timeoutIndex + 1}/${totalTests}`;
+            } else {
+              // Kiểm tra wrong answer (code 1)
+              const wrongIndex = codes.findIndex((code) => code === 1);
+              if (wrongIndex !== -1) {
+                trangThaiCham = `wrong_answer:${wrongIndex + 1}/${totalTests}`;
+              } else {
+                // Tất cả đều đúng (code 0)
+                const allPass = codes.every((code) => code === 0);
+                if (allPass) {
+                  trangThaiCham = "accepted";
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Parse TrangThaiCham error:", e);
+      // Giữ nguyên giá trị nếu parse lỗi
+    }
+  }
+
+  res.json({
+    IdBaiNop: submission.IdBaiNop.toString(),
+    IdTaiKhoan: submission.IdTaiKhoan.toString(),
+    IdDeBai: submission.IdDeBai.toString(),
+    IdNgonNgu: submission.IdNgonNgu.toString(),
+    IdCuocThi: submission.IdCuocThi ? submission.IdCuocThi.toString() : null,
+    DuongDanCode: submission.DuongDanCode,
+    TrangThaiCham: trangThaiCham, // null = đang chấm, hoặc formatted string
+    KetQuaCham: ketQuaCham, // Mảng codes gốc để frontend có thể dùng
+    ThoiGianThucThi: submission.ThoiGianThucThi,
+    BoNhoSuDung: submission.BoNhoSuDung,
+    NgayNop: submission.NgayNop,
+  });
 });
 
 // Callback from worker: POST /api/submissions/:id/callback
@@ -177,25 +302,23 @@ router.post("/:id/callback", async (req, res) => {
   try {
     const id = BigInt(req.params.id);
     const {
-      TrangThaiCham,
       ThoiGianThucThi,
       BoNhoSuDung,
       compileError,
-      failedTestIndex,
-      totalTests,
+      TrangThaiCham,  // Mảng codes từ Kra: [-1] hoặc [0,0,1,2,0] - -1=compile error, 0=đúng, 1=sai, 2=timeout, 3=memory limit
     } = req.body;
 
-    // Build status message based on result
-    let statusMessage = TrangThaiCham;
-    
-    if (compileError) {
-      statusMessage = `compile_error:${compileError}`;
-    } else if (TrangThaiCham === "accepted") {
-      statusMessage = "accepted";
-    } else if (failedTestIndex !== undefined && totalTests !== undefined) {
-      statusMessage = `wrong_answer:${failedTestIndex + 1}/${totalTests}`;
-    } else if (TrangThaiCham) {
-      statusMessage = TrangThaiCham;
+    // Lưu mảng codes vào TrangThaiCham dưới dạng JSON string
+    // null = đang chấm
+    // JSON string của mảng codes = kết quả chấm: "[-1]" hoặc "[0,0,1,2,0]"
+    let statusMessage: string | null = null;
+
+    if (TrangThaiCham && Array.isArray(TrangThaiCham)) {
+      // Lưu mảng codes dưới dạng JSON string
+      statusMessage = JSON.stringify(TrangThaiCham);
+    } else if (compileError) {
+      // Nếu có compileError nhưng không có TrangThaiCham, tạo mảng [-1]
+      statusMessage = JSON.stringify([-1]);
     }
 
     const updated = await prisma.baiNop.update({

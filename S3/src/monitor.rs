@@ -45,7 +45,12 @@ impl Monitor {
         let used_mem = self.sys.used_memory();
         let cpu = avg_cpu(&self.sys);
         let disk_used: u64 = self.disks.iter().map(|d| d.total_space() - d.available_space()).sum();
-        StatEvent { cpu: (cpu - self.start_cpu), 
+        
+        // CPU usage là giá trị tuyệt đối (0-100%), không phải delta
+        // Clamp về 0 để tránh giá trị âm (trong trường hợp hiếm)
+        let cpu_usage = cpu.max(0.0);
+        
+        StatEvent { cpu: cpu_usage, 
                     ram: ((used_mem as i64 - self.start_mem as i64) / 1024 / 1024) as u64, 
                     disk: ((disk_used as i64 - self.start_disk as i64) / 1024 / 1024) as u64,
                     time: self.start_time.elapsed().as_millis() as u64,}

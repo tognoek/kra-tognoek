@@ -92,9 +92,9 @@ model BinhLuan {
 model BoTest {
   IdBoTest      BigInt   @id @default(autoincrement())
   IdDeBai       BigInt
-  DuongDanInput String
-  DuongDanOutput String
-  DuongDanCode  String
+  DuongDanInput String?
+  DuongDanOutput String?
+  DuongDanCode  String?
   NgayTao       DateTime @default(now())
 
   deBai DeBai @relation(fields: [IdDeBai], references: [IdDeBai])
@@ -155,7 +155,7 @@ model BaiNop {
   IdNgonNgu       BigInt
   IdCuocThi       BigInt?
   DuongDanCode    String
-  TrangThaiCham   String?
+  TrangThaiCham   String?  // null = đang chấm, JSON string của mảng codes = "[-1]" hoặc "[0,0,1,2,0]" - -1=compile error, 0=đúng, 1=sai, 2=timeout, 3=memory limit
   ThoiGianThucThi Int?
   BoNhoSuDung     Int?
   NgayNop         DateTime @default(now())

@@ -80,7 +80,7 @@ pub async fn run_single_test(
     input_path: &Path,
     answer_path: Option<&Path>,
     time_limit_ms: u64,
-    _memory_limit_kb: u64,
+    memory_limit_kb: u64,
     input_mode: InputMode,
 ) -> TestCaseResult {
     let case_name = input_path
@@ -92,7 +92,7 @@ pub async fn run_single_test(
     let mut checker_exit_ok = false;
     let mut stderr_log = None;
     let mut time_ms = 0u128;
-    let memory_kb = None; // đo RAM có thể bổ sung sau
+    let mut memory_kb = None; // đo RAM có thể bổ sung sau
 
     // Đọc input (chỉ khi chạy ở mode stdin)
     let input_data = if let InputMode::Stdin = input_mode {
@@ -269,6 +269,14 @@ pub async fn run_single_test(
             // Không có answer -> coi như pass nhưng báo thiếu answer
             passed = true;
             stderr_log = Some("Không có file answer (.out) để so sánh".to_string());
+        }
+    }
+
+    // Kiểm tra memory limit nếu có memory_kb
+    if let Some(mem) = memory_kb {
+        if mem > memory_limit_kb {
+            stderr_log = Some("Memory limit exceeded".to_string());
+            passed = false;
         }
     }
 

@@ -271,7 +271,7 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
     println!("Chạy Executor::run_job với config: {:?}", cfg);
     let exec_res = Executor::run_job(cfg).await;
 
-    // In mảng kết quả theo từng test: 0=đúng, 1=sai, 2=timeout, 3=lỗi khác/biên dịch
+    // In mảng kết quả theo từng test: -1=biên dịch lỗi, 0=đúng, 1=sai, 2=timeout, 3=quá bộ nhớ
     let codes = build_result_codes(&exec_res);
     println!("KRA_RESULT_CODES {:?}", codes);
 
@@ -287,6 +287,7 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
                 status,
                 total_time_ms,
                 total_mem_kb,
+                &codes,
             )
             .await;
         }
@@ -299,43 +300,29 @@ async fn send_callback(
     server_url: &str,
     submission_id: &str,
     exec_res: &Result<ExecResult, BoxError>,
-    status: &str,
+    _status: &str,
     max_time_ms: i32,
     max_mem_kb: i32,
+    codes: &[i8],
 ) {
     let client = reqwest::Client::new();
     let callback_url = format!("{}/api/submissions/{}/callback", server_url, submission_id);
 
+    // Gửi mảng codes trong TrangThaiCham, không gửi KetQuaCham nữa
     let mut body = serde_json::json!({
-        "TrangThaiCham": status,
+        "TrangThaiCham": codes,  // Mảng codes: [-1] hoặc [0,0,1,2,0]
         "ThoiGianThucThi": max_time_ms,
         "BoNhoSuDung": max_mem_kb,
     });
 
-    // Xử lý kết quả chi tiết
+    // Xử lý lỗi biên dịch - gửi compileError nếu có
     match exec_res {
         Err(e) => {
-            body["TrangThaiCham"] = serde_json::json!("error");
             body["compileError"] = serde_json::json!(e.to_string());
         }
         Ok(exec) => {
             if !exec.compile_ok {
-                body["TrangThaiCham"] = serde_json::json!("compile_error");
                 body["compileError"] = serde_json::json!(exec.compile_log);
-            } else {
-                // Tìm test case đầu tiên bị sai
-                let mut failed_index: Option<usize> = None;
-                for (idx, test) in exec.tests.iter().enumerate() {
-                    if !test.passed {
-                        failed_index = Some(idx);
-                        break;
-                    }
-                }
-
-                if let Some(idx) = failed_index {
-                    body["failedTestIndex"] = serde_json::json!(idx);
-                    body["totalTests"] = serde_json::json!(exec.tests.len());
-                }
             }
         }
     }
@@ -387,13 +374,13 @@ fn summarize_result(res: &Result<ExecResult, BoxError>) -> (&'static str, i32, i
 }
 
 /// Xây dựng mảng code kết quả cho từng test:
-/// 0 = đúng, 1 = sai, 2 = quá thời gian, 3 = lỗi khác / biên dịch.
-fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<u8> {
+/// -1 = lỗi biên dịch, 0 = đúng, 1 = sai, 2 = quá thời gian, 3 = quá bộ nhớ.
+fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<i8> {
     match res {
-        Err(_) => vec![3],
+        Err(_) => vec![-1],
         Ok(exec) => {
             if !exec.compile_ok {
-                return vec![3];
+                return vec![-1];
             }
 
             exec.tests
@@ -404,7 +391,12 @@ fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<u8> {
                             if msg.contains("Timeout") {
                                 return 2;
                             }
+                            if msg.contains("Memory") || msg.contains("memory") || msg.contains("Memory limit") {
+                                return 3;
+                            }
                         }
+                        // Kiểm tra memory_kb nếu có và vượt quá limit (cần truyền limit vào)
+                        // Tạm thời chỉ dựa vào stderr
                         return 1;
                     }
                     0

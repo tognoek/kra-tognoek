@@ -53,8 +53,8 @@ CREATE TABLE `BinhLuan` (
 CREATE TABLE `BoTest` (
   `IdBoTest` bigint PRIMARY KEY AUTO_INCREMENT,
   `IdDeBai` bigint NOT NULL,
-  `DuongDanInput` text NOT NULL,
-  `DuongDanOutput` text NOT NULL,
+  `DuongDanInput` text,
+  `DuongDanOutput` text,
   `DuongDanCode` text NOT NULL,
   `NgayTao` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
@@ -160,7 +160,7 @@ INSERT INTO ChuDe (IdChuDe, TenChuDe, MoTa) VALUES
 INSERT INTO NgonNgu (IdNgonNgu, TenNgonNgu, TenNhanDien, TrangThai) VALUES
 (1, 'C++', 'cpp', TRUE),
 (2, 'C',   'c',   TRUE),
-(3, 'Python', 'py', TRUE),
+(3, 'Python', 'py', FALSE),
 (4, 'Java', 'java', FALSE);
 
 INSERT INTO DeBai (IdDeBai, IdTaiKhoan, TieuDe, NoiDungDeBai, DoKho,
@@ -193,9 +193,9 @@ INSERT INTO DeBai_ChuDe (IdDeBai, IdChuDe) VALUES
 
 INSERT INTO BoTest (IdBoTest, IdDeBai, DuongDanInput, DuongDanOutput, DuongDanCode, NgayTao) VALUES
 (1, 1,
- 'http://127.0.0.1:3001/data/test/sum/sum.zip',
- 'http://127.0.0.1:3001/data/test/sum/sum.zip',
- 'http://127.0.0.1:3001/data/code/1.cpp',
+ null,
+ null,
+ 'check.cpp',
  NOW());
 
 INSERT INTO CuocThi (IdCuocThi, IdTaiKhoan, TenCuocThi, MoTa,
@@ -224,5 +224,5 @@ INSERT INTO CuocThi_DangKy (IdCuocThi, IdTaiKhoan, TrangThai) VALUES
 INSERT INTO BaiNop (IdBaiNop, IdTaiKhoan, IdDeBai, IdNgonNgu, IdCuocThi,
                     DuongDanCode, TrangThaiCham, ThoiGianThucThi, BoNhoSuDung, NgayNop) VALUES
 (1, 2, 1, 1, 1,
- 'http://127.0.0.1:3001/data/code/1.cpp',
- 'pending', NULL, NULL, NOW());
+ '1.cpp',
+ '[0,0,0,0,0]', 700, 2048, NOW());
