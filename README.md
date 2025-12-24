@@ -19,6 +19,11 @@ Dự án bao gồm 4 services chính:
 - **MySQL** (8.0+): Database chính
 - **Redis** (6.0+): Job queue cho Kra worker
 
+### Reset Prisma
+```shell
+npx prisma generate
+```
+
 ### Cài đặt dependencies:
 
 #### Rust:
