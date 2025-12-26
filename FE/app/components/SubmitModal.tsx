@@ -343,7 +343,7 @@ export default function SubmitModal({
           <div style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
             💡 Tip: Bạn có thể xem kết quả chấm tại trang{" "}
             <Link href="/submissions" className="problem-link">
-              Submissions
+              Bài nộp
             </Link>
           </div>
         </form>

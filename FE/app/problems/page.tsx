@@ -72,7 +72,7 @@ export default function ProblemsPage() {
   if (loading) {
     return (
       <div>
-        <h1 className="section-title">Problems</h1>
+        <h1 className="section-title">Đề bài</h1>
         <div className="loading">Đang tải...</div>
       </div>
     );
@@ -81,7 +81,7 @@ export default function ProblemsPage() {
   if (error) {
     return (
       <div>
-        <h1 className="section-title">Problems</h1>
+        <h1 className="section-title">Đề bài</h1>
         <p style={{ color: "red" }}>{error}</p>
       </div>
     );
@@ -89,7 +89,7 @@ export default function ProblemsPage() {
 
   return (
     <div>
-      <h1 className="section-title">Problems</h1>
+      <h1 className="section-title">Đề bài</h1>
       <p className="section-sub">Danh sách các đề bài lập trình</p>
 
       <div className="search-bar">
@@ -111,13 +111,13 @@ export default function ProblemsPage() {
             className={`filter-btn ${filterPublic === "public" ? "active" : ""}`}
             onClick={() => setFilterPublic("public")}
           >
-            Public
+            Công khai
           </button>
           <button
             className={`filter-btn ${filterPublic === "private" ? "active" : ""}`}
             onClick={() => setFilterPublic("private")}
           >
-            Private
+            Riêng tư
           </button>
         </div>
         <select
@@ -141,13 +141,13 @@ export default function ProblemsPage() {
           <table>
             <thead>
               <tr>
-                <th style={{ width: "30%" }}>Title</th>
-                <th style={{ width: "12%" }}>Difficulty</th>
-                <th style={{ width: "10%" }}>Time Limit</th>
-                <th style={{ width: "10%" }}>Memory Limit</th>
-                <th style={{ width: "10%" }}>Status</th>
-                <th style={{ width: "18%" }}>Người tạo</th>
-                <th style={{ width: "10%" }}>Created</th>
+                <th style={{ width: "30%", whiteSpace: "nowrap" }}>Tiêu đề</th>
+                <th style={{ width: "12%", whiteSpace: "nowrap" }}>Độ khó</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>T/Giới hạn</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>B/Nhớ</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>Trạng thái</th>
+                <th style={{ width: "18%", whiteSpace: "nowrap" }}>Người tạo</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>Ngày tạo</th>
               </tr>
             </thead>
             <tbody>
@@ -155,7 +155,7 @@ export default function ProblemsPage() {
                 <tr key={p.IdDeBai}>
                   <td>
                     <Link href={`/problems/${p.IdDeBai}`} className="problem-link">
-                      {p.TieuDe || `Problem ${p.IdDeBai}`}
+                      {p.TieuDe || `Đề bài ${p.IdDeBai}`}
                     </Link>
                   </td>
                   <td>
@@ -164,7 +164,7 @@ export default function ProblemsPage() {
                   <td>{p.GioiHanThoiGian ? `${p.GioiHanThoiGian}ms` : "-"}</td>
                   <td>{p.GioiHanBoNho ? `${p.GioiHanBoNho}KB` : "-"}</td>
                   <td>
-                    <StatusBadge status={p.DangCongKhai ? "Public" : "Private"} />
+                    <StatusBadge status={p.DangCongKhai ? "Công khai" : "Riêng tư"} />
                   </td>
                   <td>
                     {p.taiKhoan ? (

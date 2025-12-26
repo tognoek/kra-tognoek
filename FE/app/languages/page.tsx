@@ -62,7 +62,7 @@ export default function LanguagesPage() {
   if (loading) {
     return (
       <div>
-        <h1 className="section-title">Languages</h1>
+        <h1 className="section-title">Ngôn ngữ</h1>
         <div className="loading">Đang tải...</div>
       </div>
     );
@@ -71,7 +71,7 @@ export default function LanguagesPage() {
   if (error) {
     return (
       <div>
-        <h1 className="section-title">Languages</h1>
+        <h1 className="section-title">Ngôn ngữ</h1>
         <p style={{ color: "red" }}>{error}</p>
       </div>
     );
@@ -123,12 +123,12 @@ export default function LanguagesPage() {
             <div key={l.IdNgonNgu} className="card">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "12px" }}>
                 <div>
-                  <div className="card-title">{l.TenNhanDien || `Language ${l.IdNgonNgu}`}</div>
+                  <div className="card-title">{l.TenNhanDien || `Ngôn ngữ ${l.IdNgonNgu}`}</div>
                   <div className="card-desc" style={{ marginTop: "4px" }}>
                     {l.TenNgonNgu || "N/A"}
                   </div>
                 </div>
-                <StatusBadge status={l.TrangThai ? "Active" : "Inactive"} />
+                <StatusBadge status={l.TrangThai ? "Hoạt động" : "Không hoạt động"} />
               </div>
               {l.MoTa && (
                 <div style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>

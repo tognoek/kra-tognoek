@@ -459,7 +459,7 @@ function CommentItem({
                       </>
                     ) : (
                       <span style={{ fontWeight: 600, fontSize: isReply ? "14px" : "15px" }}>
-                        User {comment.IdTaiKhoan}
+                        Người dùng {comment.IdTaiKhoan}
                       </span>
                     )}
                   </div>

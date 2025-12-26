@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import Link from "next/link";
 
 const cards = [
-  { title: "📚 Problems", href: "/problems", desc: "Xem và giải các đề bài lập trình", icon: "📚" },
-  { title: "🏆 Contests", href: "/contests", desc: "Tham gia các cuộc thi lập trình", icon: "🏆" },
-  { title: "📝 Submissions", href: "/submissions", desc: "Nộp bài và xem kết quả chấm", icon: "📝" },
-  { title: "💻 Languages", href: "/languages", desc: "Xem các ngôn ngữ lập trình được hỗ trợ", icon: "💻" },
-  { title: "🔐 Auth", href: "/auth/login", desc: "Đăng nhập / Đăng ký tài khoản", icon: "🔐" },
+  { title: "📚 Đề bài", href: "/problems", desc: "Xem và giải các đề bài lập trình", icon: "📚" },
+  { title: "🏆 Cuộc thi", href: "/contests", desc: "Tham gia các cuộc thi lập trình", icon: "🏆" },
+  { title: "📝 Bài nộp", href: "/submissions", desc: "Nộp bài và xem kết quả chấm", icon: "📝" },
+  { title: "💻 Ngôn ngữ", href: "/languages", desc: "Xem các ngôn ngữ lập trình được hỗ trợ", icon: "💻" },
+  { title: "🔐 Đăng nhập", href: "/auth/login", desc: "Đăng nhập / Đăng ký tài khoản", icon: "🔐" },
 ];
 
 export default function Home() {
@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <div>
-      <h1 className="section-title">Online Judge Portal</h1>
+      <h1 className="section-title">Cổng thông tin chấm bài tự động</h1>
       <p className="section-sub">Hệ thống chấm bài tự động - Nơi bạn có thể luyện tập và thi đấu lập trình</p>
 
       <div className="card-grid">
@@ -34,15 +34,15 @@ export default function Home() {
 
       <div className="stats-grid" style={{ marginTop: "40px" }}>
         <div className="stat-card">
-          <div className="stat-label">Total Problems</div>
+          <div className="stat-label">Tổng số đề bài</div>
           <div className="stat-value">-</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Active Contests</div>
+          <div className="stat-label">Cuộc thi đang diễn ra</div>
           <div className="stat-value">-</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Submissions</div>
+          <div className="stat-label">Số bài nộp</div>
           <div className="stat-value">-</div>
         </div>
       </div>

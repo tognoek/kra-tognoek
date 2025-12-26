@@ -67,7 +67,7 @@ export default function AdminLanguagesPage() {
 
   return (
     <div>
-      <h1 className="section-title">Admin - Languages</h1>
+      <h1 className="section-title">Quản trị - Ngôn ngữ</h1>
       <p className="section-sub">Quản lý các ngôn ngữ lập trình được hỗ trợ.</p>
 
       {error && <p style={{ color: "red", marginBottom: 12 }}>{error}</p>}
@@ -116,10 +116,10 @@ export default function AdminLanguagesPage() {
           <table>
             <thead>
               <tr>
-                <th style={{ width: "10%" }}>ID</th>
-                <th style={{ width: "30%" }}>Tên ngôn ngữ</th>
-                <th style={{ width: "30%" }}>Tên nhận diện</th>
-                <th style={{ width: "30%" }}>Trạng thái</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>ID</th>
+                <th style={{ width: "30%", whiteSpace: "nowrap" }}>Tên ngôn ngữ</th>
+                <th style={{ width: "30%", whiteSpace: "nowrap" }}>Tên nhận diện</th>
+                <th style={{ width: "30%", whiteSpace: "nowrap" }}>Trạng thái</th>
               </tr>
             </thead>
             <tbody>

@@ -124,13 +124,13 @@ export default function AdminUsersPage() {
           <table>
             <thead>
               <tr>
-                <th style={{ width: "8%" }}>ID</th>
-                <th style={{ width: "18%" }}>Username</th>
-                <th style={{ width: "18%" }}>Họ tên</th>
-                <th style={{ width: "22%" }}>Email</th>
-                <th style={{ width: "14%" }}>Vai trò</th>
-                <th style={{ width: "10%" }}>Trạng thái</th>
-                <th style={{ width: "10%" }}>Ngày tạo</th>
+                <th style={{ width: "8%", whiteSpace: "nowrap" }}>ID</th>
+                <th style={{ width: "18%", whiteSpace: "nowrap" }}>Username</th>
+                <th style={{ width: "18%", whiteSpace: "nowrap" }}>Họ tên</th>
+                <th style={{ width: "22%", whiteSpace: "nowrap" }}>Email</th>
+                <th style={{ width: "14%", whiteSpace: "nowrap" }}>Vai trò</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>Trạng thái</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>Ngày tạo</th>
               </tr>
             </thead>
             <tbody>

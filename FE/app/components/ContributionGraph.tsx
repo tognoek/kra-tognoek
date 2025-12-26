@@ -90,10 +90,10 @@ export default function ContributionGraph({ data, year }: ContributionGraphProps
     <div style={{ padding: "20px", background: "white", borderRadius: "8px", border: "1px solid #e0e0e0" }}>
       <div style={{ marginBottom: "16px" }}>
         <h3 style={{ margin: "0 0 8px 0", fontSize: "18px", fontWeight: 600 }}>
-          Submission Activity {year || new Date().getFullYear()}
+          Hoạt động nộp bài {year || new Date().getFullYear()}
         </h3>
         <div style={{ fontSize: "14px", color: "#666" }}>
-          {totalContributions} submissions in {days.filter((d) => d.count > 0).length} days
+          {totalContributions} bài nộp trong {days.filter((d) => d.count > 0).length} ngày
         </div>
       </div>
 
@@ -119,7 +119,7 @@ export default function ContributionGraph({ data, year }: ContributionGraphProps
                       cursor: "pointer",
                       position: "relative",
                     }}
-                    title={isCurrentYear ? `${dateStr}: ${dayCount} submission${dayCount !== 1 ? "s" : ""}` : ""}
+                    title={isCurrentYear ? `${dateStr}: ${dayCount} bài nộp` : ""}
                   />
                 );
               })}

@@ -15,8 +15,10 @@ interface User {
 }
 
 interface UserStats {
+  totalProblems: number;
   totalSubmissions: number;
   successfulSubmissions: number;
+  totalContests: number;
   participatedContests: number;
 }
 
@@ -100,8 +102,10 @@ export default function ProfilePage() {
 
       const data = await res.json();
       setUserStats({
-        totalSubmissions: data.stats.totalSubmissions,
+        totalProblems: data.stats.totalProblems || 0,
+        totalSubmissions: data.stats.totalSubmissions || 0,
         successfulSubmissions: data.stats.successfulSubmissions || 0,
+        totalContests: data.stats.totalContests || 0,
         participatedContests: data.stats.participatedContests || 0,
       });
     } catch (error) {
@@ -213,7 +217,7 @@ export default function ProfilePage() {
           margin: "0 auto 24px auto"
         }}>
           <div className="card" style={{ padding: "24px", textAlign: "center" }}>
-            <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số bài nạp</div>
+            <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Tổng số bài nộp</div>
             <div style={{ fontSize: "36px", fontWeight: 700, color: "#667eea" }}>
               {userStats.totalSubmissions}
             </div>
@@ -228,6 +232,18 @@ export default function ProfilePage() {
             <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số cuộc thi tham gia</div>
             <div style={{ fontSize: "36px", fontWeight: 700, color: "#764ba2" }}>
               {userStats.participatedContests}
+            </div>
+          </div>
+          <div className="card" style={{ padding: "24px", textAlign: "center" }}>
+            <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số đề bài đã tạo</div>
+            <div style={{ fontSize: "36px", fontWeight: 700, color: "#f59e0b" }}>
+              {userStats.totalProblems}
+            </div>
+          </div>
+          <div className="card" style={{ padding: "24px", textAlign: "center" }}>
+            <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số cuộc thi đã tạo</div>
+            <div style={{ fontSize: "36px", fontWeight: 700, color: "#ec4899" }}>
+              {userStats.totalContests}
             </div>
           </div>
         </div>

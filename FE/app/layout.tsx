@@ -13,11 +13,11 @@ export const metadata: Metadata = {
 };
 
 const nav = [
-  { href: "/", label: "Home" },
-  { href: "/problems", label: "Problems" },
-  { href: "/contests", label: "Contests" },
-  { href: "/submissions", label: "Submissions" },
-  { href: "/languages", label: "Languages" },
+  { href: "/", label: "Trang chủ" },
+  { href: "/problems", label: "Đề bài" },
+  { href: "/contests", label: "Cuộc thi" },
+  { href: "/submissions", label: "Bài nộp" },
+  { href: "/languages", label: "Ngôn ngữ" },
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {

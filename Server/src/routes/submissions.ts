@@ -18,7 +18,7 @@ router.get("/", async (req, res) => {
     where,
     include: {
       deBai: { select: { IdDeBai: true, TieuDe: true } },
-      taiKhoan: { select: { IdTaiKhoan: true, TenDangNhap: true } },
+      taiKhoan: { select: { IdTaiKhoan: true, HoTen: true } },
       ngonNgu: { select: { IdNgonNgu: true, TenNhanDien: true } },
     },
     orderBy: { NgayNop: "desc" },
@@ -95,7 +95,7 @@ router.get("/", async (req, res) => {
         taiKhoan: s.taiKhoan
           ? {
               IdTaiKhoan: s.taiKhoan.IdTaiKhoan.toString(),
-              TenDangNhap: s.taiKhoan.TenDangNhap,
+              HoTen: s.taiKhoan.HoTen.toString(),
             }
           : null,
         ngonNgu: s.ngonNgu

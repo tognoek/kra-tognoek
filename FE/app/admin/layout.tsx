@@ -55,13 +55,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <Link href="/admin" className="nav-link" style={{ paddingLeft: 0 }}>
-            Admin Dashboard
+            Bảng điều khiển
           </Link>
           <Link href="/admin/users" className="nav-link">
-            Users
+            Người dùng
           </Link>
           <Link href="/admin/languages" className="nav-link">
-            Languages
+            Ngôn ngữ
           </Link>
         </div>
       </div>

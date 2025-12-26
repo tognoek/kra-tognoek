@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import SubmitForm from "./submit-form";
 import StatusBadge from "../components/StatusBadge";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
@@ -19,7 +18,6 @@ export default function SubmissionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "accepted" | "rejected">("all");
-  const [showForm, setShowForm] = useState(false);
 
   // Format status display
   const getStatusDisplay = (status: string | null) => {
@@ -149,7 +147,7 @@ export default function SubmissionsPage() {
   if (loading && data.length === 0) {
     return (
       <div>
-        <h1 className="section-title">Submissions</h1>
+        <h1 className="section-title">Bài nộp</h1>
         <div className="loading">Đang tải...</div>
       </div>
     );
@@ -159,19 +157,10 @@ export default function SubmissionsPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div>
-          <h1 className="section-title">Submissions</h1>
+          <h1 className="section-title">Bài nộp</h1>
           <p className="section-sub">Nộp bài và xem kết quả chấm</p>
         </div>
-        <button className="button" onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Ẩn form" : "Nộp bài mới"}
-        </button>
       </div>
-
-      {showForm && (
-        <div style={{ marginBottom: "24px" }}>
-          <SubmitForm onSuccess={loadSubmissions} />
-        </div>
-      )}
 
       <div className="search-bar">
         <input
@@ -192,19 +181,19 @@ export default function SubmissionsPage() {
             className={`filter-btn ${filterStatus === "pending" ? "active" : ""}`}
             onClick={() => setFilterStatus("pending")}
           >
-            Pending
+            Đang chấm
           </button>
           <button
             className={`filter-btn ${filterStatus === "accepted" ? "active" : ""}`}
             onClick={() => setFilterStatus("accepted")}
           >
-            Accepted
+            Đã chấp nhận
           </button>
           <button
             className={`filter-btn ${filterStatus === "rejected" ? "active" : ""}`}
             onClick={() => setFilterStatus("rejected")}
           >
-            Rejected
+            Đã từ chối
           </button>
         </div>
       </div>
@@ -221,14 +210,14 @@ export default function SubmissionsPage() {
           <table>
             <thead>
               <tr>
-                <th style={{ width: "10%" }}>ID</th>
-                <th style={{ width: "25%" }}>Problem</th>
-                <th style={{ width: "15%" }}>User</th>
-                <th style={{ width: "12%" }}>Language</th>
-                <th style={{ width: "15%" }}>Status</th>
-                <th style={{ width: "10%" }}>Time</th>
-                <th style={{ width: "10%" }}>Memory</th>
-                <th style={{ width: "13%" }}>Submitted</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>ID</th>
+                <th style={{ width: "25%", whiteSpace: "nowrap" }}>Đề bài</th>
+                <th style={{ width: "15%", whiteSpace: "nowrap" }}>Người dùng</th>
+                <th style={{ width: "12%", whiteSpace: "nowrap" }}>Ngôn ngữ</th>
+                <th style={{ width: "15%", whiteSpace: "nowrap" }}>Trạng thái</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>Thời gian</th>
+                <th style={{ width: "10%", whiteSpace: "nowrap" }}>Bộ nhớ</th>
+                <th style={{ width: "13%", whiteSpace: "nowrap" }}>Ngày nộp</th>
               </tr>
             </thead>
             <tbody>
@@ -237,19 +226,19 @@ export default function SubmissionsPage() {
                   <td style={{ fontFamily: "monospace", fontSize: "13px" }}>#{s.IdBaiNop}</td>
                   <td>
                     <a href={`/problems/${s.IdDeBai}`} className="problem-link">
-                      {s.deBai?.TieuDe || `Problem ${s.IdDeBai}`}
+                      {s.deBai?.TieuDe || `Đề bài ${s.IdDeBai}`}
                     </a>
                   </td>
                   <td>
                     {s.taiKhoan?.IdTaiKhoan ? (
                       <a href={`/users/${s.taiKhoan.IdTaiKhoan}`} className="problem-link">
-                        {s.taiKhoan?.TenDangNhap || `User ${s.IdTaiKhoan}`}
+                        {s.taiKhoan?.HoTen || `Người dùng ${s.IdTaiKhoan}`}
                       </a>
                     ) : (
-                      `User ${s.IdTaiKhoan}`
+                      `Người dùng ${s.IdTaiKhoan}`
                     )}
                   </td>
-                  <td>{s.ngonNgu?.TenNhanDien || `Lang ${s.IdNgonNgu}`}</td>
+                  <td>{s.ngonNgu?.TenNhanDien || `Ngôn ngữ ${s.IdNgonNgu}`}</td>
                   <td>
                     {getStatusDisplay(s.TrangThaiCham)}
                   </td>

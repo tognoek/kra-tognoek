@@ -19,7 +19,9 @@ interface UserDetail {
   stats: {
     totalProblems: number;
     totalSubmissions: number;
+    successfulSubmissions: number;
     totalContests: number;
+    participatedContests: number;
   };
 }
 
@@ -62,7 +64,7 @@ export default function UserProfilePage() {
         
         // Update page title
         if (typeof document !== "undefined") {
-          document.title = `Thông tin hồ sơ của ${data.HoTen || data.TenDangNhap || `User ${params.id}`} - OJ Portal`;
+          document.title = `Thông tin hồ sơ của ${data.HoTen || data.TenDangNhap || `Người dùng ${params.id}`} - OJ Portal`;
         }
       } catch (e: any) {
         setError(e.message);
@@ -117,20 +119,32 @@ export default function UserProfilePage() {
         margin: "0 auto 24px auto"
       }}>
         <div className="card" style={{ padding: "24px", textAlign: "center" }}>
-          <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số đề bài đã tạo</div>
-          <div style={{ fontSize: "36px", fontWeight: 700, color: "#667eea" }}>
-            {user.stats.totalProblems}
-          </div>
-        </div>
-        <div className="card" style={{ padding: "24px", textAlign: "center" }}>
           <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Tổng số bài nộp</div>
-          <div style={{ fontSize: "36px", fontWeight: 700, color: "#764ba2" }}>
+          <div style={{ fontSize: "36px", fontWeight: 700, color: "#667eea" }}>
             {user.stats.totalSubmissions}
           </div>
         </div>
         <div className="card" style={{ padding: "24px", textAlign: "center" }}>
-          <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số cuộc thi đã tạo</div>
+          <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số bài thành công</div>
           <div style={{ fontSize: "36px", fontWeight: 700, color: "#48bb78" }}>
+            {user.stats.successfulSubmissions}
+          </div>
+        </div>
+        <div className="card" style={{ padding: "24px", textAlign: "center" }}>
+          <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số cuộc thi tham gia</div>
+          <div style={{ fontSize: "36px", fontWeight: 700, color: "#764ba2" }}>
+            {user.stats.participatedContests}
+          </div>
+        </div>
+        <div className="card" style={{ padding: "24px", textAlign: "center" }}>
+          <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số đề bài đã tạo</div>
+          <div style={{ fontSize: "36px", fontWeight: 700, color: "#f59e0b" }}>
+            {user.stats.totalProblems}
+          </div>
+        </div>
+        <div className="card" style={{ padding: "24px", textAlign: "center" }}>
+          <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Số cuộc thi đã tạo</div>
+          <div style={{ fontSize: "36px", fontWeight: 700, color: "#ec4899" }}>
             {user.stats.totalContests}
           </div>
         </div>
@@ -174,7 +188,7 @@ export default function UserProfilePage() {
           </div>
           <div>
             <strong>Trạng thái:</strong>{" "}
-            <StatusBadge status={user.TrangThai ? "Active" : "Inactive"} />
+            <StatusBadge status={user.TrangThai ? "Hoạt động" : "Không hoạt động"} />
           </div>
           <div>
             <strong>Ngày tạo:</strong> {new Date(user.NgayTao).toLocaleString("vi-VN")}

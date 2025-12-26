@@ -38,15 +38,47 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Người dùng không tồn tại" });
     }
 
-    // Đếm số bài nộp thành công (TrangThaiCham = "accepted" hoặc "hoan_tat")
-    const successfulSubmissions = await prisma.baiNop.count({
+    // Đếm số bài nộp thành công
+    // TrangThaiCham trong database là JSON string của mảng codes: "[0,0,0,0]" (tất cả đều 0 = accepted)
+    // Hoặc có thể là string "accepted" hoặc "hoan_tat" (từ hệ thống cũ)
+    const allSubmissions = await prisma.baiNop.findMany({
       where: {
         IdTaiKhoan: userId,
         TrangThaiCham: {
-          in: ["accepted", "hoan_tat"],
+          not: null,
         },
       },
+      select: {
+        TrangThaiCham: true,
+      },
     });
+
+    let successfulSubmissions = 0;
+    for (const submission of allSubmissions) {
+      if (!submission.TrangThaiCham) continue;
+      
+      // Kiểm tra nếu là string "accepted" hoặc "hoan_tat" (từ hệ thống cũ)
+      if (submission.TrangThaiCham === "accepted" || submission.TrangThaiCham === "hoan_tat") {
+        successfulSubmissions++;
+        continue;
+      }
+
+      // Parse JSON string thành mảng codes
+      try {
+        const codes = JSON.parse(submission.TrangThaiCham);
+        if (Array.isArray(codes) && codes.length > 0) {
+          // Kiểm tra xem tất cả codes có phải là 0 không (accepted)
+          // Code 0 = đúng, code -1 = compile error, code 1 = wrong answer, code 2 = timeout, code 3 = memory limit
+          const allPass = codes.every((code) => code === 0);
+          if (allPass) {
+            successfulSubmissions++;
+          }
+        }
+      } catch (e) {
+        // Nếu không parse được, bỏ qua
+        console.warn("Failed to parse TrangThaiCham:", submission.TrangThaiCham);
+      }
+    }
 
     // Đếm số cuộc thi đã tham gia (đã đăng ký)
     const participatedContests = await prisma.cuocThi_DangKy.count({

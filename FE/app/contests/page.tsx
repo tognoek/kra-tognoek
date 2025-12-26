@@ -76,7 +76,7 @@ export default function ContestsPage() {
   if (loading) {
     return (
       <div>
-        <h1 className="section-title">Contests</h1>
+        <h1 className="section-title">Cuộc thi</h1>
         <div className="loading">Đang tải...</div>
       </div>
     );
@@ -85,7 +85,7 @@ export default function ContestsPage() {
   if (error) {
     return (
       <div>
-        <h1 className="section-title">Contests</h1>
+        <h1 className="section-title">Cuộc thi</h1>
         <p style={{ color: "red" }}>{error}</p>
       </div>
     );
@@ -129,18 +129,18 @@ export default function ContestsPage() {
       {filtered.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">🏆</div>
-          <p>Không tìm thấy contest nào.</p>
+          <p>Không tìm thấy cuộc thi nào.</p>
         </div>
       ) : (
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th style={{ width: "30%" }}>Tên Contest</th>
-                <th style={{ width: "20%" }}>Bắt đầu</th>
-                <th style={{ width: "20%" }}>Kết thúc</th>
-                <th style={{ width: "15%" }}>Trạng thái</th>
-                <th style={{ width: "15%" }}>Problems</th>
+                <th style={{ width: "30%", whiteSpace: "nowrap" }}>Tên cuộc thi</th>
+                <th style={{ width: "20%", whiteSpace: "nowrap" }}>Bắt đầu</th>
+                <th style={{ width: "20%", whiteSpace: "nowrap" }}>Kết thúc</th>
+                <th style={{ width: "15%", whiteSpace: "nowrap" }}>Trạng thái</th>
+                <th style={{ width: "15%", whiteSpace: "nowrap" }}>Đề bài</th>
               </tr>
             </thead>
             <tbody>
@@ -150,7 +150,7 @@ export default function ContestsPage() {
                   <tr key={c.IdCuocThi}>
                     <td style={{ fontWeight: 600 }}>
                       <Link href={`/contests/${c.IdCuocThi}`} className="problem-link">
-                        {c.TenCuocThi || `Contest ${c.IdCuocThi}`}
+                        {c.TenCuocThi || `Cuộc thi ${c.IdCuocThi}`}
                       </Link>
                     </td>
                     <td>{new Date(c.ThoiGianBatDau).toLocaleString("vi-VN")}</td>

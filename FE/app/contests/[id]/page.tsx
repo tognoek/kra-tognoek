@@ -71,20 +71,22 @@ export default function ContestDetailPage() {
         const res = await fetch(`${API_BASE}/api/contests/${params.id}`, {
           cache: "no-store",
         });
-        
+
         if (!res.ok) {
           if (res.status === 404) {
             throw new Error("Cuộc thi không tồn tại");
           }
           throw new Error("Không tải được thông tin cuộc thi");
         }
-        
+
         const data = await res.json();
         setContest(data);
-        
+
         // Update page title
         if (typeof document !== "undefined") {
-          document.title = `${data.TenCuocThi || `Contest ${params.id}`} - OJ Portal`;
+          document.title = `${
+            data.TenCuocThi || `Cuộc thi ${params.id}`
+          } - OJ Portal`;
         }
       } catch (e: any) {
         setError(e.message);
@@ -115,7 +117,11 @@ export default function ContestDetailPage() {
       <div>
         <h1 className="section-title">Chi tiết cuộc thi</h1>
         <p style={{ color: "red" }}>{error || "Không tìm thấy cuộc thi"}</p>
-        <Link href="/contests" className="button" style={{ marginTop: "16px", display: "inline-block" }}>
+        <Link
+          href="/contests"
+          className="button"
+          style={{ marginTop: "16px", display: "inline-block" }}
+        >
           ← Quay lại danh sách
         </Link>
       </div>
@@ -132,7 +138,15 @@ export default function ContestDetailPage() {
       {/* Header */}
       <div style={{ marginBottom: "24px" }}>
         <h1 className="section-title">{contest.TenCuocThi}</h1>
-        <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap", marginTop: "8px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "16px",
+            alignItems: "center",
+            flexWrap: "wrap",
+            marginTop: "8px",
+          }}
+        >
           <StatusBadge status={contest.Status} />
           <span style={{ color: "#666", fontSize: "14px" }}>
             Bắt đầu: {start.toLocaleString("vi-VN")}
@@ -147,21 +161,34 @@ export default function ContestDetailPage() {
       </div>
 
       {/* Stats Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px",
+        }}
+      >
         <div className="card">
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Số đề bài</div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>
+            Số đề bài
+          </div>
           <div style={{ fontSize: "24px", fontWeight: 700, color: "#667eea" }}>
             {contest.stats.totalProblems}
           </div>
         </div>
         <div className="card">
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Số người đăng ký</div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>
+            Số người đăng ký
+          </div>
           <div style={{ fontSize: "24px", fontWeight: 700, color: "#764ba2" }}>
             {contest.stats.totalRegistrations}
           </div>
         </div>
         <div className="card">
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Tổng số bài nộp</div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>
+            Tổng số bài nộp
+          </div>
           <div style={{ fontSize: "24px", fontWeight: 700, color: "#48bb78" }}>
             {contest.stats.totalSubmissions}
           </div>
@@ -170,31 +197,43 @@ export default function ContestDetailPage() {
 
       {/* Contest Info */}
       <div className="card" style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 600, marginBottom: "16px", marginTop: 0 }}>
+        <h2
+          style={{
+            fontSize: "20px",
+            fontWeight: 600,
+            marginBottom: "16px",
+            marginTop: 0,
+          }}
+        >
           Thông tin cuộc thi
         </h2>
         <div style={{ display: "grid", gap: "12px" }}>
           <div>
             <strong>Người tạo:</strong>{" "}
-            <Link href={`/users/${contest.taiKhoan.IdTaiKhoan}`} className="problem-link">
+            <Link
+              href={`/users/${contest.taiKhoan.IdTaiKhoan}`}
+              className="problem-link"
+            >
               {contest.taiKhoan.HoTen} (@{contest.taiKhoan.TenDangNhap})
             </Link>
           </div>
           <div>
-            <strong>Ngày tạo:</strong> {new Date(contest.NgayTao).toLocaleString("vi-VN")}
+            <strong>Ngày tạo:</strong>{" "}
+            {new Date(contest.NgayTao).toLocaleString("vi-VN")}
           </div>
-          {contest.ChuY && (
-            <div style={{ marginTop: "8px", padding: "12px", background: "#fff3cd", borderRadius: "4px", border: "1px solid #ffc107" }}>
-              <strong style={{ color: "#856404" }}>⚠️ Chú ý:</strong>
-              <div style={{ color: "#856404", marginTop: "4px" }}>{contest.ChuY}</div>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Description */}
       <div className="form-card" style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 600, marginBottom: "16px", marginTop: 0 }}>
+        <h2
+          style={{
+            fontSize: "20px",
+            fontWeight: 600,
+            marginBottom: "16px",
+            marginTop: 0,
+          }}
+        >
           Mô tả cuộc thi
         </h2>
         <article className="markdown-body">
@@ -207,9 +246,32 @@ export default function ContestDetailPage() {
         </article>
       </div>
 
+      {contest.ChuY && (
+        <div
+          style={{
+            marginTop: "8px",
+            padding: "12px",
+            background: "#fff3cd",
+            borderRadius: "4px",
+            border: "1px solid #ffc107",
+          }}
+        >
+          <strong style={{ color: "#856404" }}>⚠️ Chú ý:</strong>
+          <div style={{ color: "#856404", marginTop: "4px" }}>
+            {contest.ChuY}
+          </div>
+        </div>
+      )}
       {/* Problems List */}
       <div className="form-card" style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 600, marginBottom: "16px", marginTop: 0 }}>
+        <h2
+          style={{
+            fontSize: "20px",
+            fontWeight: 600,
+            marginBottom: "16px",
+            marginTop: 0,
+          }}
+        >
           Danh sách đề bài ({contest.deBais.length})
         </h2>
         {contest.deBais.length > 0 ? (
@@ -217,12 +279,14 @@ export default function ContestDetailPage() {
             <table>
               <thead>
                 <tr>
-                  <th style={{ width: "10%" }}>#</th>
-                  <th style={{ width: "40%" }}>Đề bài</th>
-                  <th style={{ width: "15%" }}>Độ khó</th>
-                  <th style={{ width: "15%" }}>Thời gian</th>
-                  <th style={{ width: "15%" }}>Bộ nhớ</th>
-                  <th style={{ width: "5%" }}></th>
+                  <th style={{ width: "10%", whiteSpace: "nowrap" }}>#</th>
+                  <th style={{ width: "40%", whiteSpace: "nowrap" }}>Đề bài</th>
+                  <th style={{ width: "15%", whiteSpace: "nowrap" }}>Độ khó</th>
+                  <th style={{ width: "15%", whiteSpace: "nowrap" }}>
+                    Thời gian
+                  </th>
+                  <th style={{ width: "15%", whiteSpace: "nowrap" }}>Bộ nhớ</th>
+                  <th style={{ width: "5%", whiteSpace: "nowrap" }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -233,7 +297,10 @@ export default function ContestDetailPage() {
                     </td>
                     <td>
                       {item.deBai ? (
-                        <Link href={`/problems/${item.deBai.IdDeBai}`} className="problem-link">
+                        <Link
+                          href={`/problems/${item.deBai.IdDeBai}`}
+                          className="problem-link"
+                        >
                           {item.TenHienThi || item.deBai.TieuDe}
                         </Link>
                       ) : (
@@ -251,7 +318,9 @@ export default function ContestDetailPage() {
                       {item.deBai ? `${item.deBai.GioiHanThoiGian}ms` : "-"}
                     </td>
                     <td>
-                      {item.deBai ? `${Math.round(item.deBai.GioiHanBoNho / 1024)}MB` : "-"}
+                      {item.deBai
+                        ? `${Math.round(item.deBai.GioiHanBoNho / 1024)}MB`
+                        : "-"}
                     </td>
                     <td>
                       {item.deBai && (
@@ -270,24 +339,37 @@ export default function ContestDetailPage() {
             </table>
           </div>
         ) : (
-          <p style={{ color: "#666" }}>Chưa có đề bài nào trong cuộc thi này.</p>
+          <p style={{ color: "#666" }}>
+            Chưa có đề bài nào trong cuộc thi này.
+          </p>
         )}
       </div>
 
       {/* Registered Users */}
       {contest.dangKys.length > 0 && (
         <div className="form-card">
-          <h2 style={{ fontSize: "20px", fontWeight: 600, marginBottom: "16px", marginTop: 0 }}>
+          <h2
+            style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              marginBottom: "16px",
+              marginTop: 0,
+            }}
+          >
             Danh sách người đăng ký ({contest.dangKys.length})
           </h2>
           <div className="table-wrap" style={{ marginTop: 0 }}>
             <table>
               <thead>
                 <tr>
-                  <th style={{ width: "10%" }}>#</th>
-                  <th style={{ width: "30%" }}>Tên đăng nhập</th>
-                  <th style={{ width: "40%" }}>Họ tên</th>
-                  <th style={{ width: "20%" }}>Trạng thái</th>
+                  <th style={{ width: "10%", whiteSpace: "nowrap" }}>#</th>
+                  <th style={{ width: "30%", whiteSpace: "nowrap" }}>
+                    Tên đăng nhập
+                  </th>
+                  <th style={{ width: "40%", whiteSpace: "nowrap" }}>Họ tên</th>
+                  <th style={{ width: "20%", whiteSpace: "nowrap" }}>
+                    Trạng thái
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -295,13 +377,20 @@ export default function ContestDetailPage() {
                   <tr key={dangKy.IdTaiKhoan}>
                     <td>{index + 1}</td>
                     <td>
-                      <Link href={`/users/${dangKy.taiKhoan.IdTaiKhoan}`} className="problem-link">
+                      <Link
+                        href={`/users/${dangKy.taiKhoan.IdTaiKhoan}`}
+                        className="problem-link"
+                      >
                         {dangKy.taiKhoan.TenDangNhap}
                       </Link>
                     </td>
                     <td>{dangKy.taiKhoan.HoTen}</td>
                     <td>
-                      <StatusBadge status={dangKy.TrangThai ? "Active" : "Inactive"} />
+                      <StatusBadge
+                        status={
+                          dangKy.TrangThai ? "Hoạt động" : "Không hoạt động"
+                        }
+                      />
                     </td>
                   </tr>
                 ))}

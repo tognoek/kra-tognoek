@@ -40,7 +40,7 @@ export default function ProblemDetailPage() {
         
         // Update page title
         if (typeof document !== "undefined") {
-          document.title = `${data.TieuDe || `Problem ${problemId}`} - OJ Portal`;
+          document.title = `${data.TieuDe || `Đề bài ${problemId}`} - OJ Portal`;
         }
       } catch (e: any) {
         setError(e.message);
@@ -95,16 +95,16 @@ export default function ProblemDetailPage() {
       <div style={{ marginBottom: "24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
           <div style={{ flex: 1 }}>
-            <h1 className="section-title">{problem.TieuDe || `Problem ${problemId}`}</h1>
+            <h1 className="section-title">{problem.TieuDe || `Đề bài ${problemId}`}</h1>
             <div style={{ display: "flex", gap: "12px", marginTop: "12px", flexWrap: "wrap", alignItems: "center" }}>
               <span className="difficulty difficulty-medium">
-                Difficulty: {problem.DoKho || "N/A"}
+                Độ khó: {problem.DoKho || "N/A"}
               </span>
               <span style={{ color: "#666" }}>
-                Time Limit: {problem.GioiHanThoiGian ? `${problem.GioiHanThoiGian}ms` : "N/A"}
+                Giới hạn thời gian: {problem.GioiHanThoiGian ? `${problem.GioiHanThoiGian}ms` : "N/A"}
               </span>
               <span style={{ color: "#666" }}>
-                Memory Limit: {problem.GioiHanBoNho ? `${Math.round(problem.GioiHanBoNho / 1024)}MB` : "N/A"}
+                Giới hạn bộ nhớ: {problem.GioiHanBoNho ? `${Math.round(problem.GioiHanBoNho / 1024)}MB` : "N/A"}
               </span>
               {problem.taiKhoan && (
                 <span style={{ color: "#666" }}>
@@ -135,7 +135,7 @@ export default function ProblemDetailPage() {
 
       <div className="form-card">
         <h2 style={{ fontSize: "20px", fontWeight: 600, marginBottom: "16px", marginTop: 0 }}>
-          Problem Statement
+          Đề bài
         </h2>
         <article className="markdown-body">
           <ReactMarkdown
