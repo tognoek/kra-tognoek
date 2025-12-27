@@ -14,7 +14,6 @@ use tokio::net::TcpListener;
 use tokio::select;
 use tog::{Executor, BoxError, JobConfig, ExecResult, InputMode, Language};
 
-/// Job envelope giống với cấu trúc bên UI/Server push vào Redis.
 #[derive(Debug, Deserialize)]
 struct JobEnvelope {
     id: String,
@@ -23,34 +22,24 @@ struct JobEnvelope {
     timestamp: u64,
 }
 
-/// Dữ liệu job `judge` mà Kra thật sự cần để chấm.
 #[derive(Debug, Deserialize)]
 struct JudgeData {
-    /// Submission ID để gửi callback
     #[serde(rename = "submissionId")]
     submission_id: Option<String>,
-    /// Problem ID
     #[serde(rename = "problemId")]
     problem_id: Option<String>,
-    /// Id code – dùng để gọi S3 (data/code/{codeId}.cpp)
     #[serde(rename = "codeId")]
     code_id: String,
-    /// Id test – dùng để gọi S3 (data/test/{testId}.zip)
     #[serde(rename = "testId")]
     test_id: String,
-    /// Giới hạn thời gian mỗi test (ms)
     #[serde(rename = "timeLimitMs")]
     time_limit_ms: u64,
-    /// Giới hạn RAM (KB)
     #[serde(rename = "memoryLimitKb")]
     memory_limit_kb: u64,
-    /// Kiểu đọc input: \"stdin\" hoặc \"file\"
     #[serde(rename = "inputMode")]
     input_mode: String,
-    /// Ngôn ngữ: \"c\" hoặc \"cpp\" (mặc định: cpp nếu thiếu)
     #[serde(rename = "language")]
     language: Option<String>,
-    /// Server base URL để gửi callback
     #[serde(rename = "serverBaseUrl")]
     server_base_url: Option<String>,
 }
@@ -142,7 +131,6 @@ async fn enqueue_job(Form(form): Form<JudgeForm>) -> Html<String> {
 
 #[tokio::main]
 async fn main() -> Result<(), BoxError> {
-    // Các config cơ bản
     let redis_url = std::env::var("REDIS_URL")
         .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let queue_name =
@@ -160,7 +148,6 @@ async fn main() -> Result<(), BoxError> {
     println!("S3 base  : {}", s3_base_url);
     println!("Web UI   : http://127.0.0.1:{}", web_port);
 
-    // Setup Redis client cho worker
     let redis_client = match redis::Client::open(redis_url.clone()) {
         Ok(c) => c,
         Err(e) => {
@@ -180,7 +167,6 @@ async fn main() -> Result<(), BoxError> {
         }
     };
 
-    // Setup web server
     let web_app = Router::new()
         .route("/", get(index_page))
         .route("/enqueue", post(enqueue_job));
@@ -189,7 +175,6 @@ async fn main() -> Result<(), BoxError> {
         .await
         .map_err(|e| format!("Failed to bind web port {}: {}", web_port, e))?;
 
-    // Chạy song song: worker loop + web server
     select! {
         _ = async {
             let _ = axum::serve(web_listener, web_app).await;
@@ -271,13 +256,11 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
     println!("Chạy Executor::run_job với config: {:?}", cfg);
     let exec_res = Executor::run_job(cfg).await;
 
-    // In mảng kết quả theo từng test: -1=biên dịch lỗi, 0=đúng, 1=sai, 2=timeout, 3=quá bộ nhớ
     let codes = build_result_codes(&exec_res);
     println!("KRA_RESULT_CODES {:?}", codes);
 
     let (status, total_time_ms, total_mem_kb) = summarize_result(&exec_res);
 
-    // Gửi callback về Server nếu có submissionId
     if let Some(submission_id) = &data.submission_id {
         if let Some(server_url) = &data.server_base_url {
             send_callback(
@@ -308,7 +291,6 @@ async fn send_callback(
     let client = reqwest::Client::new();
     let callback_url = format!("{}/api/submissions/{}/callback", server_url, submission_id);
 
-    // Gửi mảng codes trong TrangThaiCham, không gửi KetQuaCham nữa
     let mut body = serde_json::json!({
         "TrangThaiCham": codes,  // Mảng codes: [-1] hoặc [0,0,1,2,0]
         "ThoiGianThucThi": max_time_ms,
@@ -373,7 +355,6 @@ fn summarize_result(res: &Result<ExecResult, BoxError>) -> (&'static str, i32, i
     }
 }
 
-/// Xây dựng mảng code kết quả cho từng test:
 /// -1 = lỗi biên dịch, 0 = đúng, 1 = sai, 2 = quá thời gian, 3 = quá bộ nhớ.
 fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<i8> {
     match res {
@@ -395,8 +376,6 @@ fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<i8> {
                                 return 3;
                             }
                         }
-                        // Kiểm tra memory_kb nếu có và vượt quá limit (cần truyền limit vào)
-                        // Tạm thời chỉ dựa vào stderr
                         return 1;
                     }
                     0
@@ -406,4 +385,3 @@ fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<i8> {
     }
 }
 
-// summarize_result + build_result_codes vẫn dùng nội bộ để log thống kê.

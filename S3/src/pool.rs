@@ -18,7 +18,6 @@ pub fn spawn_stats_pool(rx: mpsc::Receiver<StatEvent>, interval_ms: u64) {
     });
 
     let stats_clone2 = stats.clone();
-    // Kiểm tra biến môi trường một lần khi khởi tạo
     let enable_console = crate::stats::is_console_output_enabled();
     tokio::spawn(async move {
         let interval = Duration::from_millis(interval_ms);
@@ -26,7 +25,6 @@ pub fn spawn_stats_pool(rx: mpsc::Receiver<StatEvent>, interval_ms: u64) {
         loop {
             {
                 let s = stats_clone2.lock().await;
-                // Chỉ vẽ khi có thay đổi và console output được bật
                 if enable_console && s.total_calls != last_total_calls {
                     s.draw_table();
                     last_total_calls = s.total_calls;

@@ -30,5 +30,24 @@ router.post("/", async (req, res) => {
   res.json(created);
 });
 
+//PUT /api/languages/:id
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { TenNgonNgu, TenNhanDien, TrangThai } = req.body;
+  try {
+    const updated = await prisma.ngonNgu.update({
+      where: { IdNgonNgu: BigInt(id) },
+      data: {
+        ...(TenNgonNgu && { TenNgonNgu }),
+        ...(TenNhanDien && { TenNhanDien }),
+        ...(TrangThai !== undefined && { TrangThai }),
+      },
+    });
+    res.json(updated);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to update language" });
+  }
+});
+
 export default router;
 

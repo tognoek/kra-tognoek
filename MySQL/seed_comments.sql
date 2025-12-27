@@ -5,10 +5,10 @@
 -- DELETE FROM BinhLuan;
 
 -- Lấy ID của các users và đề bài
-SET @user1_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'user1' LIMIT 1);
-SET @user2_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'user2' LIMIT 1);
-SET @user3_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'user3' LIMIT 1);
-SET @user4_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'user4' LIMIT 1);
+SET @user1_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'nguyenvanan' LIMIT 1);
+SET @user2_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'tranthibinh' LIMIT 1);
+SET @user3_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'levancuong' LIMIT 1);
+SET @user4_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'hoanvancanh' LIMIT 1);
 SET @admin_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'admin' LIMIT 1);
 
 -- Lấy ID của các đề bài (chỉ lấy đề bài đã tồn tại)

@@ -62,7 +62,9 @@ router.post("/code", async (req: Request, res: Response) => {
 // POST /api/upload/test - Upload test .zip to S3 and create BoTest
 router.post("/test", async (req: Request, res: Response) => {
   try {
-    const { fileBase64, originalName, problemId } = req.body;
+    const { fileBase64, originalName, 
+      problemId, inputPath, 
+      outputPath, checkerPath } = req.body;
 
     if (!fileBase64 || !problemId) {
       return res.status(400).json({ error: "fileBase64 và problemId là bắt buộc" });
@@ -74,13 +76,13 @@ router.post("/test", async (req: Request, res: Response) => {
     const boTest = await prisma.boTest.create({
       data: {
         IdDeBai: idDeBai,
-        DuongDanInput: "",
-        DuongDanOutput: "",
-        DuongDanCode: "",
+        DuongDanInput: inputPath || null,   // Ví dụ: bai1.inp
+        DuongDanOutput: outputPath || null, // Ví dụ: bai1.out
+        DuongDanCode: checkerPath || "",  // Ví dụ: check.cpp
       },
     });
 
-    const testId = `test_${boTest.IdBoTest.toString()}`;
+    const testId = boTest.IdBoTest.toString();
     const filename = `${testId}.zip`;
 
     // Giải mã base64 sang Buffer
@@ -109,20 +111,8 @@ router.post("/test", async (req: Request, res: Response) => {
 
     const s3Result = await s3Response.text();
 
-    // Đường dẫn test.zip trên S3 (phù hợp với logic extract testId trong submissions)
-    const fileUrl = `${S3_BASE_URL}/data/test/${testId}.zip`;
-
-    const updated = await prisma.boTest.update({
-      where: { IdBoTest: boTest.IdBoTest },
-      data: {
-        DuongDanInput: fileUrl,
-      },
-    });
-
     res.json({
       success: true,
-      IdBoTest: updated.IdBoTest.toString(),
-      DuongDanInput: updated.DuongDanInput,
       message: s3Result,
     });
   } catch (error: any) {

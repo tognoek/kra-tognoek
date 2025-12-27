@@ -1,16 +1,10 @@
--- File seed data để fake dữ liệu submissions cho dễ thấy biểu đồ
--- Chạy file này sau khi đã tạo schema từ code.sql
-
--- Xóa dữ liệu cũ (nếu cần)
--- DELETE FROM BaiNop;
--- DELETE FROM TaiKhoan WHERE IdTaiKhoan > 3;
--- DELETE FROM DeBai WHERE IdDeBai > 1;
 
 -- Thêm một số users mẫu
 INSERT INTO TaiKhoan (IdVaiTro, TenDangNhap, MatKhau, HoTen, Email, TrangThai, NgayTao) VALUES
-(2, 'user2', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Nguyễn Văn A', 'user2@example.com', TRUE, DATE_SUB(NOW(), INTERVAL 60 DAY)),
-(2, 'user3', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Trần Thị B', 'user3@example.com', TRUE, DATE_SUB(NOW(), INTERVAL 45 DAY)),
-(2, 'user4', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Lê Văn C', 'user4@example.com', TRUE, DATE_SUB(NOW(), INTERVAL 30 DAY))
+(2, 'nguyenvanan', '$2a$10$$2a$10$wfeuSdGOP5Ns5fReRB8hkuCzzp6RtNVQ0pLDIH.ozF.19b7pvMhTu', 'Nguyễn Văn An', 'nguyenvanan@gmail.com', TRUE, DATE_SUB(NOW(), INTERVAL 60 DAY)),
+(2, 'tranthibinh', '$2a$10$$2a$10$wfeuSdGOP5Ns5fReRB8hkuCzzp6RtNVQ0pLDIH.ozF.19b7pvMhTu', 'Trần Thị Bình', 'tranthibinh@gmail.com', TRUE, DATE_SUB(NOW(), INTERVAL 45 DAY)),
+(2, 'levancuong', '$2a$10$$2a$10$wfeuSdGOP5Ns5fReRB8hkuCzzp6RtNVQ0pLDIH.ozF.19b7pvMhTu', 'Lê Văn Cương', 'levancuong@gmail.com', TRUE, DATE_SUB(NOW(), INTERVAL 30 DAY)),
+(2, 'hoanvancanh', '$2a$10$$2a$10$wfeuSdGOP5Ns5fReRB8hkuCzzp6RtNVQ0pLDIH.ozF.19b7pvMhTu', 'Hoàng Văn Cảnh', 'hoanvancanh@gmail.com', TRUE, DATE_SUB(NOW(), INTERVAL 30 DAY))
 ON DUPLICATE KEY UPDATE TenDangNhap=TenDangNhap;
 
 -- Thêm một số đề bài mẫu
@@ -23,10 +17,10 @@ INSERT INTO DeBai (IdTaiKhoan, TieuDe, NoiDungDeBai, DoKho, GioiHanThoiGian, Gio
 ON DUPLICATE KEY UPDATE TieuDe=TieuDe;
 
 -- Lấy ID của các users và đề bài vừa tạo (hoặc đã có)
-SET @user1_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'user1' LIMIT 1);
-SET @user2_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'user2' LIMIT 1);
-SET @user3_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'user3' LIMIT 1);
-SET @user4_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'user4' LIMIT 1);
+SET @user1_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'tranthibinh' LIMIT 1);
+SET @user2_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'tranthibinh' LIMIT 1);
+SET @user3_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'levancuong' LIMIT 1);
+SET @user4_id = (SELECT IdTaiKhoan FROM TaiKhoan WHERE TenDangNhap = 'hoanvancanh' LIMIT 1);
 SET @deBai1_id = (SELECT IdDeBai FROM DeBai WHERE TieuDe = 'A + B Problem' LIMIT 1);
 SET @deBai2_id = (SELECT IdDeBai FROM DeBai WHERE TieuDe = 'Tìm số lớn nhất' LIMIT 1);
 SET @deBai3_id = (SELECT IdDeBai FROM DeBai WHERE TieuDe = 'Tính tổng mảng' LIMIT 1);

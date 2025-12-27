@@ -67,7 +67,6 @@ impl Stats {
         let avg_disk = self.total_disk / self.total_calls;
         let avg_time = self.total_time / self.total_calls;
 
-        // Sử dụng buffer để giảm số lần syscall
         let output = format!(
             "\x1B[2J\x1B[3J\x1B[H\
 ===========================[http://127.0.0.1:3000]============================\n\
@@ -77,8 +76,8 @@ impl Stats {
 │ {:11} │ Avg: {:8.2} │ Avg: {:8} │ Avg: {:8} │ Avg: {:8} │\n\
 │ {:11} │ Max: {:8.2} │ Max: {:8} │ Max: {:8} │ Max: {:8} │\n\
 └─────────────┴───────────────┴───────────────┴───────────────┴───────────────┘\n",
-            self.format_number(self.total_calls), avg_cpu, avg_ram, avg_disk, avg_time,
-            "", self.max_cpu, self.max_ram, self.max_disk, self.max_time
+            self.format_number(self.total_calls as u64), self.format_number(avg_cpu as u64), self.format_number(avg_ram as u64), self.format_number(avg_disk as u64), self.format_number(avg_time as u64),
+            "", self.format_number(self.max_cpu as u64), self.format_number(self.max_ram as u64), self.format_number(self.max_disk as u64), self.format_number(self.max_time as u64)
         );
         print!("{}", output);
         // Flush để đảm bảo output được hiển thị ngay

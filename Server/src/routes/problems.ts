@@ -58,54 +58,96 @@ router.post("/", async (req, res) => {
     DangCongKhai,
     TrangThai,
     topicIds,
-    TestPath,
   } = req.body;
 
   if (!IdTaiKhoan || !TieuDe || !NoiDungDeBai || !DoKho || !GioiHanThoiGian || !GioiHanBoNho) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const created = await prisma.deBai.create({
-    data: {
-      IdTaiKhoan: BigInt(IdTaiKhoan),
-      TieuDe,
-      NoiDungDeBai,
-      DoKho,
-      GioiHanThoiGian,
-      GioiHanBoNho,
-      DangCongKhai: DangCongKhai ?? true,
-      TrangThai: TrangThai ?? true,
-      deBaiChuDes: topicIds?.length
-        ? {
-            create: topicIds.map((id: bigint) => ({
-              IdChuDe: BigInt(id),
-            })),
-          }
-        : undefined,
-      boTests: TestPath
-        ? {
-            create: {
-              DuongDanInput: TestPath,
-              DuongDanOutput: "",
-              DuongDanCode: "",
-            },
-          }
-        : undefined,
-    },
-  });
+  try {
+    const created = await prisma.deBai.create({
+      data: {
+        IdTaiKhoan: BigInt(IdTaiKhoan),
+        TieuDe,
+        NoiDungDeBai,
+        DoKho,
+        GioiHanThoiGian,
+        GioiHanBoNho,
+        DangCongKhai: DangCongKhai ?? true,
+        TrangThai: TrangThai ?? true,
+        
+        // Dùng tên trường trong model DeBai (deBaiChuDes)
+        deBaiChuDes: topicIds?.length
+          ? {
+              create: topicIds.map((id: bigint) => ({
+                IdChuDe: BigInt(id),
+              })),
+            }
+          : undefined,
+      },
+    });
 
-  res.json({
-    IdDeBai: created.IdDeBai.toString(),
-    IdTaiKhoan: created.IdTaiKhoan.toString(),
-    TieuDe: created.TieuDe,
-    NoiDungDeBai: created.NoiDungDeBai,
-    DoKho: created.DoKho,
-    GioiHanThoiGian: created.GioiHanThoiGian,
-    GioiHanBoNho: created.GioiHanBoNho,
-    DangCongKhai: created.DangCongKhai,
-    TrangThai: created.TrangThai,
-    NgayTao: created.NgayTao,
-  });
+    res.json({
+      IdDeBai: created.IdDeBai.toString(),
+      IdTaiKhoan: created.IdTaiKhoan.toString(),
+      TieuDe: created.TieuDe,
+      NoiDungDeBai: created.NoiDungDeBai,
+      DoKho: created.DoKho,
+      GioiHanThoiGian: created.GioiHanThoiGian,
+      GioiHanBoNho: created.GioiHanBoNho,
+      DangCongKhai: created.DangCongKhai,
+      TrangThai: created.TrangThai,
+      NgayTao: created.NgayTao,
+    });
+  } catch (error: any) {
+    console.error("Create problem error:", error);
+    res.status(500).json({ error: "Failed to create problem" });
+  }
+});
+
+// GET /api/problems/available?userId=...
+router.get("/available", async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+
+  try {
+    const problems = await prisma.deBai.findMany({
+      where: {
+        IdTaiKhoan: BigInt(userId as string),
+      },
+      orderBy: { NgayTao: "desc" },
+      select: {
+        IdDeBai: true,
+        TieuDe: true,
+        DoKho: true,
+        GioiHanThoiGian: true,
+        GioiHanBoNho: true,
+        DangCongKhai: true,
+        TrangThai: true,
+        NgayTao: true,
+        IdTaiKhoan: true, 
+      },
+    });
+
+    res.json(
+      problems.map((p) => ({
+        IdDeBai: p.IdDeBai.toString(),
+        TieuDe: p.TieuDe,
+        DoKho: p.DoKho,
+        GioiHanThoiGian: p.GioiHanThoiGian,
+        GioiHanBoNho: p.GioiHanBoNho,
+        DangCongKhai: p.DangCongKhai,
+        TrangThai: p.TrangThai,
+        NgayTao: p.NgayTao,
+        IdTaiKhoan: p.IdTaiKhoan.toString(),
+      }))
+    );
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to fetch available problems" });
+  }
 });
 
 // GET /api/problems/:id
@@ -126,6 +168,8 @@ router.get("/:id", async (req, res) => {
             Email: true,
           },
         },
+        // Dùng tên trường quan hệ (deBaiChuDes)
+        deBaiChuDes: true, 
       },
     });
 
@@ -135,7 +179,7 @@ router.get("/:id", async (req, res) => {
 
     res.json({
       IdDeBai: problem.IdDeBai.toString(),
-      IdTaiKhoan: problem.IdTaiKhoan.toString(), 
+      IdTaiKhoan: problem.IdTaiKhoan.toString(),
       TieuDe: problem.TieuDe,
       NoiDungDeBai: problem.NoiDungDeBai,
       DoKho: problem.DoKho,
@@ -152,17 +196,70 @@ router.get("/:id", async (req, res) => {
             Email: problem.taiKhoan.Email,
           }
         : null,
+      
+      // Map dữ liệu từ quan hệ deBaiChuDes
+      topicIds: problem.deBaiChuDes.map((t) => Number(t.IdChuDe)),
     });
   } catch (error: any) {
     console.error("Error fetching problem:", error);
-    
-    if (error.name === 'PrismaClientValidationError' || error.message.includes('BigInt')) {
-         return res.status(400).json({ error: "ID không hợp lệ" });
+
+    if (error.name === "PrismaClientValidationError" || error.message.includes("BigInt")) {
+      return res.status(400).json({ error: "ID không hợp lệ" });
     }
 
     res.status(500).json({ error: "Lỗi server khi lấy chi tiết bài tập" });
   }
 });
 
-export default router;
+// PUT /api/problems/:id
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const {
+    TieuDe,
+    NoiDungDeBai,
+    DoKho,
+    GioiHanThoiGian,
+    GioiHanBoNho,
+    DangCongKhai,
+    TrangThai,
+    topicIds,
+  } = req.body;
 
+  try {
+    // 1. Xóa các chủ đề cũ
+    // QUAN TRỌNG: Ở đây dùng tên Model (DeBai_ChuDe -> prisma.deBai_ChuDe)
+    await prisma.deBai_ChuDe.deleteMany({
+      where: { IdDeBai: BigInt(id) },
+    });
+
+    // 2. Cập nhật thông tin bài toán và thêm chủ đề mới
+    const updated = await prisma.deBai.update({
+      where: { IdDeBai: BigInt(id) },
+      data: {
+        TieuDe,
+        NoiDungDeBai,
+        DoKho,
+        GioiHanThoiGian,
+        GioiHanBoNho,
+        DangCongKhai,
+        TrangThai,
+        
+        // QUAN TRỌNG: Ở đây dùng tên trường quan hệ trong Model DeBai (deBaiChuDes)
+        deBaiChuDes: topicIds?.length
+          ? {
+              create: topicIds.map((tid: number) => ({
+                IdChuDe: BigInt(tid),
+              })),
+            }
+          : undefined,
+      },
+    });
+
+    res.json({ message: "Update success", IdDeBai: updated.IdDeBai.toString() });
+  } catch (error: any) {
+    console.error("Update problem error:", error);
+    res.status(500).json({ error: "Failed to update problem" });
+  }
+});
+
+export default router;

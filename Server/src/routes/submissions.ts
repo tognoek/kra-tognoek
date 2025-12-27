@@ -153,26 +153,17 @@ router.post("/", async (req, res) => {
   let testId = IdDeBai.toString();
   let inputMode = "stdin"; // Default to stdin
   
+  console.log(problem);
+
   if (problem.boTests.length > 0) {
     const boTest = problem.boTests[0];
+    testId = boTest.IdBoTest.toString();
     const testInputPath = boTest.DuongDanInput;
     const testOutputPath = boTest.DuongDanOutput;
     
-    // Xác định inputMode: nếu DuongDanInput hoặc DuongDanOutput là null => stdin, ngược lại => file
     if (testInputPath && testOutputPath) {
       inputMode = "file";
-      // Extract test ID từ path nếu có
-      if (typeof testInputPath === "string") {
-        const testMatch1 = testInputPath.match(/\/test\/([^\/]+)\//);
-        const testMatch2 = testInputPath.match(/\/test\/([^\/]+)\.zip$/);
-        if (testMatch1) {
-          testId = testMatch1[1];
-        } else if (testMatch2) {
-          testId = testMatch2[1];
-        }
-      }
     } else {
-      // DuongDanInput hoặc DuongDanOutput là null => chấm từ bàn phím
       inputMode = "stdin";
     }
   }
@@ -201,7 +192,7 @@ router.post("/", async (req, res) => {
         codeId: codeId,
         testId: testId,
         timeLimitMs: problem.GioiHanThoiGian,
-        memoryLimitKb: problem.GioiHanBoNho,
+        memoryLimitKb: problem.GioiHanBoNho * 1024,
         inputMode: inputMode, // "stdin" nếu DuongDanInput/Output null, "file" nếu có cả 2
         language: language.TenNhanDien.toLowerCase(),
         serverBaseUrl: SERVER_BASE_URL,
@@ -325,11 +316,11 @@ router.post("/:id/callback", async (req, res) => {
       where: { IdBaiNop: id },
       data: {
         TrangThaiCham: statusMessage,
-        ThoiGianThucThi: ThoiGianThucThi || null,
-        BoNhoSuDung: BoNhoSuDung || null,
+        ThoiGianThucThi: ThoiGianThucThi ?? null,
+        BoNhoSuDung: BoNhoSuDung ?? null,
       },
     });
-
+    console.log("BoNhoSuDung: ", BoNhoSuDung);
     res.json({
       IdBaiNop: updated.IdBaiNop.toString(),
       TrangThaiCham: updated.TrangThaiCham,

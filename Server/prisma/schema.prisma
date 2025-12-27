@@ -121,6 +121,7 @@ model CuocThi_DeBai {
   IdCuocThi   BigInt
   IdDeBai     BigInt
   TenHienThi  String? @db.Text
+  TrangThai  Boolean @default(true)
 
   cuocThi CuocThi @relation(fields: [IdCuocThi], references: [IdCuocThi])
   deBai   DeBai   @relation(fields: [IdDeBai], references: [IdDeBai])
