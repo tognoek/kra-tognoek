@@ -303,7 +303,10 @@ router.get("/", async (req, res) => {
     const [data, total] = await Promise.all([
       prisma.cuocThi.findMany({
         include: {
-          deBais: { include: { deBai: true } },
+          deBais: { 
+            where: { TrangThai: true},
+            include: { deBai: true }, 
+          },
           taiKhoan: { select: { HoTen: true } } // Lấy tên người tạo
         },
         orderBy: { ThoiGianBatDau: "desc" },

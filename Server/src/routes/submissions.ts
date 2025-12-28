@@ -140,8 +140,6 @@ router.post("/", async (req, res) => {
   let testId = IdDeBai.toString();
   let inputMode = "stdin"; // Default to stdin
   
-  console.log(problem);
-
   if (problem.boTests.length > 0) {
     const boTest = problem.boTests[0];
     testId = boTest.IdBoTest.toString();
@@ -307,7 +305,6 @@ router.post("/:id/callback", async (req, res) => {
         BoNhoSuDung: BoNhoSuDung ?? null,
       },
     });
-    console.log("BoNhoSuDung: ", BoNhoSuDung);
     res.json({
       IdBaiNop: updated.IdBaiNop.toString(),
       TrangThaiCham: updated.TrangThaiCham,
