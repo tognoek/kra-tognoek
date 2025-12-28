@@ -182,7 +182,7 @@ router.get("/:id", async (req, res) => {
         DangCongKhai: true,
       },
       include: {
-        taiKhoan: {
+        taiKhoan: {       
           select: {
             IdTaiKhoan: true,
             TenDangNhap: true,
@@ -190,7 +190,12 @@ router.get("/:id", async (req, res) => {
             Email: true,
           },
         },
-        // Dùng tên trường quan hệ (deBaiChuDes)
+        boTests: {          
+          select: {
+            DuongDanInput: true,
+            DuongDanOutput: true,
+          },
+        },
         deBaiChuDes: true, 
       },
     });
@@ -208,6 +213,9 @@ router.get("/:id", async (req, res) => {
       GioiHanThoiGian: problem.GioiHanThoiGian,
       GioiHanBoNho: problem.GioiHanBoNho,
       DangCongKhai: problem.DangCongKhai,
+      isReady: !!(problem.boTests[0]?.DuongDanInput && problem.boTests[0]?.DuongDanOutput),
+      DuongDanInput: problem.boTests[0]?.DuongDanInput ?? "",
+      DuongDanOutput: problem.boTests[0]?.DuongDanOutput ?? "",
       NgayTao: problem.NgayTao,
       TrangThai: problem.TrangThai,
       taiKhoan: problem.taiKhoan

@@ -40,6 +40,9 @@ export default function ContestProblemDetail() {
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || "Không thể tải đề bài");
         setData(result);
+        if (typeof document !== "undefined") {
+            document.title = `${result.problem.TieuDe} - ${result.contestInfo.TenCuocThi}`;
+        }
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -49,111 +52,36 @@ export default function ContestProblemDetail() {
     fetchDetail();
   }, [contestId, problemId, user]);
 
-  if (loading) return <div className="loading-container">Đang nạp đề bài...</div>;
+  if (loading) return <div className="loading-container">⌛ Đang nạp đề bài...</div>;
 
   if (error || !data || !data.problem) {
     return (
       <div className="error-page-container">
-        <style dangerouslySetInnerHTML={{ __html: `
-          .error-page-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 70vh;
-            padding: 20px;
-            font-family: 'Inter', sans-serif;
-          }
-          .error-card {
-            background: white;
-            max-width: 500px;
-            width: 100%;
-            padding: 40px;
-            border-radius: 24px;
-            text-align: center;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-            border: 1px solid #f1f5f9;
-          }
-          .error-illustration {
-            font-size: 80px;
-            margin-bottom: 24px;
-            display: inline-block;
-            line-height: 1;
-          }
-          .error-card h2 {
-            color: #0f172a;
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 12px;
-          }
-          .error-card p {
-            color: #64748b;
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 32px;
-          }
-          .error-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-          }
-          .btn-retry {
-            padding: 12px 24px;
-            background: #f1f5f9;
-            color: #475569;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-          }
-          .btn-retry:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-          }
-          .btn-back-contest {
-            padding: 12px 24px;
-            background: #2563eb;
-            color: white;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-          }
-          .btn-back-contest:hover {
-            background: #1d4ed8;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
-          }
-        `}} />
-        
+        <style dangerouslySetInnerHTML={{ __html: errorStyles }} />
         <div className="error-card">
           <div className="error-illustration">🕵️‍♂️</div>
           <h2>Không tìm thấy nội dung</h2>
-          <p>
-            {error || "Bài tập này không tồn tại trong hệ thống hoặc cuộc thi chưa chính thức bắt đầu để bạn có thể xem đề."}
-          </p>
+          <p>{error || "Bài tập không tồn tại hoặc cuộc thi chưa bắt đầu."}</p>
           <div className="error-actions">
-            <button className="btn-retry" onClick={() => window.location.reload()}>
-              🔄 Thử lại
-            </button>
-            <Link href={`/contests/${contestId}`} className="btn-back-contest">
-              🏆 Về trang cuộc thi
-            </Link>
+            <Link href={`/contests/${contestId}`} className="btn-back-contest">🏆 Về cuộc thi</Link>
           </div>
         </div>
       </div>
     );
   }
+
   const { problem, contestInfo, permissions } = data;
+
+  // Logic hiển thị nhập xuất
+  const inputMethod = problem.DuongDanInput ? problem.DuongDanInput : "Bàn phím (stdin)";
+  const outputMethod = problem.DuongDanOutput ? problem.DuongDanOutput : "Màn hình (stdout)";
 
   return (
     <div className="problem-container">
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
       
       {/* Contest Header */}
-      <div className="contest-header-mini">
+      <div className="contest-header-mini no-print">
         <Link href={`/contests/${contestId}`} className="breadcrumb-link">
           🏆 {contestInfo.TenCuocThi}
         </Link>
@@ -162,9 +90,21 @@ export default function ContestProblemDetail() {
 
       <div className="problem-main-layout">
         {/* KHUNG BÊN TRÁI: NỘI DUNG ĐỀ BÀI */}
-        <div className="problem-content">
+        <div className="problem-content printable-area">
           <div className="problem-header">
             <h1>📄 {problem.TieuDe}</h1>
+          </div>
+
+          {/* Thông số hiển thị riêng khi IN */}
+          <div className="print-only-specs">
+            <div className="print-grid">
+                <div>⏱️ <b>Thời gian:</b> {problem.GioiHanThoiGian}ms</div>
+                <div>💾 <b>Bộ nhớ:</b> {problem.GioiHanBoNho}MB</div>
+                <div>📈 <b>Độ khó:</b> {problem.DoKho}/10</div>
+                <div>📥 <b>Nhập:</b> {inputMethod}</div>
+                <div>📤 <b>Xuất:</b> {outputMethod}</div>
+            </div>
+            <hr className="print-divider" />
           </div>
 
           <div className="markdown-card">
@@ -178,9 +118,9 @@ export default function ContestProblemDetail() {
         </div>
 
         {/* KHUNG BÊN PHẢI: HÀNH ĐỘNG & THÔNG SỐ */}
-        <div className="problem-sidebar">
+        <div className="problem-sidebar no-print">
           <div className="action-card">
-            <h3 className="card-title">📊 Thông tin</h3>
+            <h3 className="card-title">📊 Thông số</h3>
             
             <div className="specs-list">
               <div className="spec-item">
@@ -193,11 +133,15 @@ export default function ContestProblemDetail() {
               </div>
               <div className="spec-item">
                 <span className="spec-label">📈 Độ khó</span>
-                <span className="spec-value difficulty-pill">{problem.DoKho}</span>
+                <span className="spec-value difficulty-pill">{problem.DoKho}/10</span>
               </div>
               <div className="spec-item">
-                <span className="spec-label">✍️ Tác giả</span>
-                <span className="spec-value">{problem.NguoiTaoDe}</span>
+                <span className="spec-label">📥 Nhập từ</span>
+                <span className={`spec-value ${problem.DuongDanInput ? 'file-tag' : ''}`}>{inputMethod}</span>
+              </div>
+              <div className="spec-item">
+                <span className="spec-label">📤 Xuất ra</span>
+                <span className={`spec-value ${problem.DuongDanOutput ? 'file-tag' : ''}`}>{outputMethod}</span>
               </div>
             </div>
 
@@ -207,17 +151,11 @@ export default function ContestProblemDetail() {
             
             {permissions.canSubmit ? (
               <button className="btn-submit-main" onClick={() => setShowSubmitModal(true)}>
-                📤 NỘP BÀI NGAY
+                📤 NỘP BÀI GIẢI
               </button>
             ) : (
               <div className="status-notice">
-                {permissions.isEnded ? (
-                  <p>🏁 Cuộc thi đã kết thúc.</p>
-                ) : !permissions.isRegistered ? (
-                  <p>🔒 Bạn chưa đăng ký thi.</p>
-                ) : (
-                  <p>⏳ Vui lòng chờ...</p>
-                )}
+                {permissions.isEnded ? "🏁 Cuộc thi kết thúc" : "🔒 Chưa đăng ký thi"}
               </div>
             )}
 
@@ -238,143 +176,52 @@ export default function ContestProblemDetail() {
 }
 
 const customStyles = `
-  .problem-container { 
-    max-width: 1300px; 
-    margin: 0 auto; 
-    padding: 30px 20px; 
-    font-family: 'Inter', -apple-system, sans-serif; 
-    background-color: #fcfcfd;
-    min-height: 100vh;
-  }
+  .problem-container { max-width: 1300px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', sans-serif; background-color: #fcfcfd; min-height: 100vh; }
+  .contest-header-mini { background: #fff; padding: 15px 25px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eef0f2; }
+  .breadcrumb-link { text-decoration: none; color: #2563eb; font-weight: 700; }
+  
+  .problem-main-layout { display: grid; grid-template-columns: 1fr 380px; gap: 30px; align-items: start; }
+  .problem-header h1 { font-size: 2.2rem; color: #0f172a; font-weight: 800; margin-bottom: 20px; }
+  
+  .markdown-card { background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; line-height: 1.8; color: #334155; font-size: 16px; }
 
-  .contest-header-mini { 
-    background: #fff; 
-    padding: 15px 25px; 
-    border-radius: 12px; 
-    margin-bottom: 25px; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    border: 1px solid #eef0f2;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  }
-
-  .breadcrumb-link { text-decoration: none; color: #2563eb; font-weight: 700; font-size: 16px; }
-  .creator-tag { font-size: 14px; color: #64748b; }
-
-  /* BỐ CỤC CHÍNH */
-  .problem-main-layout { 
-    display: grid; 
-    grid-template-columns: 1fr 380px; /* Chia cột cân đối hơn */
-    gap: 30px; 
-    align-items: start;
-  }
-
-  .problem-header h1 { 
-    font-size: 2.2rem; 
-    color: #0f172a; 
-    font-weight: 800;
-    margin-bottom: 5px;
-  }
-
-  .markdown-card { 
-    background: #fff; 
-    padding: 40px; 
-    border-radius: 16px; 
-    box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
-    border: 1px solid #f1f5f9; 
-    line-height: 1.8;
-    color: #334155;
-    font-size: 16px;
-  }
-
-  /* SIDEBAR (KHUNG HÀNH ĐỘNG) */
-  .action-card { 
-    background: #fff; 
-    padding: 28px; 
-    border-radius: 16px; 
-    border: 1px solid #f1f5f9; 
-    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-    position: sticky; 
-    top: 30px; 
-  }
-
-  .card-title {
-    font-size: 15px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #94a3b8;
-    margin: 0 0 20px 0;
-    font-weight: 700;
-  }
-
-  .specs-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .spec-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px dashed #f1f5f9;
-  }
-
-  .spec-label { color: #475569; font-weight: 500; display: flex; align-items: center; gap: 8px; }
-  .spec-value { font-weight: 700; color: #0f172a; }
-
-  .difficulty-pill {
-    background: #eff6ff;
-    color: #2563eb;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 13px;
-  }
-
+  .action-card { background: #fff; padding: 28px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); position: sticky; top: 30px; }
+  .card-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin: 0 0 20px 0; font-weight: 700; }
+  
+  .specs-list { display: flex; flex-direction: column; gap: 14px; }
+  .spec-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #f1f5f9; }
+  .spec-label { color: #475569; font-size: 14px; font-weight: 500; }
+  .spec-value { font-weight: 700; color: #0f172a; font-size: 14px; }
+  
+  .difficulty-pill { background: #eff6ff; color: #2563eb; padding: 2px 10px; border-radius: 99px; }
+  .file-tag { color: #2563eb; background: #eff6ff; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+  
   .divider { border: 0; border-top: 1px solid #f1f5f9; margin: 25px 0; }
-
-  .btn-submit-main { 
-    width: 100%; 
-    padding: 16px; 
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: white; 
-    border: none; 
-    border-radius: 12px; 
-    font-weight: 800; 
-    cursor: pointer; 
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-    font-size: 15px;
-  }
-
-  .btn-submit-main:hover { 
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
-  }
-
-  .status-notice { 
-    background: #fff1f2; 
-    padding: 15px; 
-    border-radius: 12px; 
-    border: 1px solid #fecdd3; 
-    text-align: center;
-    color: #be123c;
-    font-weight: 700;
-  }
-
-  .problem-meta {
-    margin-top: 25px;
-    text-align: center;
-    font-size: 13px;
-    color: #94a3b8;
-  }
-
+  
+  .btn-submit-main { width: 100%; padding: 16px; background: #2563eb; color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-bottom: 12px; }
+  .btn-submit-main:hover { background: #1d4ed8; transform: translateY(-2px); }
+  
+  .btn-print-side { width: 100%; padding: 12px; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; cursor: pointer; }
+  
+  .status-notice { background: #fff1f2; padding: 15px; border-radius: 12px; text-align: center; color: #be123c; font-weight: 700; margin-bottom: 12px; }
   .loading-container { padding: 100px; text-align: center; font-weight: 600; color: #64748b; }
 
-  @media (max-width: 1024px) {
-    .problem-main-layout { grid-template-columns: 1fr; }
-    .action-card { position: static; }
+  /* PRINT STYLES */
+  .print-only-specs { display: none; }
+  @media print {
+    .no-print { display: none !important; }
+    .problem-container { padding: 0; background: white; }
+    .problem-main-layout { display: block; }
+    .markdown-card { box-shadow: none; border: none; padding: 0; }
+    .print-only-specs { display: block; margin-bottom: 30px; }
+    .print-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12pt; }
+    .print-divider { margin-top: 15px; border: 0; border-top: 1px solid #000; }
   }
+`;
+
+const errorStyles = `
+  .error-page-container { display: flex; align-items: center; justify-content: center; min-height: 70vh; font-family: 'Inter', sans-serif; }
+  .error-card { background: white; padding: 40px; border-radius: 24px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
+  .error-illustration { font-size: 60px; margin-bottom: 20px; }
+  .btn-back-contest { padding: 12px 24px; background: #2563eb; color: white; border-radius: 12px; text-decoration: none; font-weight: 600; display: inline-block; }
 `;

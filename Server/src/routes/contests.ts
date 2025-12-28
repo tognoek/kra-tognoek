@@ -64,25 +64,17 @@ router.get("/by-user/:userId", async (req, res) => {
 // GET /api/contests/:contestId/problems/:problemId
 router.get("/:contestId/problems/:problemId", async (req, res) => {
   const { contestId, problemId } = req.params;
-  const { userId } = req.query; // Lấy userId từ query string (?userId=...)
+  const { userId } = req.query;
   try {
-    // 1. Kiểm tra ID có phải là số không trước khi chuyển sang BigInt để tránh crash
     if (isNaN(Number(contestId)) || isNaN(Number(problemId))) {
-      return res.status(400).json({ error: "ID cuộc thi hoặc ID bài tập không hợp lệ" });
+      return res.status(400).json({ error: "ID không hợp lệ" });
     }
 
-    // 2. Xử lý userId an toàn
     let userFilter: any = false;
     if (userId && userId !== "" && !isNaN(Number(userId))) {
-      userFilter = { 
-        where: { 
-          IdTaiKhoan: BigInt(userId as string), 
-          TrangThai: true 
-        } 
-      };
+      userFilter = { where: { IdTaiKhoan: BigInt(userId as string), TrangThai: true } };
     }
 
-    // 3. Truy vấn Database
     const contestProblem = await prisma.cuocThi_DeBai.findUnique({
       where: {
         IdCuocThi_IdDeBai: {
@@ -94,19 +86,20 @@ router.get("/:contestId/problems/:problemId", async (req, res) => {
         cuocThi: {
           include: {
             taiKhoan: { select: { HoTen: true } },
-            // Chỉ lấy thông tin đăng ký của user đang kiểm tra
             dangKys: userFilter 
           }
         },
         deBai: {
-          include: { taiKhoan: { select: { IdTaiKhoan: true, HoTen: true } } }
+          include: { 
+            taiKhoan: { select: { IdTaiKhoan: true, HoTen: true } },
+            boTests: { take: 1 } // Lấy 1 bộ test để kiểm tra đường dẫn
+          }
         }
       },
     });
 
-    // Nếu không tìm thấy hoặc bài thi trong contest bị ẩn (TrangThai = false)
     if (!contestProblem || contestProblem.TrangThai === false) {
-      return res.status(404).json({ error: "Bài tập không tồn tại hoặc đã bị gỡ khỏi cuộc thi" });
+      return res.status(404).json({ error: "Bài tập không tồn tại" });
     }
 
     const { cuocThi, deBai, TenHienThi } = contestProblem;
@@ -114,23 +107,17 @@ router.get("/:contestId/problems/:problemId", async (req, res) => {
     const start = new Date(cuocThi.ThoiGianBatDau);
     const end = new Date(cuocThi.ThoiGianKetThuc);
 
-    // 4. KIỂM TRA THỜI GIAN: Nếu chưa đến giờ, không cho xem đề
     if (now < start) {
-      return res.status(403).json({ 
-        error: "Cuộc thi chưa bắt đầu. Bạn không thể xem nội dung đề bài lúc này.",
-        startTime: cuocThi.ThoiGianBatDau,
-        serverTime: now
-      });
+      return res.status(403).json({ error: "Cuộc thi chưa bắt đầu." });
     }
 
-    // 5. KIỂM TRA QUYỀN: Đã đăng ký hay chưa? Cuộc thi kết thúc chưa?
     const isRegistered = Array.isArray(cuocThi.dangKys) && cuocThi.dangKys.length > 0;
     const isEnded = now > end;
-    
-    // Chỉ cho phép nộp nếu: Đã đăng ký VÀ Cuộc thi đang diễn ra
     const canSubmit = isRegistered && (now >= start && now <= end);
 
-    // 6. Trả về dữ liệu
+    // Lấy thông tin file input/output từ bộ test đầu tiên
+    const firstTest = deBai.boTests[0];
+
     res.json({
       contestInfo: {
         IdCuocThi: contestId,
@@ -145,21 +132,21 @@ router.get("/:contestId/problems/:problemId", async (req, res) => {
         DoKho: deBai.DoKho,
         GioiHanThoiGian: deBai.GioiHanThoiGian,
         GioiHanBoNho: deBai.GioiHanBoNho,
-        NguoiTaoDe: deBai.taiKhoan.HoTen
+        NguoiTaoDe: deBai.taiKhoan.HoTen,
+        // 3 THUỘC TÍNH MỚI
+        isReady: !!(firstTest?.DuongDanInput && firstTest?.DuongDanOutput),
+        DuongDanInput: firstTest?.DuongDanInput ?? "",
+        DuongDanOutput: firstTest?.DuongDanOutput ?? ""
       },
       permissions: {
         canSubmit,
         isRegistered,
         isEnded,
-        message: isEnded 
-          ? "Cuộc thi đã kết thúc." 
-          : (!isRegistered ? "Bạn cần đăng ký cuộc thi để nộp bài." : "Bạn có thể nộp bài.")
+        message: isEnded ? "Kết thúc" : (isRegistered ? "Sẵn sàng" : "Chưa đăng ký")
       }
     });
-
-  } catch (error: any) {
-    console.error("Error at Contest Problem Detail API:", error);
-    res.status(500).json({ error: "Lỗi hệ thống khi xử lý yêu cầu" });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi hệ thống" });
   }
 });
 

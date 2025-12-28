@@ -79,6 +79,10 @@ export default function ProblemDetailPage() {
   const diffVal = Number(problem.DoKho) || 1;
   const diffLevel = getDifficultyLevel(diffVal);
 
+  // Logic xử lý phương thức nhập xuất
+  const inputMethod = problem.DuongDanInput ? problem.DuongDanInput : "Bàn phím (stdin)";
+  const outputMethod = problem.DuongDanOutput ? problem.DuongDanOutput : "Màn hình (stdout)";
+
   return (
     <div className="problem-detail-wrapper">
       <style dangerouslySetInnerHTML={{ __html: modernProblemStyles }} />
@@ -106,9 +110,15 @@ export default function ProblemDetailPage() {
             <div className="print-header">
                <h1>{problem.TieuDe}</h1>
                <div className="print-specs">
-                  <span>⏱️ <b>Thời gian:</b> {problem.GioiHanThoiGian}ms</span>
-                  <span>💾 <b>Bộ nhớ:</b> {problem.GioiHanBoNho}MB</span>
-                  <span>📈 <b>Độ khó:</b> {diffVal}/10</span>
+                  <div className="print-specs-row">
+                    <span>⏱️ <b>Thời gian:</b> {problem.GioiHanThoiGian}ms</span>
+                    <span>💾 <b>Bộ nhớ:</b> {problem.GioiHanBoNho}MB</span>
+                    <span>📈 <b>Độ khó:</b> {diffVal}/10</span>
+                  </div>
+                  <div className="print-specs-row">
+                    <span>📥 <b>Nhập từ:</b> {inputMethod}</span>
+                    <span>📤 <b>Xuất ra:</b> {outputMethod}</span>
+                  </div>
                </div>
                <hr />
             </div>
@@ -152,6 +162,16 @@ export default function ProblemDetailPage() {
                 <span className="stat-label">💾 Giới hạn bộ nhớ</span>
                 <span className="stat-value">{problem.GioiHanBoNho} MB</span>
               </div>
+
+              <div className="stat-item">
+                <span className="stat-label">📥 Dữ liệu vào</span>
+                <span className={`stat-value ${problem.DuongDanInput ? "text-highlight" : ""}`}>{inputMethod}</span>
+              </div>
+
+              <div className="stat-item">
+                <span className="stat-label">📤 Dữ liệu ra</span>
+                <span className={`stat-value ${problem.DuongDanOutput ? "text-highlight" : ""}`}>{outputMethod}</span>
+              </div>
             </div>
 
             <div className="sidebar-divider"></div>
@@ -179,11 +199,7 @@ export default function ProblemDetailPage() {
 const modernProblemStyles = `
   .problem-detail-wrapper { max-width: 1300px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', system-ui, sans-serif; }
   
-  /* Hero Header */
   .problem-hero { display: flex; justify-content: space-between; align-items: center; background: white; padding: 30px; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-  .breadcrumb { font-size: 13px; color: #64748b; margin-bottom: 8px; }
-  .breadcrumb span { margin: 0 8px; }
-  .breadcrumb a { color: #2563eb; text-decoration: none; }
   .problem-title { font-size: 2rem; font-weight: 800; color: #0f172a; margin: 0; }
   .author-tag { margin-top: 10px; font-size: 14px; color: #64748b; }
   .author-tag b { color: #1e293b; }
@@ -191,20 +207,18 @@ const modernProblemStyles = `
   .btn-submit-hero { background: #2563eb; color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
   .btn-submit-hero:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(37,99,235,0.3); }
 
-  /* Layout */
   .problem-grid-layout { display: grid; grid-template-columns: 1fr 340px; gap: 30px; align-items: start; }
   .content-card { background: white; padding: 40px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04); }
   .card-title-internal { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 25px; border-left: 4px solid #2563eb; padding-left: 15px; }
 
-  /* Sidebar */
   .sidebar-card { background: white; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; position: sticky; top: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04); }
   .sidebar-title { font-size: 13px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 20px; }
   .stat-list { display: flex; flex-direction: column; gap: 20px; }
   .stat-item { display: flex; flex-direction: column; gap: 8px; }
   .stat-label { font-size: 13px; font-weight: 600; color: #64748b; }
   .stat-value { font-size: 16px; font-weight: 700; color: #0f172a; }
+  .text-highlight { color: #2563eb; }
 
-  /* Difficulty UI */
   .diff-bar-container { display: flex; flex-direction: column; gap: 6px; }
   .diff-status-text { font-size: 11px; font-weight: 800; text-transform: uppercase; }
   .diff-progress-bg { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
@@ -221,23 +235,22 @@ const modernProblemStyles = `
   .btn-tool:hover, .btn-tool-link:hover { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
 
   .markdown-body { line-height: 1.8; color: #334155; font-size: 16px; }
-  .comments-section-container { margin-top: 30px; }
 
   @media (max-width: 1024px) {
     .problem-grid-layout { grid-template-columns: 1fr; }
     .sidebar-card { position: static; }
-    .problem-hero { flex-direction: column; align-items: flex-start; gap: 20px; }
   }
 
   @media print {
     body * { visibility: hidden; }
     .printable-area, .printable-area * { visibility: visible; }
     .printable-area { position: absolute; left: 0; top: 0; width: 100%; }
-    .content-card { border: none !important; box-shadow: none !important; padding: 0 !important; }
-    .print-header { display: block !important; margin-bottom: 20px; }
-    .print-header h1 { font-size: 26pt; margin-bottom: 10pt; }
-    .print-specs { display: flex; gap: 30pt; font-size: 12pt; }
+    .print-header { display: block !important; margin-bottom: 30px; }
+    .print-header h1 { font-size: 24pt; margin-bottom: 10pt; }
+    .print-specs { display: flex; flex-direction: column; gap: 10pt; font-size: 12pt; }
+    .print-specs-row { display: flex; gap: 40pt; }
     .no-print { display: none !important; }
+    .content-card { border: none !important; box-shadow: none !important; padding: 0 !important; }
   }
   .print-header { display: none; }
 `;
@@ -246,8 +259,5 @@ const errorStyles = `
   .error-container { display: flex; align-items: center; justify-content: center; min-height: 70vh; }
   .error-card { background: white; padding: 50px; border-radius: 24px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); max-width: 450px; border: 1px solid #f1f5f9; }
   .error-icon { font-size: 60px; margin-bottom: 20px; }
-  .error-card h2 { font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
-  .error-card p { color: #64748b; margin-bottom: 30px; line-height: 1.6; }
   .btn-back-home { background: #2563eb; color: white; text-decoration: none; padding: 12px 25px; border-radius: 12px; font-weight: 600; display: inline-block; transition: 0.2s; }
-  .btn-back-home:hover { background: #1d4ed8; transform: translateY(-2px); }
 `;
