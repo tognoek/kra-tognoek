@@ -241,7 +241,7 @@ export default function EditProblemPage() {
 
             <div className="test-config-box">
                <div className="test-header">
-                  <h4>⚠️ Cập nhật Bộ Test (Ghi đè)</h4>
+                  <h4>⚠️ Cập nhật Bộ Test</h4>
                   <p>Chỉ upload file nếu bạn muốn thay thế toàn bộ test case cũ.</p>
                </div>
                

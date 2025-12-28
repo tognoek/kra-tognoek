@@ -11,6 +11,7 @@ import health from "./health";
 import auth from "./auth";
 import admin from "./admin";
 import upload from "./upload";
+import rank from "./rank"
 
 export const router = Router();
 
@@ -22,6 +23,7 @@ router.use("/topics", topics);
 router.use("/problems", problems);
 router.use("/comments", comments);
 router.use("/contests", contests);
+router.use("/ranks", rank);
 router.use("/submissions", submissions);
 router.use("/languages", languages);
 router.use("/admin", admin);

@@ -6,107 +6,94 @@ const router = Router();
 
 // GET /api/submissions
 router.get("/", async (req, res) => {
-  const { status, problemId, userId, contestId } = req.query;
-  const where: any = {};
-  
-  if (status) where.TrangThaiCham = status;
-  if (problemId) where.IdDeBai = BigInt(problemId as string);
-  if (userId) where.IdTaiKhoan = BigInt(userId as string);
-  if (contestId) where.IdCuocThi = BigInt(contestId as string);
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 15;
+    const skip = (page - 1) * limit;
+    const { q, status, problemId, userId, contestId } = req.query;
 
-  const data = await prisma.baiNop.findMany({
-    where,
-    include: {
-      deBai: { select: { IdDeBai: true, TieuDe: true } },
-      taiKhoan: { select: { IdTaiKhoan: true, HoTen: true } },
-      ngonNgu: { select: { IdNgonNgu: true, TenNhanDien: true } },
-    },
-    orderBy: { NgayNop: "desc" },
-    take: 100,
-  });
-  res.json(
-    data.map((s) => {
-      // TrangThaiCham: null = đang chấm, JSON string của mảng codes = "[0,0,1,2,0]"
-      // Parse và format lại cho frontend
+    const where: any = {};
+    if (problemId) where.IdDeBai = BigInt(problemId as string);
+    if (userId) where.IdTaiKhoan = BigInt(userId as string);
+    if (contestId) where.IdCuocThi = BigInt(contestId as string);
+
+    // Lọc theo tên bài hoặc người dùng (Search)
+    if (q) {
+      where.OR = [
+        { deBai: { TieuDe: { contains: q as string } } },
+        { taiKhoan: { HoTen: { contains: q as string } } },
+        { taiKhoan: { TenDangNhap: { contains: q as string } } }
+      ];
+    }
+
+    // Lọc theo trạng thái (Xử lý đơn giản ở tầng DB, format chi tiết ở Map)
+    if (status && status !== "all") {
+        if (status === "pending") where.TrangThaiCham = null;
+        // Các trạng thái khác sẽ được filter sau khi map hoặc dùng raw query nếu cần phức tạp hơn
+    }
+
+    const [data, total] = await Promise.all([
+      prisma.baiNop.findMany({
+        where,
+        include: {
+          deBai: { select: { IdDeBai: true, TieuDe: true } },
+          taiKhoan: { select: { IdTaiKhoan: true, HoTen: true, TenDangNhap: true } },
+          ngonNgu: { select: { IdNgonNgu: true, TenNhanDien: true } },
+        },
+        orderBy: { NgayNop: "desc" }, // Luôn mới nhất lên đầu
+        skip,
+        take: limit,
+      }),
+      prisma.baiNop.count({ where })
+    ]);
+
+    const formattedData = data.map((s) => {
       let trangThaiCham: string | null = s.TrangThaiCham;
-      let ketQuaCham: number[] | null = null;
-
       if (s.TrangThaiCham) {
         try {
-          ketQuaCham = JSON.parse(s.TrangThaiCham);
-          if (Array.isArray(ketQuaCham) && ketQuaCham.length > 0) {
-            const codes = ketQuaCham;
+          const codes = JSON.parse(s.TrangThaiCham);
+          if (Array.isArray(codes) && codes.length > 0) {
             const totalTests = codes.length;
-
-            // Kiểm tra lỗi biên dịch (code -1)
-            const compileErrorIndex = codes.findIndex((code) => code === -1);
-            if (compileErrorIndex !== -1) {
-              trangThaiCham = "compile_error";
-            } else {
-              // Kiểm tra memory limit exceeded (code 3)
-              const memoryLimitIndex = codes.findIndex((code) => code === 3);
-              if (memoryLimitIndex !== -1) {
-                trangThaiCham = `memory_limit_exceeded:${memoryLimitIndex + 1}/${totalTests}`;
-              } else {
-                // Kiểm tra timeout (code 2)
-                const timeoutIndex = codes.findIndex((code) => code === 2);
-                if (timeoutIndex !== -1) {
-                  trangThaiCham = `time_limit_exceeded:${timeoutIndex + 1}/${totalTests}`;
-                } else {
-                  // Kiểm tra wrong answer (code 1)
-                  const wrongIndex = codes.findIndex((code) => code === 1);
-                  if (wrongIndex !== -1) {
-                    trangThaiCham = `wrong_answer:${wrongIndex + 1}/${totalTests}`;
-                  } else {
-                    // Tất cả đều đúng (code 0)
-                    const allPass = codes.every((code) => code === 0);
-                    if (allPass) {
-                      trangThaiCham = "accepted";
-                    }
-                  }
+            const compileErrorIndex = codes.findIndex((c) => c === -1);
+            if (compileErrorIndex !== -1) trangThaiCham = "compile_error";
+            else {
+              const memoryIndex = codes.findIndex((c) => c === 3);
+              if (memoryIndex !== -1) trangThaiCham = `memory_limit_exceeded:${memoryIndex + 1}/${totalTests}`;
+              else {
+                const timeoutIndex = codes.findIndex((c) => c === 2);
+                if (timeoutIndex !== -1) trangThaiCham = `time_limit_exceeded:${timeoutIndex + 1}/${totalTests}`;
+                else {
+                  const wrongIndex = codes.findIndex((c) => c === 1);
+                  if (wrongIndex !== -1) trangThaiCham = `wrong_answer:${wrongIndex + 1}/${totalTests}`;
+                  else if (codes.every((c) => c === 0)) trangThaiCham = "accepted";
                 }
               }
             }
           }
-        } catch (e) {
-          console.error("Parse TrangThaiCham error:", e);
-          // Giữ nguyên giá trị nếu parse lỗi
-        }
+        } catch (e) { console.error(e); }
       }
 
       return {
+        ...s,
         IdBaiNop: s.IdBaiNop.toString(),
         IdTaiKhoan: s.IdTaiKhoan.toString(),
         IdDeBai: s.IdDeBai.toString(),
-        IdNgonNgu: s.IdNgonNgu.toString(),
-        IdCuocThi: s.IdCuocThi ? s.IdCuocThi.toString() : null,
-        DuongDanCode: s.DuongDanCode,
-        TrangThaiCham: trangThaiCham, // null = đang chấm, hoặc formatted string
-        KetQuaCham: ketQuaCham, // Mảng codes gốc để frontend có thể dùng
-        ThoiGianThucThi: s.ThoiGianThucThi,
-        BoNhoSuDung: s.BoNhoSuDung,
+        TrangThaiCham: trangThaiCham,
         NgayNop: s.NgayNop,
-        deBai: s.deBai
-          ? {
-              IdDeBai: s.deBai.IdDeBai.toString(),
-              TieuDe: s.deBai.TieuDe,
-            }
-          : null,
-        taiKhoan: s.taiKhoan
-          ? {
-              IdTaiKhoan: s.taiKhoan.IdTaiKhoan.toString(),
-              HoTen: s.taiKhoan.HoTen.toString(),
-            }
-          : null,
-        ngonNgu: s.ngonNgu
-          ? {
-              IdNgonNgu: s.ngonNgu.IdNgonNgu.toString(),
-              TenNhanDien: s.ngonNgu.TenNhanDien,
-            }
-          : null,
+        deBai: s.deBai ? { ...s.deBai, IdDeBai: s.deBai.IdDeBai.toString() } : null,
+        taiKhoan: s.taiKhoan ? { ...s.taiKhoan, IdTaiKhoan: s.taiKhoan.IdTaiKhoan.toString() } : null,
       };
-    })
-  );
+    });
+
+    res.json({
+      submissions: formattedData,
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi Server" });
+  }
 });
 
 // POST /api/submissions

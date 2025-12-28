@@ -61,42 +61,326 @@ router.get("/by-user/:userId", async (req, res) => {
   }
 });
 
-// GET /api/contests - Lấy danh sách cuộc thi
-router.get("/", async (_req, res) => {
+// GET /api/contests/:contestId/problems/:problemId
+router.get("/:contestId/problems/:problemId", async (req, res) => {
+  const { contestId, problemId } = req.params;
+  const { userId } = req.query; // Lấy userId từ query string (?userId=...)
   try {
-    const data = await prisma.cuocThi.findMany({
-      include: {
-        deBais: { include: { deBai: true } },
+    // 1. Kiểm tra ID có phải là số không trước khi chuyển sang BigInt để tránh crash
+    if (isNaN(Number(contestId)) || isNaN(Number(problemId))) {
+      return res.status(400).json({ error: "ID cuộc thi hoặc ID bài tập không hợp lệ" });
+    }
+
+    // 2. Xử lý userId an toàn
+    let userFilter: any = false;
+    if (userId && userId !== "" && !isNaN(Number(userId))) {
+      userFilter = { 
+        where: { 
+          IdTaiKhoan: BigInt(userId as string), 
+          TrangThai: true 
+        } 
+      };
+    }
+
+    // 3. Truy vấn Database
+    const contestProblem = await prisma.cuocThi_DeBai.findUnique({
+      where: {
+        IdCuocThi_IdDeBai: {
+          IdCuocThi: BigInt(contestId),
+          IdDeBai: BigInt(problemId),
+        },
       },
-      orderBy: { NgayTao: "desc" },
+      include: {
+        cuocThi: {
+          include: {
+            taiKhoan: { select: { HoTen: true } },
+            // Chỉ lấy thông tin đăng ký của user đang kiểm tra
+            dangKys: userFilter 
+          }
+        },
+        deBai: {
+          include: { taiKhoan: { select: { IdTaiKhoan: true, HoTen: true } } }
+        }
+      },
     });
 
-    res.json(
-      data.map((c) => ({
+    // Nếu không tìm thấy hoặc bài thi trong contest bị ẩn (TrangThai = false)
+    if (!contestProblem || contestProblem.TrangThai === false) {
+      return res.status(404).json({ error: "Bài tập không tồn tại hoặc đã bị gỡ khỏi cuộc thi" });
+    }
+
+    const { cuocThi, deBai, TenHienThi } = contestProblem;
+    const now = new Date();
+    const start = new Date(cuocThi.ThoiGianBatDau);
+    const end = new Date(cuocThi.ThoiGianKetThuc);
+
+    // 4. KIỂM TRA THỜI GIAN: Nếu chưa đến giờ, không cho xem đề
+    if (now < start) {
+      return res.status(403).json({ 
+        error: "Cuộc thi chưa bắt đầu. Bạn không thể xem nội dung đề bài lúc này.",
+        startTime: cuocThi.ThoiGianBatDau,
+        serverTime: now
+      });
+    }
+
+    // 5. KIỂM TRA QUYỀN: Đã đăng ký hay chưa? Cuộc thi kết thúc chưa?
+    const isRegistered = Array.isArray(cuocThi.dangKys) && cuocThi.dangKys.length > 0;
+    const isEnded = now > end;
+    
+    // Chỉ cho phép nộp nếu: Đã đăng ký VÀ Cuộc thi đang diễn ra
+    const canSubmit = isRegistered && (now >= start && now <= end);
+
+    // 6. Trả về dữ liệu
+    res.json({
+      contestInfo: {
+        IdCuocThi: contestId,
+        TenCuocThi: cuocThi.TenCuocThi,
+        NguoiTaoContest: cuocThi.taiKhoan.HoTen,
+        Status: isEnded ? "Finished" : "Running",
+      },
+      problem: {
+        IdDeBai: deBai.IdDeBai.toString(),
+        TieuDe: TenHienThi || deBai.TieuDe,
+        NoiDungDeBai: deBai.NoiDungDeBai,
+        DoKho: deBai.DoKho,
+        GioiHanThoiGian: deBai.GioiHanThoiGian,
+        GioiHanBoNho: deBai.GioiHanBoNho,
+        NguoiTaoDe: deBai.taiKhoan.HoTen
+      },
+      permissions: {
+        canSubmit,
+        isRegistered,
+        isEnded,
+        message: isEnded 
+          ? "Cuộc thi đã kết thúc." 
+          : (!isRegistered ? "Bạn cần đăng ký cuộc thi để nộp bài." : "Bạn có thể nộp bài.")
+      }
+    });
+
+  } catch (error: any) {
+    console.error("Error at Contest Problem Detail API:", error);
+    res.status(500).json({ error: "Lỗi hệ thống khi xử lý yêu cầu" });
+  }
+});
+
+// [GET] /api/contests/:id - Lấy chi tiết cuộc thi & Kiểm tra trạng thái đăng ký
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Đảm bảo id là số trước khi chuyển BigInt
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ error: "ID cuộc thi không hợp lệ" });
+    }
+    const contestId = BigInt(id);
+
+    // Lấy userId từ query và ép kiểu an toàn về string
+    const userIdRaw = req.query.userId;
+    const userIdStr = typeof userIdRaw === 'string' ? userIdRaw : null;
+    
+    // Kiểm tra xem userIdStr có phải là một con số hợp lệ không
+    const isValidUserId = userIdStr && !isNaN(Number(userIdStr)) && userIdStr !== "null" && userIdStr !== "undefined";
+
+    const contest = await prisma.cuocThi.findUnique({
+      where: { IdCuocThi: contestId },
+      include: {
+        taiKhoan: { select: { IdTaiKhoan: true, TenDangNhap: true, HoTen: true } },
+        deBais: {
+          where: { TrangThai: true },
+          include: { deBai: true },
+          orderBy: { IdDeBai: "asc" },
+        },
+        // Chỉ thực hiện truy vấn bảng đăng ký nếu có userId hợp lệ
+        dangKys: isValidUserId ? {
+          where: { 
+            IdTaiKhoan: BigInt(userIdStr),
+            // Ta không lọc TrangThai: true ở đây để lát nữa check được cả trường hợp user đã hủy
+          } 
+        } : false,
+        _count: { select: { baiNops: true, dangKys: true } },
+      },
+    });
+
+    if (!contest) return res.status(404).json({ error: "Cuộc thi không tồn tại" });
+
+    // Kiểm tra trạng thái đăng ký
+    // contest.dangKys lúc này là mảng chứa 1 phần tử (vì kết hợp khóa chính IdCuocThi + IdTaiKhoan)
+    const isRegistered = Array.isArray(contest.dangKys) && 
+                         contest.dangKys.length > 0 && 
+                         contest.dangKys[0].TrangThai === true;
+
+    const totalActiveRegistrations = await prisma.cuocThi_DangKy.count({
+      where: {
+        IdCuocThi: contestId,
+        TrangThai: true
+      }
+    });
+
+    const now = new Date();
+    const start = new Date(contest.ThoiGianBatDau);
+    const end = new Date(contest.ThoiGianKetThuc);
+    
+    // Tính toán Status
+    let status = "Kết thúc";
+    if (!contest.TrangThai) {
+      status = "Đóng";
+    } else if (now < start) {
+      status = "Sắp mở";
+    } else if (now >= start && now <= end) {
+      status = "Đang thi";
+    }
+
+    // Trả về dữ liệu và ép kiểu BigInt sang String để JSON không lỗi
+    res.json({
+      IdCuocThi: contest.IdCuocThi.toString(),
+      IdTaiKhoan: contest.IdTaiKhoan.toString(),
+      TenCuocThi: contest.TenCuocThi,
+      MoTa: contest.MoTa,
+      ThoiGianBatDau: contest.ThoiGianBatDau,
+      ThoiGianKetThuc: contest.ThoiGianKetThuc,
+      TrangThai: contest.TrangThai,
+      NgayTao: contest.NgayTao,
+      ChuY: contest.ChuY,
+      taiKhoan: {
+        ...contest.taiKhoan,
+        IdTaiKhoan: contest.taiKhoan.IdTaiKhoan.toString()
+      },
+      // Map lại danh sách đề bài để convert BigInt
+      deBais: contest.deBais.map(d => ({
+        ...d,
+        IdCuocThi: d.IdCuocThi.toString(),
+        IdDeBai: d.IdDeBai.toString(),
+        deBai: d.deBai ? {
+          ...d.deBai,
+          IdDeBai: d.deBai.IdDeBai.toString()
+        } : null
+      })),
+      isUserRegistered: isRegistered,
+      Status: status,
+      stats: {
+        totalProblems: contest.deBais.length,
+        totalRegistrations: totalActiveRegistrations,
+        totalSubmissions: contest._count.baiNops,
+      }
+    });
+  } catch (error: any) {
+    console.error("API Error:", error);
+    res.status(500).json({ error: "Lỗi hệ thống khi tải thông tin cuộc thi" });
+  }
+});
+
+// [POST] /api/contests/:id/register - Đăng ký
+router.post("/:id/register", async (req, res) => {
+  try {
+    const { IdTaiKhoan } = req.body;
+    const registration = await prisma.cuocThi_DangKy.upsert({
+      where: { IdCuocThi_IdTaiKhoan: { IdCuocThi: BigInt(req.params.id), IdTaiKhoan: BigInt(IdTaiKhoan) } },
+      update: { TrangThai: true },
+      create: { IdCuocThi: BigInt(req.params.id), IdTaiKhoan: BigInt(IdTaiKhoan), TrangThai: true }
+    });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: "Lỗi đăng ký" }); }
+});
+
+// [PUT] /api/contests/:id/unregister - Hủy đăng ký
+router.put("/:id/unregister", async (req, res) => {
+  try {
+    const { IdTaiKhoan } = req.body;
+    await prisma.cuocThi_DangKy.update({
+      where: { IdCuocThi_IdTaiKhoan: { IdCuocThi: BigInt(req.params.id), IdTaiKhoan: BigInt(IdTaiKhoan) } },
+      data: { TrangThai: false }
+    });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: "Lỗi hủy đăng ký" }); }
+});
+
+// GET /api/contests - Lấy danh sách cuộc thi có phân trang
+router.get("/", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.cuocThi.findMany({
+        include: {
+          deBais: { include: { deBai: true } },
+          taiKhoan: { select: { HoTen: true } } // Lấy tên người tạo
+        },
+        orderBy: { ThoiGianBatDau: "desc" },
+        skip: skip,
+        take: limit,
+      }),
+      prisma.cuocThi.count() // Tổng số cuộc thi để tính số trang
+    ]);
+
+    res.json({
+      contests: data.map((c) => ({
+        ...c,
         IdCuocThi: c.IdCuocThi.toString(),
         IdTaiKhoan: c.IdTaiKhoan.toString(),
-        TenCuocThi: c.TenCuocThi,
-        MoTa: c.MoTa,
-        ThoiGianBatDau: c.ThoiGianBatDau,
-        ThoiGianKetThuc: c.ThoiGianKetThuc,
-        TrangThai: c.TrangThai,
-        NgayTao: c.NgayTao,
-        ChuY: c.ChuY,
+        HoTenTacGia: c.taiKhoan?.HoTen || "Admin",
         deBais: c.deBais.map((d) => ({
           IdCuocThi: d.IdCuocThi.toString(),
           IdDeBai: d.IdDeBai.toString(),
           TenHienThi: d.TenHienThi,
-          deBai: d.deBai
-            ? {
-                IdDeBai: d.deBai.IdDeBai.toString(),
-                TieuDe: d.deBai.TieuDe,
-              }
-            : null,
         })),
-      }))
-    );
+      })),
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to load contests" });
+  }
+});
+
+// GET /api/contests/:id/submissions - Lấy danh sách bài nộp của cuộc thi
+router.get("/:id/submissions", async (req, res) => {
+  try {
+    const contestId = BigInt(req.params.id);
+    
+    // Ép kiểu an toàn từ query
+    const querySearch = req.query.q as string | undefined;
+    const queryProblemId = req.query.problemId as string | undefined;
+
+    const submissions = await prisma.baiNop.findMany({
+      where: {
+        IdCuocThi: contestId,
+        AND: [
+          // Lọc theo tên người nộp (nếu có)
+          querySearch ? {
+            taiKhoan: {
+              OR: [
+                { HoTen: { contains: querySearch } },
+                { TenDangNhap: { contains: querySearch } }
+              ]
+            }
+          } : {},
+          // Lọc theo ID bài tập (nếu có và phải là số)
+          (queryProblemId && !isNaN(Number(queryProblemId))) ? { 
+            IdDeBai: BigInt(queryProblemId) 
+          } : {}
+        ]
+      },
+      include: {
+        taiKhoan: { select: { HoTen: true, TenDangNhap: true } },
+        deBai: { select: { TieuDe: true } },
+        ngonNgu: { select: { TenNgonNgu: true } }
+      },
+      orderBy: { NgayNop: "desc" }
+    });
+
+    res.json(submissions.map(s => ({
+      ...s,
+      IdBaiNop: s.IdBaiNop.toString(),
+      IdTaiKhoan: s.IdTaiKhoan.toString(),
+      IdDeBai: s.IdDeBai.toString(),
+      IdNgonNgu: s.IdNgonNgu.toString(),
+      IdCuocThi: s.IdCuocThi?.toString(),
+    })));
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to load contests" });
+    console.error("Error fetching submissions:", error);
+    res.status(500).json({ error: "Lỗi khi tải danh sách bài nộp" });
   }
 });
 
@@ -296,7 +580,9 @@ router.get("/:id", async (req, res) => {
     const contestId = BigInt(req.params.id);
 
     const contest = await prisma.cuocThi.findUnique({
-      where: { IdCuocThi: contestId },
+      where: { 
+        IdCuocThi: contestId,
+      },
       include: {
         taiKhoan: {
           select: {
@@ -307,6 +593,9 @@ router.get("/:id", async (req, res) => {
           },
         },
         deBais: {
+          where: {
+            TrangThai: true,
+          },
           include: {
             deBai: {
               select: {

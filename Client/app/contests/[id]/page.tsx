@@ -1,404 +1,331 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
-import StatusBadge from "../../components/StatusBadge";
-import DifficultyBadge from "../../components/DifficultyBadge";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// Badge Trạng thái đồng bộ màu sắc mới
+const StatusBadge = ({ status }: { status: string }) => {
+  const colors: any = { 
+    "Đang thi": "#2563eb",  // Xanh dương
+    "Sắp mở": "#10b981",    // Xanh lá
+    "Kết thúc": "#64748b",  // Xám
+    "Đóng": "#ef4444"       // Đỏ
+  };
+  return (
+    <span style={{ 
+      background: colors[status] || "#64748b", 
+      color: "white", 
+      padding: "4px 12px", 
+      borderRadius: "99px", 
+      fontSize: "0.75rem", 
+      fontWeight: 700,
+      textTransform: "uppercase"
+    }}>
+      {status}
+    </span>
+  );
+};
+
+const DifficultyBadge = ({ difficulty }: { difficulty: any }) => {
+  const val = Number(difficulty);
+  const color = val <= 3 ? "#22c55e" : val <= 7 ? "#f59e0b" : "#ef4444";
+  return <span style={{ color, fontWeight: 700 }}>{val}/10</span>;
+};
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
-
-interface ContestDetail {
-  IdCuocThi: string;
-  IdTaiKhoan: string;
-  TenCuocThi: string;
-  MoTa: string;
-  ThoiGianBatDau: string;
-  ThoiGianKetThuc: string;
-  TrangThai: boolean;
-  NgayTao: string;
-  ChuY?: string;
-  Status: string;
-  taiKhoan: {
-    IdTaiKhoan: string;
-    TenDangNhap: string;
-    HoTen: string;
-    Email: string;
-  };
-  deBais: Array<{
-    IdCuocThi: string;
-    IdDeBai: string;
-    TenHienThi?: string;
-    deBai: {
-      IdDeBai: string;
-      TieuDe: string;
-      DoKho: string;
-      GioiHanThoiGian: number;
-      GioiHanBoNho: number;
-    } | null;
-  }>;
-  dangKys: Array<{
-    IdCuocThi: string;
-    IdTaiKhoan: string;
-    TrangThai: boolean;
-    taiKhoan: {
-      IdTaiKhoan: string;
-      TenDangNhap: string;
-      HoTen: string;
-    };
-  }>;
-  stats: {
-    totalProblems: number;
-    totalRegistrations: number;
-    totalSubmissions: number;
-  };
-}
 
 export default function ContestDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [contest, setContest] = useState<ContestDetail | null>(null);
+  const [contest, setContest] = useState<any>(null);
+  const [rankData, setRankData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    const fetchContest = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/contests/${params.id}`, {
-          cache: "no-store",
-        });
+    const uStr = localStorage.getItem("oj_user");
+    if (uStr) setUser(JSON.parse(uStr));
+  }, []);
 
-        if (!res.ok) {
-          if (res.status === 404) {
-            throw new Error("Cuộc thi không tồn tại");
-          }
-          throw new Error("Không tải được thông tin cuộc thi");
-        }
+  const fetchContest = useCallback(async () => {
+    try {
+      const uStr = localStorage.getItem("oj_user");
+      const uId = uStr ? JSON.parse(uStr).IdTaiKhoan : "";
+      
+      const res = await fetch(`${API_BASE}/api/contests/${params.id}?userId=${uId}`, { cache: "no-store" });
+      if (!res.ok) throw new Error("Không thể tải dữ liệu");
+      const data = await res.json();
 
-        const data = await res.json();
-        setContest(data);
+      // Tính toán Status tiếng Việt đồng bộ với trang danh sách
+      const now = new Date();
+      const start = new Date(data.ThoiGianBatDau);
+      const end = new Date(data.ThoiGianKetThuc);
+      let statusText = "Kết thúc";
+      if (!data.TrangThai) statusText = "Đóng";
+      else if (now < start) statusText = "Sắp mở";
+      else if (now >= start && now <= end) statusText = "Đang thi";
+      
+      data.vnStatus = statusText;
+      setContest(data);
 
-        // Update page title
-        if (typeof document !== "undefined") {
-          document.title = `${
-            data.TenCuocThi || `Cuộc thi ${params.id}`
-          } - OJ Portal`;
+      if (statusText !== "Sắp mở") {
+        const rankRes = await fetch(`${API_BASE}/api/ranks/${params.id}`);
+        if (rankRes.ok) {
+          const rData = await rankRes.json();
+          setRankData(rData.leaderboard.slice(0, 3));
         }
-      } catch (e: any) {
-        setError(e.message);
-        if (typeof document !== "undefined") {
-          document.title = "Chi tiết cuộc thi - OJ Portal";
-        }
-      } finally {
-        setLoading(false);
       }
-    };
-
-    if (params.id) {
-      fetchContest();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
     }
   }, [params.id]);
 
-  if (loading) {
-    return (
-      <div>
-        <h1 className="section-title">Chi tiết cuộc thi</h1>
-        <div className="loading">Đang tải...</div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (params.id) fetchContest();
+  }, [params.id, user, fetchContest]);
 
-  if (error || !contest) {
-    return (
-      <div>
-        <h1 className="section-title">Chi tiết cuộc thi</h1>
-        <p style={{ color: "red" }}>{error || "Không tìm thấy cuộc thi"}</p>
-        <Link
-          href="/contests"
-          className="button"
-          style={{ marginTop: "16px", display: "inline-block" }}
-        >
-          ← Quay lại danh sách
-        </Link>
-      </div>
-    );
-  }
+  const handleAction = async (action: "register" | "unregister") => {
+    if (!user) return router.push("/auth/login");
+    setProcessing(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/contests/${params.id}/${action}`, {
+        method: action === "register" ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ IdTaiKhoan: user.IdTaiKhoan }),
+      });
+      if (res.ok) {
+        toast.success(action === "register" ? "🎉 Đăng ký thành công!" : "🔔 Đã hủy đăng ký!");
+        await fetchContest();
+      }
+    } catch (e) { toast.error("Lỗi kết nối"); }
+    finally { setProcessing(false); }
+  };
+
+  if (loading) return <div className="loading-state">⌛ Đang chuẩn bị dữ liệu...</div>;
+  if (!contest) return <div className="error-state">⚠️ Cuộc thi không tồn tại</div>;
 
   const start = new Date(contest.ThoiGianBatDau);
   const end = new Date(contest.ThoiGianKetThuc);
-  const now = new Date();
-  const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60)); // minutes
+  const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
 
   return (
-    <div style={{ width: "100%" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "24px" }}>
-        <h1 className="section-title">{contest.TenCuocThi}</h1>
-        <div
-          style={{
-            display: "flex",
-            gap: "16px",
-            alignItems: "center",
-            flexWrap: "wrap",
-            marginTop: "8px",
-          }}
-        >
-          <StatusBadge status={contest.Status} />
-          <span style={{ color: "#666", fontSize: "14px" }}>
-            Bắt đầu: {start.toLocaleString("vi-VN")}
-          </span>
-          <span style={{ color: "#666", fontSize: "14px" }}>
-            Kết thúc: {end.toLocaleString("vi-VN")}
-          </span>
-          <span style={{ color: "#666", fontSize: "14px" }}>
-            Thời lượng: {duration} phút
-          </span>
+    <div className="contest-page">
+      <style dangerouslySetInnerHTML={{ __html: contestStyles }} />
+      <ToastContainer />
+
+      {/* Nút Quay lại danh sách */}
+      <div className="top-nav">
+        <Link href="/contests" className="back-link">
+          <span className="back-icon">←</span> Quay lại danh sách cuộc thi
+        </Link>
+      </div>
+
+      <div className="contest-header-compact">
+        <div className="header-top">
+          <div className="header-info">
+            <h1 className="compact-title">{contest.TenCuocThi}</h1>
+            <div className="meta-row">
+              <StatusBadge status={contest.vnStatus} />
+              <span className="creator-label">👤 {contest.taiKhoan.HoTen}</span>
+            </div>
+          </div>
+          <div className="header-actions">
+            {!user ? (
+              <Link href="/auth/login" className="btn btn-primary">Đăng nhập để tham gia</Link>
+            ) : contest.vnStatus === "Sắp mở" ? (
+              contest.isUserRegistered ? (
+                <button className="btn btn-outline-red" disabled={processing} onClick={() => handleAction("unregister")}>
+                  {processing ? "..." : "Hủy đăng ký"}
+                </button>
+              ) : (
+                <button className="btn btn-primary" disabled={processing} onClick={() => handleAction("register")}>
+                  {processing ? "..." : "Đăng ký ngay"}
+                </button>
+              )
+            ) : contest.vnStatus === "Đang thi" ? (
+              contest.isUserRegistered ? (
+                <div className="status-joined">✅ Bạn đang tham gia thi</div>
+              ) : (
+                <div className="status-locked">🔒 Đã đóng đăng ký</div>
+              )
+            ) : (
+              <div className="status-locked">🏁 Cuộc thi đã {contest.vnStatus.toLowerCase()}</div>
+            )}
+            
+            {(contest.vnStatus === "Đang thi" || contest.vnStatus === "Kết thúc") && (
+              <>
+                <Link href={`/contests/${params.id}/rank`} className="btn btn-rank">🏆 Xếp hạng</Link>
+                <Link href={`/contests/${params.id}/submissions`} className="btn btn-secondary">📊 Bài nộp</Link>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="header-timeline">
+          <span>{start.toLocaleString("vi-VN")}</span>
+          <div className="timeline-line"></div>
+          <span>{end.toLocaleString("vi-VN")}</span>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "16px",
-          marginBottom: "24px",
-        }}
-      >
-        <div className="card">
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-            Số đề bài
+      <div className="contest-body-layout">
+        <div className="main-content">
+          <div className="content-card">
+            <h2 className="section-title">📝 Giới thiệu</h2>
+            <div className="markdown-box">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeHighlight]}>
+                {contest.MoTa || "_Chưa có mô tả._"}
+              </ReactMarkdown>
+            </div>
           </div>
-          <div style={{ fontSize: "24px", fontWeight: 700, color: "#667eea" }}>
-            {contest.stats.totalProblems}
-          </div>
-        </div>
-        <div className="card">
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-            Số người đăng ký
-          </div>
-          <div style={{ fontSize: "24px", fontWeight: 700, color: "#764ba2" }}>
-            {contest.stats.totalRegistrations}
-          </div>
-        </div>
-        <div className="card">
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-            Tổng số bài nộp
-          </div>
-          <div style={{ fontSize: "24px", fontWeight: 700, color: "#48bb78" }}>
-            {contest.stats.totalSubmissions}
-          </div>
-        </div>
-      </div>
 
-      {/* Contest Info */}
-      <div className="card" style={{ marginBottom: "24px" }}>
-        <h2
-          style={{
-            fontSize: "20px",
-            fontWeight: 600,
-            marginBottom: "16px",
-            marginTop: 0,
-          }}
-        >
-          Thông tin cuộc thi
-        </h2>
-        <div style={{ display: "grid", gap: "12px" }}>
-          <div>
-            <strong>Người tạo:</strong>{" "}
-            <Link
-              href={`/users/${contest.taiKhoan.IdTaiKhoan}`}
-              className="problem-link"
-            >
-              {contest.taiKhoan.HoTen} (@{contest.taiKhoan.TenDangNhap})
-            </Link>
-          </div>
-          <div>
-            <strong>Ngày tạo:</strong>{" "}
-            {new Date(contest.NgayTao).toLocaleString("vi-VN")}
-          </div>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="form-card" style={{ marginBottom: "24px" }}>
-        <h2
-          style={{
-            fontSize: "20px",
-            fontWeight: 600,
-            marginBottom: "16px",
-            marginTop: 0,
-          }}
-        >
-          Mô tả cuộc thi
-        </h2>
-        <article className="markdown-body">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeHighlight]}
-          >
-            {contest.MoTa || "Chưa có mô tả."}
-          </ReactMarkdown>
-        </article>
-      </div>
-
-      {contest.ChuY && (
-        <div
-          style={{
-            marginTop: "8px",
-            padding: "12px",
-            background: "#fff3cd",
-            borderRadius: "4px",
-            border: "1px solid #ffc107",
-          }}
-        >
-          <strong style={{ color: "#856404" }}>⚠️ Chú ý:</strong>
-          <div style={{ color: "#856404", marginTop: "4px" }}>
-            {contest.ChuY}
-          </div>
-        </div>
-      )}
-      {/* Problems List */}
-      <div className="form-card" style={{ marginBottom: "24px" }}>
-        <h2
-          style={{
-            fontSize: "20px",
-            fontWeight: 600,
-            marginBottom: "16px",
-            marginTop: 0,
-          }}
-        >
-          Danh sách đề bài ({contest.deBais.length})
-        </h2>
-        {contest.deBais.length > 0 ? (
-          <div className="table-wrap" style={{ marginTop: 0 }}>
-            <table>
+          <div className="content-card">
+            <h2 className="section-title">📚 Danh sách đề bài</h2>
+            <table className="problem-table">
               <thead>
-                <tr>
-                  <th style={{ width: "10%", whiteSpace: "nowrap" }}>#</th>
-                  <th style={{ width: "40%", whiteSpace: "nowrap" }}>Đề bài</th>
-                  <th style={{ width: "15%", whiteSpace: "nowrap" }}>Độ khó</th>
-                  <th style={{ width: "15%", whiteSpace: "nowrap" }}>
-                    Thời gian
-                  </th>
-                  <th style={{ width: "15%", whiteSpace: "nowrap" }}>Bộ nhớ</th>
-                  <th style={{ width: "5%", whiteSpace: "nowrap" }}></th>
-                </tr>
+                <tr><th>#</th><th>Đề bài</th><th>Độ khó</th><th>Giới hạn</th></tr>
               </thead>
               <tbody>
-                {contest.deBais.map((item, index) => (
+                {contest.deBais.map((item: any, index: number) => (
                   <tr key={item.IdDeBai}>
-                    <td style={{ fontWeight: 600, color: "#667eea" }}>
-                      {String.fromCharCode(65 + index)} {/* A, B, C, ... */}
-                    </td>
+                    <td className="idx">{String.fromCharCode(65 + index)}</td>
                     <td>
-                      {item.deBai ? (
-                        <Link
-                          href={`/problems/${item.deBai.IdDeBai}`}
-                          className="problem-link"
-                        >
-                          {item.TenHienThi || item.deBai.TieuDe}
-                        </Link>
-                      ) : (
-                        <span style={{ color: "#999" }}>Đề bài đã bị xóa</span>
-                      )}
-                    </td>
-                    <td>
-                      {item.deBai ? (
-                        <DifficultyBadge difficulty={item.deBai.DoKho} />
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td>
-                      {item.deBai ? `${item.deBai.GioiHanThoiGian}ms` : "-"}
-                    </td>
-                    <td>
-                      {item.deBai
-                        ? `${Math.round(item.deBai.GioiHanBoNho / 1024)}MB`
-                        : "-"}
-                    </td>
-                    <td>
-                      {item.deBai && (
-                        <Link
-                          href={`/problems/${item.deBai.IdDeBai}`}
-                          className="button"
-                          style={{ padding: "4px 12px", fontSize: "12px" }}
-                        >
-                          Xem
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p style={{ color: "#666" }}>
-            Chưa có đề bài nào trong cuộc thi này.
-          </p>
-        )}
-      </div>
-
-      {/* Registered Users */}
-      {contest.dangKys.length > 0 && (
-        <div className="form-card">
-          <h2
-            style={{
-              fontSize: "20px",
-              fontWeight: 600,
-              marginBottom: "16px",
-              marginTop: 0,
-            }}
-          >
-            Danh sách người đăng ký ({contest.dangKys.length})
-          </h2>
-          <div className="table-wrap" style={{ marginTop: 0 }}>
-            <table>
-              <thead>
-                <tr>
-                  <th style={{ width: "10%", whiteSpace: "nowrap" }}>#</th>
-                  <th style={{ width: "30%", whiteSpace: "nowrap" }}>
-                    Tên đăng nhập
-                  </th>
-                  <th style={{ width: "40%", whiteSpace: "nowrap" }}>Họ tên</th>
-                  <th style={{ width: "20%", whiteSpace: "nowrap" }}>
-                    Trạng thái
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {contest.dangKys.map((dangKy, index) => (
-                  <tr key={dangKy.IdTaiKhoan}>
-                    <td>{index + 1}</td>
-                    <td>
-                      <Link
-                        href={`/users/${dangKy.taiKhoan.IdTaiKhoan}`}
-                        className="problem-link"
-                      >
-                        {dangKy.taiKhoan.TenDangNhap}
+                      <Link href={`/contests/${params.id}/${item.IdDeBai}`} className="p-link">
+                        {item.TenHienThi || item.deBai?.TieuDe}
                       </Link>
                     </td>
-                    <td>{dangKy.taiKhoan.HoTen}</td>
-                    <td>
-                      <StatusBadge
-                        status={
-                          dangKy.TrangThai ? "Hoạt động" : "Không hoạt động"
-                        }
-                      />
-                    </td>
+                    <td><DifficultyBadge difficulty={item.deBai?.DoKho} /></td>
+                    <td className="specs">{item.deBai?.GioiHanThoiGian}ms / {item.deBai?.GioiHanBoNho}MB</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {contest.ChuY && (
+            <div className="content-card warning-card">
+              <h2 className="section-title">⚠️ Chú ý từ BTC</h2>
+              <div className="markdown-box">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeHighlight]}>
+                   {contest.ChuY}
+                </ReactMarkdown>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+
+        <aside className="sidebar">
+          <div className="side-card stats-side">
+            <h4 className="side-title">📊 Thống kê</h4>
+            <div className="stat-item"><span>Số bài tập:</span> <b>{contest.stats.totalProblems}</b></div>
+            <div className="stat-item"><span>Thí sinh:</span> <b>{contest.stats.totalRegistrations}</b></div>
+            <div className="stat-item"><span>Bài nộp:</span> <b>{contest.stats.totalSubmissions}</b></div>
+          </div>
+
+          <div className="side-card info-side">
+            <h4 className="side-title">📅 Chi tiết</h4>
+            <div className="info-block"><small>Ngày tạo:</small><p>{new Date(contest.NgayTao).toLocaleDateString("vi-VN")}</p></div>
+            <div className="info-block"><small>Thời lượng:</small><p>{duration} phút</p></div>
+          </div>
+
+          {rankData && rankData.length > 0 && (
+            <div className="side-card top-users-side">
+              <h4 className="side-title">🏆 Top Thí sinh</h4>
+              <div className="top-list">
+                {rankData.map((entry: any, index: number) => (
+                  <div key={entry.user.IdTaiKhoan} className="top-user-item">
+                    <div className={`rank-icon r-${index + 1}`}>{index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}</div>
+                    <div className="top-user-info">
+                      <p className="top-name">{entry.user.HoTen}</p>
+                      <small>{entry.totalPoints} bài • {entry.executionTimes[0] || 0}ms</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Link href={`/contests/${params.id}/rank`} className="view-full-rank">Xem bảng xếp hạng ➔</Link>
+            </div>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }
+
+const contestStyles = `
+  .contest-page { max-width: 1200px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; background: #f8fafc; min-height: 100vh; }
+  
+  .top-nav { margin-bottom: 20px; }
+  .back-link { text-decoration: none; color: #64748b; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.2s; width: fit-content; }
+  .back-link:hover { color: #2563eb; transform: translateX(-4px); }
+  .back-icon { font-size: 1.2rem; }
+
+  .contest-header-compact { background: #1e293b; color: white; padding: 25px 30px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .compact-title { font-size: 1.8rem; font-weight: 800; margin: 0 0 10px 0; color: #f8fafc; letter-spacing: -0.02em; }
+  .meta-row { display: flex; align-items: center; gap: 15px; }
+  .creator-label { font-size: 0.85rem; color: #94a3b8; }
+  
+  .header-timeline { display: flex; align-items: center; gap: 15px; font-size: 0.85rem; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; }
+  .timeline-line { flex: 1; height: 1px; background: rgba(255,255,255,0.2); position: relative; }
+  .timeline-line::after { content: '➔'; position: absolute; right: 0; top: -7px; font-size: 10px; }
+
+  .contest-body-layout { display: grid; grid-template-columns: 1fr 280px; gap: 25px; align-items: start; }
+  .content-card { background: white; padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .warning-card { background: #fffbeb; border-color: #fef3c7; }
+  .section-title { font-size: 1.1rem; margin-bottom: 20px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .problem-table { width: 100%; border-collapse: collapse; }
+  .problem-table th { text-align: left; padding: 12px; font-size: 0.8rem; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; }
+  .problem-table td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; }
+  .idx { font-weight: 900; color: #2563eb; font-size: 1.2rem; width: 40px; }
+  .p-link { text-decoration: none; color: #1e293b; font-weight: 700; font-size: 1rem; transition: 0.2s; }
+  .p-link:hover { color: #2563eb; }
+  .specs { font-size: 0.85rem; color: #64748b; font-family: monospace; }
+
+  .header-actions { display: flex; gap: 12px; align-items: center; }
+  .btn { padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-primary { background: #2563eb; color: white; box-shadow: 0 4px 10px rgba(37,99,235,0.2); }
+  .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+  .btn-rank { background: #f59e0b; color: white; }
+  .btn-rank:hover { background: #d97706; transform: translateY(-2px); }
+  .btn-outline-red { background: white; color: #ef4444; border: 1.5px solid #ef4444; }
+  .btn-outline-red:hover { background: #fef2f2; }
+  
+  .status-joined { background: #dcfce7; color: #15803d; padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; }
+  .status-locked { background: #f1f5f9; color: #64748b; padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; border: 1px solid #e2e8f0; }
+
+  .side-card { background: white; padding: 22px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+  .side-title { margin: 0 0 18px 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 800; }
+  .stat-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #f1f5f9; font-size: 0.9rem; }
+  .info-block small { color: #94a3b8; text-transform: uppercase; font-size: 0.7rem; font-weight: 700; }
+  .info-block p { margin: 4px 0 15px 0; font-weight: 700; color: #1e293b; }
+
+  .top-users-side { border: 1px solid #e0e7ff; background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%); }
+  .top-user-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+  .top-user-item:last-child { border-bottom: none; }
+  .rank-icon { font-size: 1.3rem; min-width: 30px; }
+  .top-name { font-weight: 700; color: #1e293b; margin: 0; font-size: 0.95rem; }
+  .top-user-info small { color: #64748b; font-size: 0.75rem; }
+  .view-full-rank { display: block; margin-top: 15px; font-size: 0.85rem; font-weight: 700; color: #2563eb; text-decoration: none; text-align: center; transition: 0.2s; }
+  .view-full-rank:hover { letter-spacing: 0.5px; }
+
+  .loading-state { text-align: center; padding: 100px; color: #64748b; font-weight: 600; }
+
+  @media (max-width: 900px) {
+    .contest-body-layout { grid-template-columns: 1fr; }
+    .header-top { flex-direction: column; gap: 20px; }
+    .header-actions { width: 100%; flex-wrap: wrap; }
+    .btn { flex: 1; }
+  }
+`;

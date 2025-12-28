@@ -4,47 +4,67 @@ import { prisma } from "../db";
 const router = Router();
 
 // GET /api/problems
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const data = await prisma.deBai.findMany({
-      include: {
-        taiKhoan: {
-          select: {
-            IdTaiKhoan: true,
-            TenDangNhap: true,
-            HoTen: true,
-          },
-        },
-      },
-      orderBy: { NgayTao: "desc" },
-    });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
 
-    // Tránh BigInt trong JSON response
-    res.json(
-      data.map((p) => ({
+    const { q, topics, difficulty } = req.query; // topics bây giờ có thể là chuỗi "Topic1,Topic2"
+
+    const whereClause: any = {
+      TrangThai: true,
+      DangCongKhai: true,
+      AND: [
+        q ? { TieuDe: { contains: q as string } } : {},
+        difficulty && difficulty !== "all" ? { DoKho: difficulty as string } : {},
+      ]
+    };
+
+    // Xử lý lọc nhiều chủ đề (OR logic: Có 1 trong các chủ đề đã chọn là hiện)
+    if (topics && topics !== "all") {
+      const topicArray = (topics as string).split(",");
+      whereClause.AND.push({
+        deBaiChuDes: {
+          some: {
+            chuDe: {
+              TenChuDe: { in: topicArray }
+            }
+          }
+        }
+      });
+    }
+
+    const [data, total] = await Promise.all([
+      prisma.deBai.findMany({
+        where: whereClause,
+        include: {
+          taiKhoan: { select: { IdTaiKhoan: true, HoTen: true } },
+          deBaiChuDes: { include: { chuDe: true } }
+        },
+        orderBy: { NgayTao: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.deBai.count({ where: whereClause })
+    ]);
+
+    res.json({
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      problems: data.map((p) => ({
+        ...p,
         IdDeBai: p.IdDeBai.toString(),
         IdTaiKhoan: p.IdTaiKhoan.toString(),
-        TieuDe: p.TieuDe,
-        NoiDungDeBai: p.NoiDungDeBai,
-        DoKho: p.DoKho,
-        GioiHanThoiGian: p.GioiHanThoiGian,
-        GioiHanBoNho: p.GioiHanBoNho,
-        DangCongKhai: p.DangCongKhai,
-        NgayTao: p.NgayTao,
-        TrangThai: p.TrangThai,
-        taiKhoan: p.taiKhoan
-          ? {
-              IdTaiKhoan: p.taiKhoan.IdTaiKhoan.toString(),
-              TenDangNhap: p.taiKhoan.TenDangNhap,
-              HoTen: p.taiKhoan.HoTen,
-            }
-          : null,
+        chuDes: p.deBaiChuDes.map(dc => dc.chuDe.TenChuDe)
       }))
-    );
-  } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to load problems" });
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to load problems" });
   }
 });
+
 
 // POST /api/problems
 router.post("/", async (req, res) => {
@@ -158,6 +178,8 @@ router.get("/:id", async (req, res) => {
     const problem = await prisma.deBai.findUnique({
       where: {
         IdDeBai: BigInt(id),
+        TrangThai: true,
+        DangCongKhai: true,
       },
       include: {
         taiKhoan: {
