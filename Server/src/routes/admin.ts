@@ -4,7 +4,6 @@ import { authMiddleware, adminMiddleware, AuthRequest } from "../middleware/auth
 
 const router = Router();
 
-// Tất cả routes admin đều cần auth và admin role
 router.use(authMiddleware);
 router.use(adminMiddleware);
 

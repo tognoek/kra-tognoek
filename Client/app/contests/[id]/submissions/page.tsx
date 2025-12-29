@@ -106,13 +106,12 @@ export default function ContestSubmissionsPage() {
                   <td>
                     <div className="user-info">
                       <span className="name">{s.taiKhoan.HoTen}</span>
-                      <span className="handle">@{s.taiKhoan.TenDangNhap}</span>
                     </div>
                   </td>
                   <td className="prob-title">{s.deBai.TieuDe}</td>
                   <td>{getStatusDisplay(s.TrangThaiCham)}</td>
                   <td className="spec-cell">{s.ThoiGianThucThi || 0} ms</td>
-                  <td className="spec-cell">{s.BoNhoSuDung || 0} KB</td>
+                  <td className="spec-cell">{s.BoNhoSuDung || 0} kb</td>
                   <td className="lang-cell"><span>{s.ngonNgu.TenNgonNgu}</span></td>
                   <td className="date-cell">{new Date(s.NgayNop).toLocaleString("vi-VN")}</td>
                 </tr>
@@ -131,7 +130,6 @@ export default function ContestSubmissionsPage() {
 }
 
 const subStyles = `
-  .sub-container { max-width: 1300px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', system-ui, sans-serif; background-color: #f8fafc; min-height: 100vh; }
   
   /* Navigation Row */
   .top-nav-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }

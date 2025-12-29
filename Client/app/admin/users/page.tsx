@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import CryptoJS from "crypto-js"; // Cài đặt bằng: npm install crypto-js
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -35,12 +36,16 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   
-  // State tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
-
-  // State cho Popup xác nhận (Modal)
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+
+  // --- LOGIC LẤY AVATAR ---
+  const getAvatarUrl = (email: string) => {
+    const address = String(email || "default").trim().toLowerCase();
+    const hash = CryptoJS.MD5(address).toString();
+    return `https://www.gravatar.com/avatar/${hash}?s=80&d=identicon`;
+  };
 
   const load = async () => {
     try {
@@ -71,11 +76,7 @@ export default function AdminUsersPage() {
     load();
   }, []);
 
-  // --- HANDLERS ---
-
-  // 1. Thay đổi vai trò
   const onChangeRole = async (userId: string, newRoleId: string) => {
-    // Với đổi Role, ta dùng toast promise cho nhanh gọn
     const promise = async () => {
       const token = getToken();
       const res = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
@@ -97,7 +98,6 @@ export default function AdminUsersPage() {
     });
   };
 
-  // 2. Mở Popup xác nhận khóa/mở
   const handleOpenModal = (user: AdminUser) => {
     setSelectedUser(user);
     setModalOpen(true);
@@ -108,13 +108,12 @@ export default function AdminUsersPage() {
     setSelectedUser(null);
   };
 
-  // 3. Thực hiện hành động Khóa/Mở (được gọi từ Modal)
   const confirmToggleStatus = async () => {
     if (!selectedUser) return;
     
     try {
       setSavingId(selectedUser.IdTaiKhoan);
-      handleCloseModal(); // Đóng modal trước khi gọi API
+      handleCloseModal();
 
       const token = getToken();
       const res = await fetch(`${API_BASE}/api/admin/users/${selectedUser.IdTaiKhoan}`, {
@@ -138,26 +137,17 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Filter
   const filteredUsers = users.filter(u => 
     u.TenDangNhap.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.Email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.HoTen.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Helper
-  const getInitials = (name: string) => name ? name.charAt(0).toUpperCase() : "?";
-  const getRandomColor = (char: string) => {
-    const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
-    return colors[char.charCodeAt(0) % colors.length];
-  };
-
   return (
     <div className="admin-page">
       <style dangerouslySetInnerHTML={{ __html: cssStyles }} />
       <ToastContainer position="top-right" autoClose={2000} />
 
-      {/* HEADER */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Quản lý Người dùng</h1>
@@ -168,9 +158,7 @@ export default function AdminUsersPage() {
         </button>
       </div>
 
-      {/* CARD */}
       <div className="content-card">
-        {/* Toolbar */}
         <div className="toolbar">
           <div className="search-box">
             <span className="search-icon">🔍</span>
@@ -182,11 +170,10 @@ export default function AdminUsersPage() {
             />
           </div>
           <div className="user-count">
-            <strong>{filteredUsers.length}</strong> user
+            <strong>{filteredUsers.length}</strong> thành viên
           </div>
         </div>
 
-        {/* Table */}
         <div className="table-responsive">
           <table className="data-table">
             <thead>
@@ -208,8 +195,12 @@ export default function AdminUsersPage() {
                 filteredUsers.map((u) => (
                   <tr key={u.IdTaiKhoan}>
                     <td>
-                      <div className="avatar" style={{backgroundColor: getRandomColor(u.TenDangNhap)}}>
-                        {getInitials(u.TenDangNhap)}
+                      <div className="avatar-box">
+                        <img 
+                          src={getAvatarUrl(u.Email)} 
+                          alt="avatar" 
+                          className="avatar-img"
+                        />
                       </div>
                     </td>
                     <td>
@@ -231,11 +222,11 @@ export default function AdminUsersPage() {
                       </select>
                     </td>
                     <td>
-                       <button
+                        <button
                           type="button"
                           className={`status-badge ${u.TrangThai ? 'active' : 'blocked'}`}
                           disabled={savingId === u.IdTaiKhoan}
-                          onClick={() => handleOpenModal(u)} // Mở Modal thay vì confirm
+                          onClick={() => handleOpenModal(u)}
                         >
                           {u.TrangThai ? "Active" : "Locked"}
                         </button>
@@ -251,10 +242,10 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* --- CUSTOM POPUP (MODAL) --- */}
+      {/* --- POPUP XÁC NHẬN --- */}
       {modalOpen && selectedUser && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">
                 {selectedUser.TrangThai ? "Khóa tài khoản?" : "Mở khóa tài khoản?"}
@@ -263,9 +254,16 @@ export default function AdminUsersPage() {
             </div>
             
             <div className="modal-body">
-              <p>Bạn có chắc chắn muốn thay đổi trạng thái của tài khoản <strong>{selectedUser.TenDangNhap}</strong>?</p>
+              <div className="modal-user-preview">
+                <img src={getAvatarUrl(selectedUser.Email)} alt="user" className="modal-avatar" />
+                <div>
+                    <strong>{selectedUser.HoTen}</strong>
+                    <div style={{fontSize: '12px', color: '#666'}}>@{selectedUser.TenDangNhap}</div>
+                </div>
+              </div>
+              <p>Bạn có chắc chắn muốn {selectedUser.TrangThai ? "khóa" : "mở khóa"} tài khoản này?</p>
               {selectedUser.TrangThai && (
-                <p className="warning-text">⚠️ Tài khoản này sẽ không thể đăng nhập sau khi bị khóa.</p>
+                <p className="warning-text">⚠️ Người dùng sẽ không thể truy cập hệ thống sau khi bị khóa.</p>
               )}
             </div>
 
@@ -281,82 +279,70 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
-// ==========================================
-// CSS STYLES (Đã thêm phần Modal)
-// ==========================================
 const cssStyles = `
-  /* ... Giữ lại các style cũ của layout/table ... */
-  .admin-page { max-width: 1200px; margin: 0 auto; padding: 30px 20px; font-family: system-ui, sans-serif; color: #1f2937; background-color: #f3f4f6; min-height: 100vh; }
+  .admin-page { max-width: 1200px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', system-ui, sans-serif; color: #1f2937; }
   .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-  .page-title { font-size: 24px; font-weight: 700; margin: 0; color: #111827; }
+  .page-title { font-size: 24px; font-weight: 800; margin: 0; color: #111827; }
   .page-subtitle { margin: 4px 0 0; color: #6b7280; font-size: 14px; }
   
-  .content-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; overflow: hidden; }
+  .content-card { background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; overflow: hidden; }
   
-  .toolbar { padding: 16px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background-color: #fff; gap: 12px; }
-  .search-box { position: relative; width: 300px; }
-  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 14px; }
-  .search-box input { width: 100%; padding: 9px 12px 9px 32px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
-  .search-box input:focus { border-color: #3b82f6; }
+  .toolbar { padding: 20px 24px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; background-color: #fff; gap: 12px; }
+  .search-box { position: relative; width: 320px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+  .search-box input { width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #e5e7eb; border-radius: 10px; outline: none; transition: 0.2s; font-size: 14px; }
+  .search-box input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 
   .data-table { width: 100%; border-collapse: collapse; }
-  .data-table th { background-color: #f9fafb; padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
-  .data-table td { padding: 14px 24px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+  .data-table th { background-color: #f9fafb; padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; }
+  .data-table td { padding: 16px 24px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
   .data-table tr:hover { background-color: #f9fafb; }
 
-  .avatar { width: 36px; height: 36px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+  .avatar-box { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
+  .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+  
   .user-info { display: flex; flex-direction: column; }
-  .user-name { font-weight: 600; color: #111827; font-size: 14px; }
+  .user-name { font-weight: 700; color: #111827; font-size: 14px; }
   .user-fullname { font-size: 12px; color: #6b7280; }
-  .user-email { font-family: monospace; color: #4b5563; font-size: 13px; }
+  .user-email { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #4b5563; font-size: 13px; }
 
-  .role-select { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  .role-select { padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; background-color: #fff; }
   
-  .status-badge { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.2s; }
-  .status-badge.active { background-color: #d1fae5; color: #065f46; }
+  .status-badge { padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; border: none; cursor: pointer; transition: 0.2s; }
+  .status-badge.active { background-color: #dcfce7; color: #166534; }
   .status-badge.blocked { background-color: #fee2e2; color: #991b1b; }
+  .status-badge:hover { filter: brightness(0.95); transform: translateY(-1px); }
 
-  .btn { padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: 0.2s; }
-  .btn-secondary { background: white; border: 1px solid #d1d5db; color: #374151; }
-  .btn-secondary:hover { background: #f9fafb; }
+  .btn { padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-secondary { background: white; border: 1px solid #e5e7eb; color: #374151; }
+  .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
   .btn-danger { background: #ef4444; color: white; }
-  .btn-danger:hover { background: #dc2626; }
   .btn-success { background: #10b981; color: white; }
-  .btn-success:hover { background: #059669; }
 
-  /* --- MODAL STYLES --- */
-  .modal-overlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease-out;
-  }
-
-  .modal-content {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    animation: slideUp 0.3s ease-out;
-  }
-
-  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .modal-title { margin: 0; font-size: 18px; font-weight: 700; color: #111827; }
-  .modal-close { background: none; border: none; font-size: 24px; color: #9ca3af; cursor: pointer; }
+  /* MODAL */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.2s ease-out; }
+  .modal-content { background: white; padding: 32px; border-radius: 20px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .modal-title { margin: 0; font-size: 20px; font-weight: 800; color: #111827; }
+  .modal-close { background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 20px; color: #6b7280; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   
-  .modal-body { margin-bottom: 24px; font-size: 14px; color: #4b5563; line-height: 1.5; }
-  .warning-text { color: #dc2626; margin-top: 8px; font-size: 13px; background: #fee2e2; padding: 8px; border-radius: 6px; }
+  .modal-body { margin-bottom: 28px; font-size: 15px; color: #4b5563; line-height: 1.6; }
+  .modal-user-preview { display: flex; align-items: center; gap: 14px; padding: 12px; background: #f8fafc; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e5e7eb; }
+  .modal-avatar { width: 44px; height: 44px; border-radius: 10px; }
+  .warning-text { color: #b91c1c; margin-top: 12px; font-size: 13px; background: #fef2f2; padding: 10px; border-radius: 8px; border: 1px solid #fee2e2; }
 
   .modal-footer { display: flex; justify-content: flex-end; gap: 12px; }
 
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  @media (max-width: 768px) {
+    .search-box { width: 100%; }
+    .toolbar { flex-direction: column; align-items: flex-start; }
+    .user-count { display: none; }
+  }
 `;

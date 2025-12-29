@@ -69,7 +69,7 @@ Cơ sở dữ liệu này được thiết kế cho một hệ thống Online Ju
 | `NoiDungDeBai` | TEXT NOT NULL | Nội dung đề bài (mô tả, yêu cầu) |
 | `DoKho` | VARCHAR(50) NOT NULL | Độ khó (ví dụ: Easy, Medium, Hard) |
 | `GioiHanThoiGian` | INT NOT NULL | Giới hạn thời gian (giây) |
-| `GioiHanBoNho` | INT NOT NULL | Giới hạn bộ nhớ (MB) |
+| `GioiHanBoNho` | INT NOT NULL | Giới hạn bộ nhớ (kb) |
 | `DangCongKhai` | BOOLEAN NOT NULL DEFAULT true | Có công khai hay không |
 | `NgayTao` | DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP | Ngày tạo đề bài |
 | `TrangThai` | BOOLEAN NOT NULL DEFAULT true | Trạng thái đề bài |
@@ -211,7 +211,7 @@ Cơ sở dữ liệu này được thiết kế cho một hệ thống Online Ju
 | `DuongDanCode` | TEXT NOT NULL | Đường dẫn file code đã nộp |
 | `TrangThaiCham` | TEXT | Trạng thái chấm (ví dụ: AC, WA, TLE, MLE, RE) |
 | `ThoiGianThucThi` | INT | Thời gian thực thi (ms) |
-| `BoNhoSuDung` | INT | Bộ nhớ sử dụng (MB) |
+| `BoNhoSuDung` | INT | Bộ nhớ sử dụng (kb) |
 | `NgayNop` | DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP | Ngày giờ nộp bài |
 
 **Quan hệ**:

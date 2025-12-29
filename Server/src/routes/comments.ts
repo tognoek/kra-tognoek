@@ -1,15 +1,15 @@
 import { Router } from "express";
 import { prisma } from "../db";
 
+import { getAvatarUrl } from "../scripts/avatar";
+
 const router = Router();
 
-// GET /api/comments?problemId=...
 router.get("/", async (req, res) => {
   try {
     const { problemId } = req.query;
     if (!problemId) return res.status(400).json({ error: "problemId is required" });
     
-    // Lấy tất cả comments (bao gồm cả reply)
     const allComments = await prisma.binhLuan.findMany({
       where: { IdDeBai: BigInt(problemId as string) },
       include: {
@@ -36,17 +36,14 @@ router.get("/", async (req, res) => {
       orderBy: { NgayTao: "asc" },
     });
     
-    // Tách comments gốc và replies
     const rootComments = allComments.filter((c) => !c.IdBinhLuanCha);
     const replies = allComments.filter((c) => c.IdBinhLuanCha);
     
-    // Tạo map để dễ lookup
     const commentMap = new Map<string, any>();
     allComments.forEach((c) => {
       commentMap.set(c.IdBinhLuan.toString(), c);
     });
     
-    // Hàm đệ quy để build nested replies
     const buildCommentTree = (comment: any): any => {
       const commentId = comment.IdBinhLuan.toString();
       const childReplies = replies.filter(
@@ -63,15 +60,13 @@ router.get("/", async (req, res) => {
         taiKhoan: comment.taiKhoan
           ? {
               IdTaiKhoan: comment.taiKhoan.IdTaiKhoan.toString(),
-              TenDangNhap: comment.taiKhoan.TenDangNhap,
               HoTen: comment.taiKhoan.HoTen,
-              Email: comment.taiKhoan.Email,
+              Avatar: getAvatarUrl(comment.taiKhoan.Email),
             }
           : null,
         parentUser: comment.binhLuanCha?.taiKhoan
           ? {
               IdTaiKhoan: comment.binhLuanCha.taiKhoan.IdTaiKhoan.toString(),
-              TenDangNhap: comment.binhLuanCha.taiKhoan.TenDangNhap,
               HoTen: comment.binhLuanCha.taiKhoan.HoTen,
             }
           : null,
@@ -81,7 +76,6 @@ router.get("/", async (req, res) => {
       };
     };
     
-    // Build tree cho tất cả root comments
     const result = rootComments
       .sort((a, b) => new Date(a.NgayTao).getTime() - new Date(b.NgayTao).getTime())
       .map((c) => buildCommentTree(c));
@@ -93,7 +87,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/comments
 router.post("/", async (req, res) => {
   try {
     const { IdDeBai, IdTaiKhoan, NoiDung, IdBinhLuanCha } = req.body;
@@ -106,7 +99,6 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Comment content cannot be empty" });
     }
     
-    // Nếu là reply, kiểm tra parent comment có tồn tại không
     if (IdBinhLuanCha) {
       const parentComment = await prisma.binhLuan.findUnique({
         where: { IdBinhLuan: BigInt(IdBinhLuanCha) },
@@ -114,7 +106,6 @@ router.post("/", async (req, res) => {
       if (!parentComment) {
         return res.status(404).json({ error: "Parent comment not found" });
       }
-      // Đảm bảo reply cùng problem với parent
       if (parentComment.IdDeBai.toString() !== IdDeBai) {
         return res.status(400).json({ error: "Reply must be on the same problem" });
       }
@@ -153,22 +144,18 @@ router.post("/", async (req, res) => {
     res.json({
       IdBinhLuan: created.IdBinhLuan.toString(),
       IdDeBai: created.IdDeBai.toString(),
-      IdTaiKhoan: created.IdTaiKhoan.toString(),
       IdBinhLuanCha: created.IdBinhLuanCha ? created.IdBinhLuanCha.toString() : null,
       NoiDung: created.NoiDung,
       NgayTao: created.NgayTao,
       taiKhoan: created.taiKhoan
         ? {
             IdTaiKhoan: created.taiKhoan.IdTaiKhoan.toString(),
-            TenDangNhap: created.taiKhoan.TenDangNhap,
             HoTen: created.taiKhoan.HoTen,
-            Email: created.taiKhoan.Email,
           }
         : null,
       parentUser: created.binhLuanCha?.taiKhoan
         ? {
             IdTaiKhoan: created.binhLuanCha.taiKhoan.IdTaiKhoan.toString(),
-            TenDangNhap: created.binhLuanCha.taiKhoan.TenDangNhap,
             HoTen: created.binhLuanCha.taiKhoan.HoTen,
           }
         : null,

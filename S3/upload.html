@@ -252,7 +252,7 @@
         codeFileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                codeFileInfo.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                codeFileInfo.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} kb)`;
                 codeFileInfo.classList.add('show');
             }
         });
@@ -315,7 +315,7 @@
         testFileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                testFileInfo.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                testFileInfo.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} kb)`;
                 testFileInfo.classList.add('show');
             }
         });

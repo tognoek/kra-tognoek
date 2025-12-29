@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import CryptoJS from "crypto-js";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -29,7 +30,7 @@ export default function UserProfilePage() {
       setUser(data);
       
       if (typeof document !== "undefined") {
-        document.title = `Hồ sơ của ${data.HoTen} - OJ Portal`;
+        document.title = `Hồ sơ của ${data.HoTen} - Kra tognoek`;
       }
     } catch (e: any) {
       setError(e.message);
@@ -84,16 +85,16 @@ export default function UserProfilePage() {
       <style dangerouslySetInnerHTML={{ __html: modernUIStyles }} />
 
       <div className="content-constrain">
-        {/* Header Profile - Đã ẩn Tên Đăng Nhập */}
         <div className="profile-hero">
-          <div className="avatar-large">{user.HoTen.charAt(0)}</div>
+          <div className="avatar-container">
+            <img src={user.Avatar} alt="avatar" className="avatar-img" />
+          </div>
           <div className="hero-info">
             <h1 className="user-fullname">{user.HoTen}</h1>
             <p className="user-handle"><span className="role-badge">{user.VaiTro}</span></p>
           </div>
         </div>
 
-        {/* Main Grid */}
         <div className="main-grid">
           <div className="glass-card info-card">
             <h3 className="card-title">Thông tin</h3>
@@ -140,7 +141,6 @@ export default function UserProfilePage() {
           </div>
         </div>
 
-        {/* Danh sách bài nộp của người dùng */}
         <div className="glass-card sub-section">
           <div className="sub-header">
             <h3 className="card-title">Lịch sử bài nộp của {user.HoTen}</h3>
@@ -206,7 +206,10 @@ const modernUIStyles = `
   .content-constrain { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
 
   .profile-hero { display: flex; align-items: center; gap: 24px; background: white; padding: 24px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-  .avatar-large { width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; }
+  
+  .avatar-container { width: 80px; height: 80px; border-radius: 20px; overflow: hidden; background: #eee; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+
   .user-fullname { font-size: 24px; font-weight: 800; color: #1e293b; margin: 0; }
   .role-badge { background: #f1f5f9; color: #475569; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 

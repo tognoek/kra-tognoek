@@ -123,7 +123,7 @@ export default function SubmissionsPage() {
                   </td>
                   <td>{getStatusUI(s.TrangThaiCham)}</td>
                   <td className="mono">{s.ThoiGianThucThi ?? 0}ms</td>
-                  <td className="mono">{s.BoNhoSuDung ?? 0}KB</td>
+                  <td className="mono">{s.BoNhoSuDung ?? 0} kb</td>
                   <td className="date-cell">{new Date(s.NgayNop).toLocaleString("vi-VN")}</td>
                 </tr>
               );

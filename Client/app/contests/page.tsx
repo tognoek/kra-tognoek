@@ -42,7 +42,7 @@ export default function ContestsPage() {
 
   useEffect(() => {
     if (typeof document !== "undefined") {
-      document.title = "Danh sách cuộc thi - OJ Portal";
+      document.title = "Danh sách cuộc thi - Kra tognoek";
     }
     fetchContests(currentPage);
   }, [currentPage, fetchContests]);

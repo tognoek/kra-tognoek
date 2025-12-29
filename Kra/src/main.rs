@@ -6,6 +6,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use std::env;
 use redis::AsyncCommands;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -131,6 +132,9 @@ async fn enqueue_job(Form(form): Form<JudgeForm>) -> Html<String> {
 
 #[tokio::main]
 async fn main() -> Result<(), BoxError> {
+
+    dotenvy::dotenv().ok();
+
     let redis_url = std::env::var("REDIS_URL")
         .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let queue_name =
@@ -291,6 +295,8 @@ async fn send_callback(
     let client = reqwest::Client::new();
     let callback_url = format!("{}/api/submissions/{}/callback", server_url, submission_id);
 
+    let worker_secret = env::var("WORKER_SECRET").unwrap_or_else(|_| "".to_string());
+
     let mut body = serde_json::json!({
         "TrangThaiCham": codes,  // Mảng codes: [-1] hoặc [0,0,1,2,0]
         "ThoiGianThucThi": max_time_ms,
@@ -309,7 +315,11 @@ async fn send_callback(
         }
     }
 
-    match client.post(&callback_url).json(&body).send().await {
+    match client
+    .post(&callback_url)
+    .header("x-worker-key", worker_secret)
+    .json(&body)
+    .send().await {
         Ok(res) => {
             if res.status().is_success() {
                 println!("✅ Callback sent successfully to {}", callback_url);

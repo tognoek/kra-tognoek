@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { prisma } from "../db";
 import { getJobQueue } from "../redis/main";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = Router();
 
@@ -177,7 +180,7 @@ router.post("/", async (req, res) => {
         codeId: codeId,
         testId: testId,
         timeLimitMs: problem.GioiHanThoiGian,
-        memoryLimitKb: problem.GioiHanBoNho * 1024,
+        memoryLimitKb: problem.GioiHanBoNho,
         inputMode: inputMode, // "stdin" nếu DuongDanInput/Output null, "file" nếu có cả 2
         language: language.TenNhanDien.toLowerCase(),
         serverBaseUrl: SERVER_BASE_URL,
@@ -276,6 +279,12 @@ router.get("/:id", async (req, res) => {
 // Callback from worker: POST /api/submissions/:id/callback
 router.post("/:id/callback", async (req, res) => {
   try {
+    const workerKey = req.headers['x-worker-key'];
+    const secretKey = process.env.WORKER_SECRET;
+    if (!workerKey || workerKey !== secretKey) {
+      console.error("🚫 Cảnh báo: Truy cập callback trái phép!");
+      return res.status(403).json({ error: "Unauthorized: Invalid worker key" });
+    }
     const id = BigInt(req.params.id);
     const {
       ThoiGianThucThi,
@@ -287,6 +296,8 @@ router.post("/:id/callback", async (req, res) => {
     // Lưu mảng codes vào TrangThaiCham dưới dạng JSON string
     // null = đang chấm
     // JSON string của mảng codes = kết quả chấm: "[-1]" hoặc "[0,0,1,2,0]"
+    const current = await prisma.baiNop.findUnique({ where: { IdBaiNop: id } });
+    if (current?.TrangThaiCham) return res.json({ message: "Already updated" });
     let statusMessage: string | null = null;
 
     if (TrangThaiCham && Array.isArray(TrangThaiCham)) {

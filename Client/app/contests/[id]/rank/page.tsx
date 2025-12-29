@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import CryptoJS from "crypto-js"; // Cần cài đặt: npm install crypto-js
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
 export default function ContestRankPage() {
   const params = useParams();
-  const router = useRouter();
   const contestId = params.id;
 
   const [data, setData] = useState<any>(null);
@@ -63,8 +63,6 @@ export default function ContestRankPage() {
           <h1 className="main-title">{data?.contestName}</h1>
         </div>
         <div className="stats-quick-view">
-          <div className="stat-item">
-          </div>
         </div>
       </div>
 
@@ -100,7 +98,11 @@ export default function ContestRankPage() {
                   <td className="user-col">
                     <div className="user-info">
                       <div className={`avatar-mini avatar-${rankClass || 'default'}`}>
-                        {row.user.HoTen.charAt(0)}
+                        <img 
+                          src={row.user.Avatar} 
+                          alt="avt" 
+                          style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} 
+                        />
                       </div>
                       <div className="name-group">
                         <div className="full-name">{row.user.HoTen}</div>
@@ -142,18 +144,13 @@ const modernRankStyles = `
 
   .rank-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
   .contest-meta { text-align: center; }
-  .contest-badge-top { background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; margin-bottom: 8px; }
   .main-title { font-size: 32px; font-weight: 900; color: #0f172a; margin: 0; letter-spacing: -1px; }
   
   .stats-quick-view { display: flex; gap: 20px; }
-  .stat-item { text-align: right; }
-  .stat-item .val { display: block; font-size: 24px; font-weight: 800; color: #0f172a; }
-  .stat-item .lbl { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600; }
 
   .table-container-glass { background: white; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.04); }
   .modern-rank-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
   
-  /* Reset alignment for all headers and then specify user header */
   .modern-rank-table th { 
     background: #f8fafc; 
     padding: 20px 15px; 
@@ -166,7 +163,6 @@ const modernRankStyles = `
   }
   .modern-rank-table th.w-user { text-align: left; }
 
-  /* Table Body Alignment */
   .modern-rank-table td { padding: 16px 15px; border-bottom: 1px solid #f1f5f9; transition: all 0.2s; text-align: center; }
   .modern-rank-table td.user-col { text-align: left; }
 
@@ -180,14 +176,13 @@ const modernRankStyles = `
   .rank-badge.silver { background: #e2e8f0; color: #475569; font-size: 20px; }
   .rank-badge.bronze { background: #ffedd5; color: #9a3412; font-size: 20px; }
 
-  .avatar-mini { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; background: #64748b; flex-shrink: 0; }
-  .avatar-gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-  .avatar-silver { background: linear-gradient(135deg, #94a3b8, #64748b); }
-  .avatar-bronze { background: linear-gradient(135deg, #d97706, #b45309); }
+  .avatar-mini { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; border: 1px solid #e2e8f0; flex-shrink: 0; padding: 2px; }
+  .avatar-gold { border: 2px solid #fbbf24; }
+  .avatar-silver { border: 2px solid #94a3b8; }
+  .avatar-bronze { border: 2px solid #d97706; }
 
   .user-info { display: flex; align-items: center; gap: 12px; }
   .full-name { font-weight: 700; color: #1e293b; font-size: 15px; }
-  .user-handle { font-size: 12px; color: #94a3b8; }
 
   .score-text { font-size: 20px; font-weight: 900; }
   .text-gold { color: #b45309; }

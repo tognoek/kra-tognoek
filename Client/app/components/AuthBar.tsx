@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import AuthModal from "./AuthModal";
 
 interface User {
   IdTaiKhoan: string;
@@ -13,7 +12,6 @@ interface User {
 }
 
 export default function AuthBar() {
-  const [open, setOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
@@ -37,15 +35,8 @@ export default function AuthBar() {
   useEffect(() => {
     updateUser();
 
-    // Listen for storage changes (when user logs in from another tab)
-    const handleStorageChange = () => {
-      updateUser();
-    };
-
-    // Listen for custom auth events (when user logs in from same tab)
-    const handleAuthChange = () => {
-      updateUser();
-    };
+    const handleStorageChange = () => updateUser();
+    const handleAuthChange = () => updateUser();
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("authChange", handleAuthChange);
@@ -65,14 +56,10 @@ export default function AuthBar() {
     }
   };
 
-  const handleProfileClick = () => {
-    setShowDropdown(false);
-    router.push("/profile");
-  };
-
   const isAdmin = user?.VaiTro?.toLowerCase() === "admin";
   const isCreator = isAdmin || user?.VaiTro?.toLowerCase() === "creator";
 
+  // Nếu đã đăng nhập: Hiển thị Dropdown User
   if (user) {
     return (
       <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -81,11 +68,11 @@ export default function AuthBar() {
           style={{ 
             padding: "8px 16px", 
             borderRadius: "10px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)", // Đổi màu gradient cho đồng bộ với trang login mới
             color: "white",
             border: "none",
             cursor: "pointer",
-            fontWeight: 500
+            fontWeight: 600
           }}
           onClick={() => setShowDropdown(!showDropdown)}
         >
@@ -94,14 +81,7 @@ export default function AuthBar() {
         {showDropdown && (
           <>
             <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 998,
-              }}
+              style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}
               onClick={() => setShowDropdown(false)}
             />
             <div
@@ -111,127 +91,85 @@ export default function AuthBar() {
                 right: 0,
                 marginTop: "8px",
                 background: "white",
-                border: "1px solid #e0e0e0",
-                borderRadius: "8px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                minWidth: "200px",
+                border: "1px solid #f1f5f9",
+                borderRadius: "12px",
+                boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                minWidth: "220px",
                 zIndex: 999,
                 overflow: "hidden",
               }}
             >
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid #e0e0e0" }}>
-                <div style={{ fontWeight: 600, fontSize: "14px" }}>{user.HoTen}</div>
-                <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>{user.Email}</div>
-                <div style={{ fontSize: "12px", color: "#667eea", marginTop: "4px", fontWeight: 600 }}>
-                  Vai trò: {user.VaiTro}
+              <div style={{ padding: "16px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
+                <div style={{ fontWeight: 700, fontSize: "14px", color: "#1e293b" }}>{user.HoTen}</div>
+                <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>{user.Email}</div>
+                <div style={{ fontSize: "11px", color: "#2563eb", marginTop: "8px", fontWeight: 700, textTransform: "uppercase" }}>
+                   {user.VaiTro}
                 </div>
               </div>
-              <button
-                onClick={handleProfileClick}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  textAlign: "left",
-                  border: "none",
-                  background: "white",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  transition: "background 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f5")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
-              >
-                👤 Hồ sơ bản thân
+              
+              <button className="dropdown-item" onClick={() => { setShowDropdown(false); router.push("/profile"); }}>
+                👤 Hồ sơ cá nhân
               </button>
+
               {isAdmin && (
-                <button
-                  onClick={() => {
-                    setShowDropdown(false);
-                    router.push("/admin");
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    textAlign: "left",
-                    border: "none",
-                    background: "white",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    transition: "background 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f5")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
-                >
-                  🛡️ Trang Admin
+                <button className="dropdown-item" onClick={() => { setShowDropdown(false); router.push("/admin"); }}>
+                  🛡️ Quản trị hệ thống
                 </button>
               )}
+
               {isCreator && (
-                <button
-                  onClick={() => {
-                    setShowDropdown(false);
-                    router.push("/creator");
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    textAlign: "left",
-                    border: "none",
-                    background: "white",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    transition: "background 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f5")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
-                >
-                  🛠️ Chức năng
+                <button className="dropdown-item" onClick={() => { setShowDropdown(false); router.push("/creator"); }}>
+                  🛠️ Quản lý bài tập
                 </button>
               )}
-              <button
+
+              <button 
+                className="dropdown-item" 
                 onClick={handleLogout}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  textAlign: "left",
-                  border: "none",
-                  background: "white",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  color: "#c62828",
-                  transition: "background 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#ffebee")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                style={{ color: "#ef4444" }}
               >
                 🚪 Đăng xuất
               </button>
             </div>
           </>
         )}
+        <style jsx>{`
+          .dropdown-item {
+            width: 100%;
+            padding: 12px 16px;
+            text-align: left;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+          }
+          .dropdown-item:hover {
+            background: #f1f5f9;
+            padding-left: 20px;
+          }
+        `}</style>
       </div>
     );
   }
 
+  // Nếu chưa đăng nhập: Hiển thị nút dẫn tới trang Login
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
       <button
         className="button"
-        style={{ padding: "8px 14px", borderRadius: "10px" }}
-        onClick={() => setOpen(true)}
+        style={{ 
+          padding: "8px 20px", 
+          borderRadius: "10px",
+          fontWeight: 600,
+          cursor: "pointer"
+        }}
+        onClick={() => router.push("/auth/login")} // Chuyển hướng trực tiếp tới trang login
       >
         Đăng nhập
       </button>
-      <AuthModal 
-        open={open} 
-        mode="login" 
-        onClose={() => {
-          setOpen(false);
-          updateUser();
-        }} 
-      />
     </div>
   );
 }
-
-
-

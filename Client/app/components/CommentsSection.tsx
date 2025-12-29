@@ -4,6 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeRaw from "rehype-raw";
+import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
+import 'highlight.js/styles/github.css';
+import 'katex/dist/katex.min.css';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -15,6 +21,7 @@ interface Comment {
   NoiDung: string;
   NgayTao: string;
   taiKhoan: {
+    Avatar: string;
     IdTaiKhoan: string;
     TenDangNhap: string;
     HoTen: string;
@@ -53,6 +60,7 @@ export default function CommentsSection({ problemId, user }: CommentsSectionProp
       });
       if (res.ok) {
         const data = await res.json();
+        console.log("Fetched comments:", data);
         setComments(data);
       }
     } catch (err) {
@@ -143,7 +151,6 @@ export default function CommentsSection({ problemId, user }: CommentsSectionProp
       await fetchComments();
       setReplyContent("");
       setReplyingTo(null);
-      // Expand parent comment khi reply
       setCollapsedComments((prev) => {
         const newSet = new Set(prev);
         newSet.delete(parentId);
@@ -194,15 +201,14 @@ export default function CommentsSection({ problemId, user }: CommentsSectionProp
         💬 Bình luận ({totalComments})
       </h2>
 
-      {/* Comment form */}
       {user ? (
         <div
           style={{
             padding: "16px",
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            borderRadius: "8px",
+            borderRadius: "12px",
             marginBottom: "20px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
           }}
         >
           <form onSubmit={handleSubmit}>
@@ -217,9 +223,9 @@ export default function CommentsSection({ problemId, user }: CommentsSectionProp
                   fontFamily: "inherit",
                   fontSize: "14px",
                   background: "white",
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  borderRadius: "6px",
-                  padding: "10px",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "12px",
                   width: "100%",
                   resize: "vertical",
                 }}
@@ -249,7 +255,7 @@ export default function CommentsSection({ problemId, user }: CommentsSectionProp
                 fontWeight: 600,
                 padding: "10px 24px",
                 border: "none",
-                borderRadius: "6px",
+                borderRadius: "8px",
                 cursor: submitting || !newComment.trim() ? "not-allowed" : "pointer",
                 opacity: submitting || !newComment.trim() ? 0.6 : 1,
               }}
@@ -275,7 +281,6 @@ export default function CommentsSection({ problemId, user }: CommentsSectionProp
         </div>
       )}
 
-      {/* Comments list */}
       {comments.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 20px", color: "#666" }}>
           <div style={{ fontSize: "64px", marginBottom: "16px" }}>💬</div>
@@ -323,7 +328,7 @@ interface CommentItemProps {
   collapsedComments: Set<string>;
   toggleCollapse: (id: string) => void;
   level: number;
-  isLastReply?: boolean; // Đánh dấu reply cuối cùng trong danh sách
+  isLastReply?: boolean;
 }
 
 function CommentItem({
@@ -346,13 +351,7 @@ function CommentItem({
   const replyCount = comment.replies?.length || 0;
   const isReply = level > 0;
   const hasReplies = replyCount > 0 && !isCollapsed;
-  
-  // Đường kẻ dọc chỉ kéo dài xuống nếu:
-  // 1. Comment có replies và không bị collapse, VÀ
-  // 2. Không phải là reply cuối cùng (hoặc có replies của chính nó)
   const shouldExtendLine = hasReplies || (isReply && !isLastReply);
-  
-  // Ensure problemId is always a string
   const safeProblemId = problemId || "";
 
   return (
@@ -363,10 +362,8 @@ function CommentItem({
         marginBottom: "8px",
       }}
     >
-      {/* Tree connector lines - chỉ hiển thị nếu là reply */}
       {level > 0 && (
         <>
-          {/* Đường kẻ dọc - chỉ kéo dài xuống nếu có replies hoặc không phải reply cuối cùng */}
           <div
             style={{
               position: "absolute",
@@ -377,7 +374,6 @@ function CommentItem({
               background: "#d0d0d0",
             }}
           />
-          {/* Đường kẻ ngang - nối từ đường dọc đến comment */}
           <div
             style={{
               position: "absolute",
@@ -394,14 +390,13 @@ function CommentItem({
       <div
         style={{
           padding: "12px 16px",
-          background: isReply ? "#f8f9fa" : "#ffffff",
-          borderRadius: "8px",
-          border: "1px solid #e0e0e0",
-          boxShadow: isReply ? "none" : "0 1px 3px rgba(0,0,0,0.08)",
+          background: isReply ? "#f8fafc" : "#ffffff",
+          borderRadius: "12px",
+          border: "1px solid #e2e8f0",
+          boxShadow: isReply ? "none" : "0 1px 3px rgba(0,0,0,0.04)",
           position: "relative",
         }}
       >
-      {/* Comment header */}
       <div
         style={{
           display: "flex",
@@ -410,81 +405,79 @@ function CommentItem({
           marginBottom: "8px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
           <div
-                  style={{
-                    width: isReply ? "32px" : "40px",
-                    height: isReply ? "32px" : "40px",
-                    borderRadius: "50%",
-                    background: isReply
-                      ? "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-                      : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    fontWeight: 600,
-                    fontSize: isReply ? "13px" : "16px",
-                  }}
-                >
-                  {comment.taiKhoan?.HoTen?.[0]?.toUpperCase() || "U"}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                    {comment.taiKhoan ? (
-                      <>
-                        <Link
-                          href={`/users/${comment.taiKhoan.IdTaiKhoan}`}
-                          className="problem-link"
-                          style={{
-                            fontWeight: 600,
-                            fontSize: isReply ? "14px" : "15px",
-                            color: isReply ? "#f5576c" : "#667eea",
-                          }}
-                        >
-                          {comment.taiKhoan.HoTen}
-                        </Link>
-                        {comment.parentUser && (
-                          <>
-                            <span style={{ color: "#999", fontSize: "12px" }}>→</span>
-                            <Link
-                              href={`/users/${comment.parentUser.IdTaiKhoan}`}
-                              className="problem-link"
-                              style={{ fontSize: "13px", color: "#666" }}
-                            >
-                              {comment.parentUser.HoTen}
-                            </Link>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <span style={{ fontWeight: 600, fontSize: isReply ? "14px" : "15px" }}>
-                        Người dùng {comment.IdTaiKhoan}
-                      </span>
-                    )}
-                  </div>
-            <div style={{ fontSize: "12px", color: "#999", marginTop: "2px" }}>
+            style={{
+              width: isReply ? "32px" : "42px",
+              height: isReply ? "32px" : "42px",
+              borderRadius: "10px",
+              overflow: "hidden",
+              border: "1px solid #eee",
+              flexShrink: 0
+            }}
+          >
+            <img 
+              src={comment.taiKhoan.Avatar} 
+              alt="avatar" 
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              {comment.taiKhoan ? (
+                <>
+                  <Link
+                    href={`/users/${comment.taiKhoan.IdTaiKhoan}`}
+                    className="problem-link"
+                    style={{
+                      fontWeight: 700,
+                      fontSize: isReply ? "13px" : "14px",
+                      color: "#1e293b",
+                    }}
+                  >
+                    {comment.taiKhoan.HoTen}
+                  </Link>
+                  {comment.parentUser && (
+                    <>
+                      <span style={{ color: "#94a3b8", fontSize: "12px" }}>→</span>
+                      <Link
+                        href={`/users/${comment.parentUser.IdTaiKhoan}`}
+                        className="problem-link"
+                        style={{ fontSize: "13px", color: "#64748b" }}
+                      >
+                        {comment.parentUser.HoTen}
+                      </Link>
+                    </>
+                  )}
+                </>
+              ) : (
+                <span style={{ fontWeight: 600, fontSize: isReply ? "13px" : "14px" }}>
+                  User {comment.IdTaiKhoan}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px" }}>
               {new Date(comment.NgayTao).toLocaleString("vi-VN")}
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
           {replyCount > 0 && (
             <button
               onClick={() => toggleCollapse(comment.IdBinhLuan)}
               style={{
                 padding: "4px 8px",
-                background: "transparent",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
+                background: "#f1f5f9",
+                border: "none",
+                borderRadius: "6px",
                 cursor: "pointer",
-                fontSize: "12px",
-                color: "#666",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#64748b",
                 display: "flex",
                 alignItems: "center",
                 gap: "4px",
               }}
-              title={isCollapsed ? "Hiện replies" : "Ẩn replies"}
             >
               {isCollapsed ? "▶" : "▼"} {replyCount}
             </button>
@@ -502,45 +495,48 @@ function CommentItem({
               }}
               style={{
                 padding: "6px 12px",
-                background: replyingTo === comment.IdBinhLuan ? "#667eea" : "#f0f0f0",
-                color: replyingTo === comment.IdBinhLuan ? "white" : "#666",
+                background: replyingTo === comment.IdBinhLuan ? "#ef4444" : "#f1f5f9",
+                color: replyingTo === comment.IdBinhLuan ? "white" : "#475569",
                 border: "none",
                 borderRadius: "6px",
                 cursor: "pointer",
-                fontSize: "13px",
-                fontWeight: 500,
+                fontSize: "12px",
+                fontWeight: 600,
               }}
             >
-              {replyingTo === comment.IdBinhLuan ? "✕ Hủy" : "↩ Trả lời"}
+              {replyingTo === comment.IdBinhLuan ? "Hủy" : "Trả lời"}
             </button>
           )}
         </div>
       </div>
 
-      {/* Comment content */}
       <div
+        className="markdown-body"
         style={{
           fontSize: isReply ? "13px" : "14px",
           lineHeight: "1.6",
-          color: "#333",
-          marginBottom: "8px",
+          color: "#334155",
+          marginBottom: "4px",
+          paddingLeft: "2px"
         }}
       >
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown 
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeRaw, rehypeHighlight, rehypeKatex]}
+        >
           {comment.NoiDung}
         </ReactMarkdown>
       </div>
 
-      {/* Reply form */}
       {replyingTo === comment.IdBinhLuan && user && (
         <form
           onSubmit={(e) => handleReply(comment.IdBinhLuan, e)}
           style={{
             marginTop: "12px",
             padding: "12px",
-            background: "#f8f9fa",
-            borderRadius: "6px",
-            border: "1px solid #e0e0e0",
+            background: "#ffffff",
+            borderRadius: "10px",
+            border: "2px solid #e2e8f0",
           }}
         >
           <div style={{ marginBottom: "8px" }}>
@@ -553,12 +549,12 @@ function CommentItem({
               style={{
                 fontFamily: "inherit",
                 fontSize: "13px",
-                background: "white",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                padding: "8px",
+                background: "transparent",
+                border: "none",
+                padding: "4px",
                 width: "100%",
                 resize: "vertical",
+                outline: "none"
               }}
             />
           </div>
@@ -567,9 +563,9 @@ function CommentItem({
               style={{
                 padding: "8px 12px",
                 borderRadius: "4px",
-                background: "#ffebee",
-                color: "#c62828",
-                fontSize: "13px",
+                background: "#fee2e2",
+                color: "#b91c1c",
+                fontSize: "12px",
                 marginBottom: "10px",
               }}
             >
@@ -583,7 +579,7 @@ function CommentItem({
               disabled={submitting || !replyContent.trim()}
               style={{
                 padding: "8px 16px",
-                fontSize: "13px",
+                fontSize: "12px",
                 background: "#667eea",
                 color: "white",
                 border: "none",
@@ -592,25 +588,7 @@ function CommentItem({
                 opacity: submitting || !replyContent.trim() ? 0.6 : 1,
               }}
             >
-              {submitting ? "Đang gửi..." : "Gửi trả lời"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setReplyingTo(null);
-                setReplyContent("");
-              }}
-              style={{
-                padding: "8px 16px",
-                fontSize: "13px",
-                background: "#e0e0e0",
-                color: "#666",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-              }}
-            >
-              Hủy
+              Gửi trả lời
             </button>
           </div>
         </form>
@@ -618,7 +596,6 @@ function CommentItem({
 
       </div>
       
-      {/* Replies - chỉ hiển thị nếu không bị collapse */}
       {!isCollapsed && comment.replies && comment.replies.length > 0 && (
         <div style={{ marginTop: "8px" }}>
           {comment.replies.map((reply, index) => (

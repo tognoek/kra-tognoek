@@ -12,8 +12,14 @@ import auth from "./auth";
 import admin from "./admin";
 import upload from "./upload";
 import rank from "./rank"
+import creatorC from "./creatorContest";
+import creatorP from "./creatorProblem";
 
 export const router = Router();
+
+router.get("/", (req, res) => {
+  res.send("Hi! Kra-tognoek Server API is running.");
+});
 
 router.use("/health", health);
 router.use("/auth", auth);
@@ -27,5 +33,7 @@ router.use("/ranks", rank);
 router.use("/submissions", submissions);
 router.use("/languages", languages);
 router.use("/admin", admin);
+router.use("/creator_contest", creatorC);
+router.use("/creator_problem", creatorP);
 router.use("/upload", upload);
 

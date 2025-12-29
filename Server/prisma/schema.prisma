@@ -25,15 +25,20 @@ model TaiKhoan {
   MatKhau      String
   HoTen        String
   Email        String   @unique
-  TrangThai    Boolean  @default(true)
+  TrangThai    Boolean  @default(false)
   NgayTao      DateTime @default(now())
 
+  FirebaseUID  String?  @unique @db.VarChar(128)
+  IsVerified   Boolean  @default(false)
+  
   vaiTro       VaiTro   @relation(fields: [IdVaiTro], references: [IdVaiTro])
   deBais       DeBai[]
   binhLuans    BinhLuan[]
   cuocThis     CuocThi[]
   baiNops      BaiNop[]
   cuocThiDangKy CuocThi_DangKy[]
+
+  @@index([FirebaseUID])
 }
 
 model ChuDe {

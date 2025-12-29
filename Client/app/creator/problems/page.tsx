@@ -57,7 +57,7 @@ export default function MyProblemListPage() {
   const fetchMyProblems = async (id: string) => {
     try {
       // GỌI API MỚI: Chỉ lấy bài của user này
-      const res = await fetch(`${API_BASE}/api/problems/available?userId=${id}`);
+      const res = await fetch(`${API_BASE}/api/creator_problem/available?userId=${id}`);
       if (res.ok) {
         const data = await res.json();
         setProblems(data);
@@ -233,7 +233,7 @@ export default function MyProblemListPage() {
                   </td>
                   <td style={{ padding: "16px 24px", fontSize: "13px", fontFamily: "monospace", color: "#4b5563" }}>
                     <div>⏱ {prob.GioiHanThoiGian}ms</div>
-                    <div style={{ marginTop: "2px" }}>💾 {prob.GioiHanBoNho}MB</div>
+                    <div style={{ marginTop: "2px" }}>💾 {prob.GioiHanBoNho} kb</div>
                   </td>
                   <td style={{ padding: "16px 24px", textAlign: "center" }}>
                     {prob.TrangThai ? (

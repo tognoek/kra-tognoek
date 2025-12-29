@@ -41,7 +41,7 @@ Kra đọc job từ Redis ở dạng JSON, bọc trong `JobEnvelope` giống bê
     "codeId": "1",                // id code - dùng để map sang đường dẫn code trong S3
     "testId": "sum",              // id bộ test - dùng để map sang bundle test trong S3
     "timeLimitMs": 1000,          // giới hạn thời gian mỗi test (ms)
-    "memoryLimitKb": 262144,      // giới hạn RAM (KB)
+    "memoryLimitKb": 262144,      // giới hạn RAM (kb)
     "inputMode": "stdin",         // "stdin" hoặc "file"
     "language": "cpp"             // "c" hoặc "cpp" (mặc định cpp nếu thiếu)
   },

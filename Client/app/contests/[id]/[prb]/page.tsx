@@ -5,9 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
 import SubmitModal from "../../../components/SubmitModal";
+import 'highlight.js/styles/github.css';
+import 'katex/dist/katex.min.css';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -72,7 +76,6 @@ export default function ContestProblemDetail() {
 
   const { problem, contestInfo, permissions } = data;
 
-  // Logic hiển thị nhập xuất
   const inputMethod = problem.DuongDanInput ? problem.DuongDanInput : "Bàn phím (stdin)";
   const outputMethod = problem.DuongDanOutput ? problem.DuongDanOutput : "Màn hình (stdout)";
 
@@ -80,7 +83,6 @@ export default function ContestProblemDetail() {
     <div className="problem-container">
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
       
-      {/* Contest Header */}
       <div className="contest-header-mini no-print">
         <Link href={`/contests/${contestId}`} className="breadcrumb-link">
           🏆 {contestInfo.TenCuocThi}
@@ -89,17 +91,15 @@ export default function ContestProblemDetail() {
       </div>
 
       <div className="problem-main-layout">
-        {/* KHUNG BÊN TRÁI: NỘI DUNG ĐỀ BÀI */}
         <div className="problem-content printable-area">
           <div className="problem-header">
             <h1>📄 {problem.TieuDe}</h1>
           </div>
 
-          {/* Thông số hiển thị riêng khi IN */}
           <div className="print-only-specs">
             <div className="print-grid">
                 <div>⏱️ <b>Thời gian:</b> {problem.GioiHanThoiGian}ms</div>
-                <div>💾 <b>Bộ nhớ:</b> {problem.GioiHanBoNho}MB</div>
+                <div>💾 <b>Bộ nhớ:</b> {problem.GioiHanBoNho} kb</div>
                 <div>📈 <b>Độ khó:</b> {problem.DoKho}/10</div>
                 <div>📥 <b>Nhập:</b> {inputMethod}</div>
                 <div>📤 <b>Xuất:</b> {outputMethod}</div>
@@ -107,17 +107,17 @@ export default function ContestProblemDetail() {
             <hr className="print-divider" />
           </div>
 
-          <div className="markdown-card">
+          <div className="markdown-card markdown-body">
+            {/* ĐÃ CẬP NHẬT HỖ TRỢ MARKDOWN ĐẦY ĐỦ */}
             <ReactMarkdown 
-              remarkPlugins={[remarkGfm]} 
-              rehypePlugins={[rehypeRaw, rehypeHighlight]}
+              remarkPlugins={[remarkGfm, remarkMath]} 
+              rehypePlugins={[rehypeRaw, rehypeHighlight, rehypeKatex]}
             >
               {problem.NoiDungDeBai}
             </ReactMarkdown>
           </div>
         </div>
 
-        {/* KHUNG BÊN PHẢI: HÀNH ĐỘNG & THÔNG SỐ */}
         <div className="problem-sidebar no-print">
           <div className="action-card">
             <h3 className="card-title">📊 Thông số</h3>
@@ -129,7 +129,7 @@ export default function ContestProblemDetail() {
               </div>
               <div className="spec-item">
                 <span className="spec-label">💾 Bộ nhớ</span>
-                <span className="spec-value">{problem.GioiHanBoNho} MB</span>
+                <span className="spec-value">{problem.GioiHanBoNho} kb</span>
               </div>
               <div className="spec-item">
                 <span className="spec-label">📈 Độ khó</span>
@@ -185,6 +185,14 @@ const customStyles = `
   
   .markdown-card { background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; line-height: 1.8; color: #334155; font-size: 16px; }
 
+  /* GitHub Flavored Markdown Sync */
+  .markdown-body h1, .markdown-body h2 { border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; margin-bottom: 16px; margin-top: 24px; font-weight: 700; }
+  .markdown-body table { border-collapse: collapse; width: 100%; margin: 20px 0; border: 1px solid #dfe2e5; }
+  .markdown-body table th, .markdown-body table td { border: 1px solid #dfe2e5; padding: 10px 15px; text-align: left; }
+  .markdown-body table tr:nth-child(2n) { background: #f6f8fa; }
+  .markdown-body code { background: rgba(37, 99, 235, 0.05); padding: 3px 6px; border-radius: 4px; font-family: monospace; color: #e11d48; }
+  .markdown-body pre { background: #1e293b; color: #f8fafc; padding: 20px; border-radius: 12px; overflow: auto; }
+
   .action-card { background: #fff; padding: 28px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); position: sticky; top: 30px; }
   .card-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin: 0 0 20px 0; font-weight: 700; }
   
@@ -200,8 +208,6 @@ const customStyles = `
   
   .btn-submit-main { width: 100%; padding: 16px; background: #2563eb; color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-bottom: 12px; }
   .btn-submit-main:hover { background: #1d4ed8; transform: translateY(-2px); }
-  
-  .btn-print-side { width: 100%; padding: 12px; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; cursor: pointer; }
   
   .status-notice { background: #fff1f2; padding: 15px; border-radius: 12px; text-align: center; color: #be123c; font-weight: 700; margin-bottom: 12px; }
   .loading-container { padding: 100px; text-align: center; font-weight: 600; color: #64748b; }

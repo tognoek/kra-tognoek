@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { prisma } from "../db";
 
+import { getAvatarUrl } from "../scripts/avatar";
+
 const router = Router();
 
 router.get("/:id", async (req, res) => {
@@ -15,11 +17,10 @@ router.get("/:id", async (req, res) => {
           orderBy: { IdDeBai: 'asc' },
           select: { IdDeBai: true, TenHienThi: true }
         },
-        // Lấy TẤT CẢ thí sinh đã đăng ký cuộc thi này
         dangKys: {
           where: { TrangThai: true },
           include: {
-            taiKhoan: { select: { IdTaiKhoan: true, HoTen: true, TenDangNhap: true } }
+            taiKhoan: { select: { IdTaiKhoan: true, HoTen: true, Email: true } }
           }
         }
       }
@@ -34,13 +35,10 @@ router.get("/:id", async (req, res) => {
 
     const leaderboard = contest.dangKys.map(reg => {
       const user = reg.taiKhoan;
-      console.log(allSubmissions, user.IdTaiKhoan);
       const userSubmissions = allSubmissions.filter(s => s.IdTaiKhoan === user.IdTaiKhoan);
-      console.log(userSubmissions);
       const problemStats = contest.deBais.map(prob => {
         const pSubs = userSubmissions.filter(s => s.IdDeBai === prob.IdDeBai);
         
-        // Tìm bài ACC đầu tiên
         const solvedSub = pSubs.find(s => {
           if (!s.TrangThaiCham) return false;
           try {
@@ -55,7 +53,6 @@ router.get("/:id", async (req, res) => {
           IdDeBai: prob.IdDeBai.toString(),
           isSolved: !!solvedSub,
           attempts: pSubs.length,
-          // Thời gian nộp cuối cùng (dùng để hiện thị lên Rank theo yêu cầu của bạn)
           lastSubmitTime: lastSub ? lastSub.NgayNop : null,
           executionTime: solvedSub?.ThoiGianThucThi || lastSub?.ThoiGianThucThi || 0,
           memoryUsage: solvedSub?.BoNhoSuDung || lastSub?.BoNhoSuDung || 0,
@@ -69,21 +66,18 @@ router.get("/:id", async (req, res) => {
         user: {
           IdTaiKhoan: user.IdTaiKhoan.toString(),
           HoTen: user.HoTen,
-          TenDangNhap: user.TenDangNhap
+          Avatar: getAvatarUrl(user.Email),
         },
         problemStats,
         totalPoints: solvedProblems.length,
-        // Thời gian bài thành công sớm nhất
         firstSolveTime: solvedProblems.length > 0 
           ? Math.min(...solvedProblems.map(p => new Date(p.firstSolveTime!).getTime())) 
           : Infinity,
-        // Dùng mảng này để so sánh tiêu chí thời gian thực thi
         executionTimes: solvedProblems.map(p => p.executionTime).sort((a, b) => a - b),
         totalMemory: solvedProblems.reduce((sum, p) => sum + p.memoryUsage, 0)
       };
     });
 
-    // Sắp xếp rank
     leaderboard.sort((a, b) => {
       if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
       if (a.firstSolveTime !== b.firstSolveTime) return a.firstSolveTime - b.firstSolveTime;

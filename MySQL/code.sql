@@ -18,7 +18,9 @@ CREATE TABLE `TaiKhoan` (
   `HoTen` varchar(50) NOT NULL,
   `Email` varchar(255) UNIQUE NOT NULL,
   `TrangThai` boolean NOT NULL DEFAULT true,
-  `NgayTao` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  `NgayTao` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  `IsVerified` boolean NOT NULL DEFAULT false
+  `FirebaseUid` varchar(255) UNIQUE DEFAULT NULL
 );
 
 CREATE TABLE `ChuDe` (

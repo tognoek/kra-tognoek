@@ -37,7 +37,6 @@ export default function ContestListPage() {
   const itemsPerPage = 10;
 
  useEffect(() => {
-    // 1. Lấy userId từ LocalStorage khi component mount
     if (typeof window !== "undefined") {
       const savedUser = window.localStorage.getItem("oj_user");
       if (savedUser) {
@@ -51,12 +50,10 @@ export default function ContestListPage() {
     }
   }, []);
 
-  // 2. Gọi API khi đã có userId
   useEffect(() => {
     if (userId) {
       fetchMyContests(userId);
     } else {
-       // Nếu không có user (chưa đăng nhập), có thể set loading false để hiện trang rỗng hoặc redirect
        setLoading(false); 
     }
   }, [userId]);
@@ -65,8 +62,7 @@ export default function ContestListPage() {
     try {
       setLoading(true);
       
-      // SỬA DÒNG NÀY: Gọi vào API mới /by-user/
-      const res = await fetch(`${API_BASE}/api/contests/by-user/${uid}`);
+      const res = await fetch(`${API_BASE}/api/creator_contest/by-user/${uid}`);
       
       if (res.ok) {
         const data = await res.json();
@@ -80,7 +76,6 @@ export default function ContestListPage() {
       setLoading(false);
     }
   };
-
   // Logic lọc
   const filteredContests = contests.filter((c) => {
     const matchName = c.TenCuocThi.toLowerCase().includes(searchTerm.toLowerCase());

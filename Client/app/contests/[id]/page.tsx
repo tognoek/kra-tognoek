@@ -5,10 +5,14 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import 'highlight.js/styles/github.css';
+import 'katex/dist/katex.min.css';
 
 // Badge Trạng thái đồng bộ màu sắc mới
 const StatusBadge = ({ status }: { status: string }) => {
@@ -64,7 +68,6 @@ export default function ContestDetailPage() {
       if (!res.ok) throw new Error("Không thể tải dữ liệu");
       const data = await res.json();
 
-      // Tính toán Status tiếng Việt đồng bộ với trang danh sách
       const now = new Date();
       const start = new Date(data.ThoiGianBatDau);
       const end = new Date(data.ThoiGianKetThuc);
@@ -123,7 +126,6 @@ export default function ContestDetailPage() {
       <style dangerouslySetInnerHTML={{ __html: contestStyles }} />
       <ToastContainer />
 
-      {/* Nút Quay lại danh sách */}
       <div className="top-nav">
         <Link href="/contests" className="back-link">
           <span className="back-icon">←</span> Quay lại danh sách cuộc thi
@@ -181,8 +183,12 @@ export default function ContestDetailPage() {
         <div className="main-content">
           <div className="content-card">
             <h2 className="section-title">📝 Giới thiệu</h2>
-            <div className="markdown-box">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeHighlight]}>
+            {/* ĐÃ CẬP NHẬT VIEW MARKDOWN CHUẨN */}
+            <div className="markdown-box markdown-body">
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm, remarkMath]} 
+                rehypePlugins={[rehypeRaw, rehypeHighlight, rehypeKatex]}
+              >
                 {contest.MoTa || "_Chưa có mô tả._"}
               </ReactMarkdown>
             </div>
@@ -204,7 +210,7 @@ export default function ContestDetailPage() {
                       </Link>
                     </td>
                     <td><DifficultyBadge difficulty={item.deBai?.DoKho} /></td>
-                    <td className="specs">{item.deBai?.GioiHanThoiGian}ms / {item.deBai?.GioiHanBoNho}MB</td>
+                    <td className="specs">{item.deBai?.GioiHanThoiGian}ms / {item.deBai?.GioiHanBoNho}kb</td>
                   </tr>
                 ))}
               </tbody>
@@ -214,8 +220,12 @@ export default function ContestDetailPage() {
           {contest.ChuY && (
             <div className="content-card warning-card">
               <h2 className="section-title">⚠️ Chú ý từ BTC</h2>
-              <div className="markdown-box">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeHighlight]}>
+              {/* ĐÃ CẬP NHẬT VIEW MARKDOWN CHUẨN */}
+              <div className="markdown-box markdown-body warning-text">
+                <ReactMarkdown 
+                   remarkPlugins={[remarkGfm, remarkMath]} 
+                   rehypePlugins={[rehypeRaw, rehypeHighlight, rehypeKatex]}
+                >
                    {contest.ChuY}
                 </ReactMarkdown>
               </div>
@@ -310,6 +320,16 @@ const contestStyles = `
   .stat-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #f1f5f9; font-size: 0.9rem; }
   .info-block small { color: #94a3b8; text-transform: uppercase; font-size: 0.7rem; font-weight: 700; }
   .info-block p { margin: 4px 0 15px 0; font-weight: 700; color: #1e293b; }
+
+  /* Markdown View Sync */
+  .markdown-body { line-height: 1.6; font-size: 15px; color: #334155; }
+  .markdown-body table { border-collapse: collapse; width: 100%; margin: 15px 0; border: 1px solid #e2e8f0; }
+  .markdown-body th, .markdown-body td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; }
+  .markdown-body th { background: #f8fafc; font-weight: 700; }
+  .markdown-body code { background: #f1f5f9; color: #e11d48; padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+  .markdown-body pre { background: #1e293b; color: white; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+  .markdown-body pre code { background: transparent; color: inherit; padding: 0; }
+  .warning-text { color: #9a3412; }
 
   .top-users-side { border: 1px solid #e0e7ff; background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%); }
   .top-user-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }

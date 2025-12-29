@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 * { box-sizing: border-box; }
 
 body {
@@ -566,3 +565,173 @@ tbody tr:last-child td {
   }
 }
 
+/* ==========================================================================
+   PHẦN BỔ SUNG: MODERN LAYOUT & GLASSMORPHISM
+   ========================================================================== */
+
+:root {
+  --primary-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --header-blur: blur(12px);
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--glass-bg);
+  backdrop-filter: var(--header-blur);
+  -webkit-backdrop-filter: var(--header-blur);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.header-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.logo-icon {
+  font-size: 22px;
+  background: var(--primary-gradient);
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+}
+
+.text-gradient {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+}
+
+.nav-icon {
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.nav-item.active {
+  background-color: #e2e8f0; /* Màu nền xám xanh rõ rệt khi được chọn */
+  color: #2563eb;           /* Màu chữ xanh Primary */
+}
+
+.nav-item.active .nav-label {
+  font-weight: 700;         /* Chữ đậm hơn khi active */
+}
+
+/* Đảm bảo khi hover vào item đang active vẫn giữ nguyên style rõ ràng */
+.nav-item.active:hover {
+  background-color: #cbd5e1;
+  color: #1e40af;
+}
+
+.nav-item:hover .nav-icon {
+  filter: grayscale(0);
+  opacity: 1;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.content-area {
+  flex: 1;
+  padding: 30px 0;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.main-footer {
+  padding: 30px 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  border-top: 1px solid #f1f5f9;
+  background: #fff;
+}
+
+.auth-section {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 1024px) {
+  .nav-label { display: none; }
+  .nav-item { padding: 10px; }
+  .nav-icon { font-size: 20px; }
+}
+
+@media (max-width: 640px) {
+  .logo-text, .divider, .main-nav { display: none; }
+}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import CryptoJS from "crypto-js"; // Cần cài đặt: npm install crypto-js
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -30,7 +31,7 @@ export default function ProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setUserStats(data.stats);
-        setUser(prev => ({ ...prev, ...data }));
+        setUser((prev: any) => ({ ...prev, ...data }));
       }
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
@@ -93,7 +94,7 @@ export default function ProfilePage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setUser(prev => ({ ...prev, HoTen: data.HoTen }));
+        setUser((prev: any) => ({ ...prev, HoTen: data.HoTen }));
         window.localStorage.setItem("oj_user", JSON.stringify({ ...user, HoTen: data.HoTen }));
         setEditingName(false);
         window.dispatchEvent(new CustomEvent("authChange"));
@@ -124,9 +125,11 @@ export default function ProfilePage() {
       <style dangerouslySetInnerHTML={{ __html: modernUIStyles }} />
 
       <div className="content-constrain">
-        {/* Header Profile - REDESIGNED EDITING SECTION */}
+        {/* Header Profile */}
         <div className="profile-hero">
-          <div className="avatar-large">{user.HoTen?.charAt(0) || "?"}</div>
+          <div className="avatar-container">
+             <img src={user.Avatar} alt="avatar" className="avatar-img" />
+          </div>
           <div className="hero-info">
             {editingName ? (
               <div className="name-edit-container">
@@ -251,7 +254,7 @@ export default function ProfilePage() {
                       <td><Link href={`/problems/${s.IdDeBai}`} className="p-link">{s.deBai?.TieuDe}</Link></td>
                       <td><span className={`st-badge ${getStatusClass(s.TrangThaiCham)}`}>{s.TrangThaiCham || "Pending"}</span></td>
                       <td>{s.ThoiGianThucThi}ms</td>
-                      <td>{s.BoNhoSuDung}KB</td>
+                      <td>{s.BoNhoSuDung} kb</td>
                       <td className="date-cell">{new Date(s.NgayNop).toLocaleDateString("vi-VN")}</td>
                     </tr>
                   ))
@@ -279,7 +282,9 @@ const modernUIStyles = `
 
   /* Hero Section */
   .profile-hero { display: flex; align-items: center; gap: 24px; background: white; padding: 32px; border-radius: 24px; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05); border: 1px solid #fff; }
-  .avatar-large { width: 90px; height: 90px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 800; box-shadow: 0 10px 15px -3px rgba(118, 75, 162, 0.3); }
+  
+  .avatar-container { width: 90px; height: 90px; border-radius: 24px; overflow: hidden; background: #eee; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+  .avatar-img { width: 100%; height: 100%; object-fit: cover; }
   
   /* NAME EDITING STYLES */
   .user-fullname { font-size: 28px; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 12px; }
