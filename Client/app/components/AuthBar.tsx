@@ -59,7 +59,6 @@ export default function AuthBar() {
   const isAdmin = user?.VaiTro?.toLowerCase() === "admin";
   const isCreator = isAdmin || user?.VaiTro?.toLowerCase() === "creator";
 
-  // Nếu đã đăng nhập: Hiển thị Dropdown User
   if (user) {
     return (
       <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -155,7 +154,6 @@ export default function AuthBar() {
     );
   }
 
-  // Nếu chưa đăng nhập: Hiển thị nút dẫn tới trang Login
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
       <button
@@ -166,7 +164,7 @@ export default function AuthBar() {
           fontWeight: 600,
           cursor: "pointer"
         }}
-        onClick={() => router.push("/auth/login")} // Chuyển hướng trực tiếp tới trang login
+        onClick={() => router.push("/auth/login")}
       >
         Đăng nhập
       </button>

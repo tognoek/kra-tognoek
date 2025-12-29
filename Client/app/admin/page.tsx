@@ -56,6 +56,17 @@ export default function AdminHomePage() {
           </p>
         </Link>
 
+        <Link href="/admin/posts" className="admin-card green-theme">
+          <div className="card-top">
+            <div className="icon-box">🗂️</div>
+            <div className="arrow-icon">→</div>
+          </div>
+          <h3 className="card-title">Danh sách bài đăng</h3>
+          <p className="card-desc">
+            Quản lý nội dung, trạng thái hiển thị và mức độ ưu tiên của các bài đăng hệ thống.
+          </p>
+        </Link>
+
       </div>
     </div>
   );
@@ -134,6 +145,22 @@ const adminStyles = `
   .admin-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Green Theme (Posts - Thẻ thứ 4) */
+  .green-theme .icon-box {
+    background-color: #f0fdf4; /* Xanh lá siêu nhạt */
+    color: #16a34a;           /* Xanh lá đậm */
+  }
+  
+  .green-theme:hover { 
+    border-color: #22c55e;    /* Màu viền khi hover */
+    background-color: #fcfdfc; /* Hiệu ứng nền nhẹ khi hover */
+  }
+
+  /* Đảm bảo icon box cũng đổi màu nhẹ khi hover card (Tùy chọn) */
+  .green-theme:hover .icon-box {
+    background-color: #dcfce7;
   }
 
   /* Card Top Section (Icon + Arrow) */

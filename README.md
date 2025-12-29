@@ -22,7 +22,6 @@ Dự án bao gồm 4 services chính:
 ### Reset Prisma
 ```shell
 npx prisma generate
-npx prisma migrate dev --name add_status_column
 ```
 
 ### Cài đặt dependencies:

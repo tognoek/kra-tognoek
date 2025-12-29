@@ -19,7 +19,7 @@ CREATE TABLE `TaiKhoan` (
   `Email` varchar(255) UNIQUE NOT NULL,
   `TrangThai` boolean NOT NULL DEFAULT true,
   `NgayTao` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-  `IsVerified` boolean NOT NULL DEFAULT false
+  `IsVerified` boolean NOT NULL DEFAULT false,
   `FirebaseUid` varchar(255) UNIQUE DEFAULT NULL
 );
 
@@ -114,6 +114,17 @@ CREATE TABLE `BaiNop` (
   `NgayNop` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
+CREATE TABLE `BaiDang` (
+    `IdBaiDang` BIGINT PRIMARY KEY  AUTO_INCREMENT,
+    `IdTaiKhoan` BIGINT NOT NULL,
+    `TieuDe` VARCHAR(255) NOT NULL,
+    `NoiDung` TEXT NOT NULL,
+    `UuTien` INT NOT NULL DEFAULT 1,
+    `TrangThai` BOOLEAN NOT NULL DEFAULT TRUE,
+    `NgayTao` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `NgayCapNhat` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)
+);
+
 ALTER TABLE `TaiKhoan` ADD FOREIGN KEY (`IdVaiTro`) REFERENCES `VaiTro` (`IdVaiTro`);
 
 ALTER TABLE `DeBai` ADD FOREIGN KEY (`IdTaiKhoan`) REFERENCES `TaiKhoan` (`IdTaiKhoan`);
@@ -147,6 +158,8 @@ ALTER TABLE `BaiNop` ADD FOREIGN KEY (`IdDeBai`) REFERENCES `DeBai` (`IdDeBai`);
 ALTER TABLE `BaiNop` ADD FOREIGN KEY (`IdNgonNgu`) REFERENCES `NgonNgu` (`IdNgonNgu`);
 
 ALTER TABLE `BaiNop` ADD FOREIGN KEY (`IdCuocThi`) REFERENCES `CuocThi` (`IdCuocThi`);
+
+ALTER TABLE `BaiDang` ADD FOREIGN KEY (`IdTaiKhoan`) REFERENCES `TaiKhoan` (`IdTaiKhoan`);
 
 
 -- Dữ liệu mẫu

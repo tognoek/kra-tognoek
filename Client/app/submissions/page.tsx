@@ -20,6 +20,9 @@ export default function SubmissionsPage() {
 
   const loadSubmissions = useCallback(async (page = 1) => {
     setLoading(true);
+      if (typeof document !== "undefined") {
+        document.title = `Danh sách bài nộp - Kra tognoek`;
+      }
     try {
       const query = new URLSearchParams({
         page: page.toString(),

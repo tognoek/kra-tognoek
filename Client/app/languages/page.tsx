@@ -15,6 +15,9 @@ export default function LanguagesPage() {
     fetch(`${API_BASE}/api/languages`)
       .then(res => res.json())
       .then(d => {
+        if (typeof document !== "undefined") {
+          document.title = `Thống kê ngôn ngữ   - Kra tognoek`;
+        }
         setData(d);
         setFiltered(d);
         setLoading(false);

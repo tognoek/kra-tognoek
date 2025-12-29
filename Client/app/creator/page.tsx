@@ -82,7 +82,7 @@ export default function CreatorPage() {
         <h3 className="section-label">🛠️ Tác vụ nhanh</h3>
         <div className="card-grid">
           
-          <div className="card action-card blue" onClick={() => router.push("creator/problems/create")}>
+          <div className="card action-card blue" onClick={() => router.push("/creator/problems/create")}>
             <div className="card-icon-bg">✏️</div>
             <div className="card-content">
               <h3>Tạo đề bài mới</h3>
@@ -91,11 +91,21 @@ export default function CreatorPage() {
             <div className="card-arrow">→</div>
           </div>
 
-          <div className="card action-card purple" onClick={() => router.push("creator/contests/create")}>
+          <div className="card action-card purple" onClick={() => router.push("/creator/contests/create")}>
             <div className="card-icon-bg">🏆</div>
             <div className="card-content">
               <h3>Tạo cuộc thi mới</h3>
               <p>Tổ chức kỳ thi, thêm đề bài và thiết lập thời gian.</p>
+            </div>
+            <div className="card-arrow">→</div>
+          </div>
+
+          {/* KHỐI MỚI: TẠO BÀI ĐĂNG */}
+          <div className="card action-card green-light" onClick={() => router.push("/creator/posts/create")}>
+            <div className="card-icon-bg">📝</div>
+            <div className="card-content">
+              <h3>Tạo bài đăng</h3>
+              <p>Viết thông báo, tin tức hoặc hướng dẫn mới cho người dùng.</p>
             </div>
             <div className="card-arrow">→</div>
           </div>
@@ -106,7 +116,7 @@ export default function CreatorPage() {
         <h3 className="section-label" style={{marginTop: '30px'}}>📂 Quản lý dữ liệu</h3>
         <div className="card-grid">
 
-          <div className="card manage-card" onClick={() => router.push("creator/problems")}>
+          <div className="card manage-card" onClick={() => router.push("/creator/problems")}>
             <div className="icon-box green">📚</div>
             <div className="card-content">
               <h3>Kho bài tập của tôi</h3>
@@ -114,11 +124,20 @@ export default function CreatorPage() {
             </div>
           </div>
 
-          <div className="card manage-card" onClick={() => router.push("creator/contests")}>
+          <div className="card manage-card" onClick={() => router.push("/creator/contests")}>
             <div className="icon-box orange">📊</div>
             <div className="card-content">
               <h3>Danh sách cuộc thi</h3>
               <p>Quản lý trạng thái, thí sinh và bảng xếp hạng các kỳ thi.</p>
+            </div>
+          </div>
+
+          {/* KHỐI MỚI: DANH SÁCH BÀI ĐĂNG */}
+          <div className="card manage-card" onClick={() => router.push("/creator/posts")}>
+            <div className="icon-box blue-soft">📰</div>
+            <div className="card-content">
+              <h3>Danh sách bài đăng</h3>
+              <p>Quản lý nội dung, chỉnh sửa hoặc xóa các bài viết đã đăng.</p>
             </div>
           </div>
 
@@ -129,12 +148,12 @@ export default function CreatorPage() {
 }
 
 // ==========================================
-// CSS STYLES
+// CSS STYLES (Đã thêm màu sắc cho 2 khối mới)
 // ==========================================
 const cssStyles = `
   /* Global Layout */
   .page-container {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 40px 20px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -234,7 +253,7 @@ const cssStyles = `
 
   .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 24px;
   }
 
@@ -270,7 +289,7 @@ const cssStyles = `
     line-height: 1.5;
   }
 
-  /* Action Cards (Top row) */
+  /* Action Cards */
   .action-card {
     display: flex;
     align-items: center;
@@ -279,6 +298,7 @@ const cssStyles = `
 
   .action-card.blue:hover { border-color: #3b82f6; background: #eff6ff; }
   .action-card.purple:hover { border-color: #8b5cf6; background: #f5f3ff; }
+  .action-card.green-light:hover { border-color: #10b981; background: #ecfdf5; }
 
   .card-icon-bg {
     font-size: 24px;
@@ -291,6 +311,7 @@ const cssStyles = `
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     border: 1px solid #f3f4f6;
+    flex-shrink: 0;
   }
 
   .card-arrow {
@@ -305,7 +326,7 @@ const cssStyles = `
     color: #374151;
   }
 
-  /* Manage Cards (Bottom row) */
+  /* Manage Cards */
   .manage-card {
     display: flex;
     align-items: flex-start;
@@ -329,6 +350,7 @@ const cssStyles = `
 
   .icon-box.green { background: #dcfce7; color: #166534; }
   .icon-box.orange { background: #ffedd5; color: #9a3412; }
+  .icon-box.blue-soft { background: #e0f2fe; color: #0369a1; }
 
   /* Mobile Responsive */
   @media (max-width: 600px) {

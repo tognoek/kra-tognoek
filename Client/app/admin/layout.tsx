@@ -17,6 +17,7 @@ const adminNav = [
   { href: "/admin/users", label: "Người dùng", icon: "👥" },
   { href: "/admin/languages", label: "Ngôn ngữ", icon: "🌐" },
   { href: "/admin/topics", label: "Chủ đề bài tập", icon: "🏷️" },
+  { href: "/admin/posts", label: "Quản lý bài đăng", icon: "🗂️" },
   { href: "/", label: "Về trang chủ", icon: "🏠" },
 ];
 
@@ -36,6 +37,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         setUser(null);
       }
     }
+      if (typeof document !== "undefined") {
+        document.title = `Trang admin - Kra tognoek`;
+      }
     setLoading(false);
   }, []);
 

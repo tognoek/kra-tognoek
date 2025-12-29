@@ -32,13 +32,28 @@ model TaiKhoan {
   IsVerified   Boolean  @default(false)
   
   vaiTro       VaiTro   @relation(fields: [IdVaiTro], references: [IdVaiTro])
+
+  baiDangs      BaiDang[]
   deBais       DeBai[]
   binhLuans    BinhLuan[]
   cuocThis     CuocThi[]
   baiNops      BaiNop[]
-  cuocThiDangKy CuocThi_DangKy[]
+  dangKys CuocThi_DangKy[]
 
   @@index([FirebaseUID])
+}
+
+model BaiDang {
+  IdBaiDang   BigInt   @id @default(autoincrement())
+  IdTaiKhoan  BigInt
+  TieuDe      String   @db.VarChar(255)
+  NoiDung     String   @db.Text
+  UuTien      Int      @default(1)
+  TrangThai   Boolean  @default(true)
+  NgayTao     DateTime @default(now())
+  NgayCapNhat DateTime @updatedAt
+
+  taiKhoan    TaiKhoan @relation(fields: [IdTaiKhoan], references: [IdTaiKhoan])
 }
 
 model ChuDe {
@@ -83,7 +98,7 @@ model BinhLuan {
   IdBinhLuan     BigInt    @id @default(autoincrement())
   IdDeBai        BigInt
   IdTaiKhoan     BigInt
-  IdBinhLuanCha  BigInt?   // Null nếu là comment gốc, có giá trị nếu là reply
+  IdBinhLuanCha  BigInt?  
   NoiDung        String    @db.Text
   NgayTao        DateTime  @default(now())
   TrangThai      Boolean   @default(true)
@@ -161,7 +176,7 @@ model BaiNop {
   IdNgonNgu       BigInt
   IdCuocThi       BigInt?
   DuongDanCode    String
-  TrangThaiCham   String?  // null = đang chấm, JSON string của mảng codes = "[-1]" hoặc "[0,0,1,2,0]" - -1=compile error, 0=đúng, 1=sai, 2=timeout, 3=memory limit
+  TrangThaiCham   String? 
   ThoiGianThucThi Int?
   BoNhoSuDung     Int?
   NgayNop         DateTime @default(now())

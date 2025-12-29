@@ -18,6 +18,8 @@ const creatorNav = [
   { href: "/creator/problems/create", label: "Tạo bài tập", icon: "➕" },
   { href: "/creator/contests", label: "Danh sách cuộc thi", icon: "🏆" },
   { href: "/creator/contests/create", label: "Tạo cuộc thi", icon: "📅" },
+  { href: "/creator/posts", label: "Danh sách bài đăng", icon: "📰" },
+  { href: "/creator/posts/create", label: "Tạo bài đăng", icon: "📝" },
   { href: "/", label: "Về trang chủ", icon: "🏠" },
 ];
 
@@ -37,6 +39,9 @@ export default function CreateLayout({ children }: { children: ReactNode }) {
         setUser(null);
       }
     }
+      if (typeof document !== "undefined") {
+        document.title = `Trang nhà sáng tạo - Kra tognoek`;
+      }
     setLoading(false);
   }, []);
 

@@ -12,6 +12,7 @@ import auth from "./auth";
 import admin from "./admin";
 import upload from "./upload";
 import rank from "./rank"
+import posts from "./posts"
 import creatorC from "./creatorContest";
 import creatorP from "./creatorProblem";
 
@@ -33,6 +34,7 @@ router.use("/ranks", rank);
 router.use("/submissions", submissions);
 router.use("/languages", languages);
 router.use("/admin", admin);
+router.use("/posts", posts);
 router.use("/creator_contest", creatorC);
 router.use("/creator_problem", creatorP);
 router.use("/upload", upload);

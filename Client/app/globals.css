@@ -713,12 +713,58 @@ tbody tr:last-child td {
 }
 
 .main-footer {
-  padding: 30px 0;
-  text-align: center;
-  color: #94a3b8;
-  font-size: 13px;
+  background: #ffffff;
   border-top: 1px solid #f1f5f9;
-  background: #fff;
+  padding: 30px 0;
+  margin-top: 60px;
+}
+
+.footer-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.copyright {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.brand-name-mini {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  transition: all 0.2s;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.github-link:hover {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+  transform: translateY(-2px);
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .footer-wrapper {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
 }
 
 .auth-section {

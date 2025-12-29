@@ -13,7 +13,7 @@ router.get("/", async (_req, res) => {
   res.json(data);
 });
 
-// GET /api/users/:id - Lấy thông tin user theo ID
+// GET /api/users/:id - Lấy thông tin user theo ID (Bản cập nhật cho UI mới)
 router.get("/:id", async (req, res) => {
   try {
     const userId = BigInt(req.params.id);
@@ -22,15 +22,27 @@ router.get("/:id", async (req, res) => {
       where: { IdTaiKhoan: userId },
       include: {
         vaiTro: {
-          select: {
-            TenVaiTro: true,
-          },
+          select: { TenVaiTro: true },
+        },
+        // Lấy danh sách các cuộc thi đã đăng ký tham gia
+        dangKys: {
+          where: { TrangThai: true }, // Chỉ lấy các cuộc thi đang tham gia hợp lệ
+          include: {
+            cuocThi: {
+              select: {
+                IdCuocThi: true,
+                TenCuocThi: true,
+                ThoiGianBatDau: true,
+                ThoiGianKetThuc: true,
+              }
+            }
+          }
         },
         _count: {
           select: {
-            deBais: true,
-            baiNops: true,
-            cuocThis: true,
+            deBais: true,   // Đề bài đã tạo
+            baiNops: true,  // Tổng số bài nộp
+            cuocThis: true, // Cuộc thi đã tạo
           },
         },
       },
@@ -40,67 +52,82 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Người dùng không tồn tại" });
     }
 
+    // 1. Tính toán số bài nộp thành công (AC)
     const allSubmissions = await prisma.baiNop.findMany({
-      where: {
-        IdTaiKhoan: userId,
-        TrangThaiCham: {
-          not: null,
-        },
-      },
-      select: {
-        TrangThaiCham: true,
-      },
+      where: { IdTaiKhoan: userId, TrangThaiCham: { not: null } },
+      select: { TrangThaiCham: true },
     });
 
     let successfulSubmissions = 0;
     for (const submission of allSubmissions) {
-      if (!submission.TrangThaiCham) continue;
-      
       if (submission.TrangThaiCham === "accepted" || submission.TrangThaiCham === "hoan_tat") {
         successfulSubmissions++;
         continue;
       }
-
       try {
-        const codes = JSON.parse(submission.TrangThaiCham);
-        if (Array.isArray(codes) && codes.length > 0) {
-          const allPass = codes.every((code) => code === 0);
-          if (allPass) {
-            successfulSubmissions++;
-          }
+        const codes = JSON.parse(submission.TrangThaiCham!);
+        if (Array.isArray(codes) && codes.length > 0 && codes.every((code) => code === 0)) {
+          successfulSubmissions++;
         }
-      } catch (e) {
-        console.warn("Failed to parse TrangThaiCham:", submission.TrangThaiCham);
-      }
+      } catch (e) {}
     }
 
-    const participatedContests = await prisma.cuocThi_DangKy.count({
-      where: {
-        IdTaiKhoan: userId,
-      },
-    });
+    // 2. Tổng hợp dữ liệu cuộc thi tham gia cho UI Tab
+    // Chúng ta cần đếm xem trong mỗi cuộc thi đó, user đã nộp bao nhiêu bài và AC bao nhiêu bài
+    const participatedContestsData = await Promise.all(
+      user.dangKys.map(async (dk) => {
+        const contestStats = await prisma.baiNop.findMany({
+          where: {
+            IdTaiKhoan: userId,
+            IdCuocThi: dk.IdCuocThi
+          },
+          select: { TrangThaiCham: true }
+        });
 
+        const totalInContest = contestStats.length;
+        const acInContest = contestStats.filter(s => {
+          if (s.TrangThaiCham === "accepted") return true;
+          try {
+            const codes = JSON.parse(s.TrangThaiCham!);
+            return Array.isArray(codes) && codes.every(c => c === 0);
+          } catch { return false; }
+        }).length;
+
+        return {
+          IdCuocThi: dk.cuocThi.IdCuocThi.toString(),
+          TenCuocThi: dk.cuocThi.TenCuocThi,
+          ThoiGianBatDau: dk.cuocThi.ThoiGianBatDau,
+          ThoiGianKetThuc: dk.cuocThi.ThoiGianKetThuc,
+          stats: {
+            totalSubmissions: totalInContest,
+            solvedProblems: acInContest
+          }
+        };
+      })
+    );
+
+    // 3. Trả về kết quả
     res.json({
       IdTaiKhoan: user.IdTaiKhoan.toString(),
+      TenDangNhap: user.TenDangNhap,
       HoTen: user.HoTen,
+      Email: user.Email,
       Avatar: getAvatarUrl(user.Email),
       TrangThai: user.TrangThai,
       NgayTao: user.NgayTao,
       VaiTro: user.vaiTro.TenVaiTro,
+      participatedContests: participatedContestsData, // Phục vụ cho Tab Cuộc thi
       stats: {
         totalProblems: user._count.deBais,
         totalSubmissions: user._count.baiNops,
         successfulSubmissions: successfulSubmissions,
         totalContests: user._count.cuocThis,
-        participatedContests: participatedContests,
+        participatedContestsCount: user.dangKys.length,
       },
     });
   } catch (error: any) {
     console.error("Get user error:", error);
-    if (error.name === "PrismaClientValidationError" || error.message?.includes("BigInt")) {
-      return res.status(400).json({ error: "ID không hợp lệ" });
-    }
-    res.status(500).json({ error: error.message || "Lỗi server khi lấy thông tin người dùng" });
+    res.status(500).json({ error: "Lỗi server khi lấy thông tin người dùng" });
   }
 });
 

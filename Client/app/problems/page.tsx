@@ -19,6 +19,9 @@ export default function ProblemsPage() {
 
   const loadData = useCallback(async (page = 1) => {
     setLoading(true);
+      if (typeof document !== "undefined") {
+        document.title = `Danh sách bài tập - Kra tognoek`;
+      }
     try {
       const query = new URLSearchParams({
         page: page.toString(),

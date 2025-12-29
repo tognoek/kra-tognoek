@@ -86,6 +86,9 @@ export default function ContestDetailPage() {
           setRankData(rData.leaderboard.slice(0, 3));
         }
       }
+      if (typeof document !== "undefined") {
+        document.title = `${data.TenCuocThi}- Kra tognoek`;
+      }
     } catch (e: any) {
       toast.error(e.message);
     } finally {

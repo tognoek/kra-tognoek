@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../db";
 
 import { getAvatarUrl } from "../scripts/avatar";
+import { containsSensitiveWords } from "../scripts/scan"
 
 const router = Router();
 
@@ -11,7 +12,10 @@ router.get("/", async (req, res) => {
     if (!problemId) return res.status(400).json({ error: "problemId is required" });
     
     const allComments = await prisma.binhLuan.findMany({
-      where: { IdDeBai: BigInt(problemId as string) },
+      where: { 
+        IdDeBai: BigInt(problemId as string),
+        TrangThai: true,
+      },
       include: {
         taiKhoan: {
           select: {
@@ -97,6 +101,12 @@ router.post("/", async (req, res) => {
     
     if (!NoiDung.trim()) {
       return res.status(400).json({ error: "Comment content cannot be empty" });
+    }
+
+    if (containsSensitiveWords(NoiDung.trim())) {
+      return res.status(400).json({ 
+        error: "Bình luận chứa nội dung không phù hợp và không thể đăng tải." 
+      });
     }
     
     if (IdBinhLuanCha) {
