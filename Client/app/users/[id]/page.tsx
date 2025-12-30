@@ -86,9 +86,61 @@ export default function UserProfilePage() {
     }
   }, [params.id, subPage, subSearch, fetchSubmissions, activeTab]);
 
-  if (loading) return <div className="loader-box">Đang tải thông tin...</div>;
-  if (error || !user) return <div className="loader-box">⚠️ {error}</div>;
+  if (loading) return (
+      <div className="profile-wrapper animate-pulse">
+        <style dangerouslySetInnerHTML={{ __html: modernUIStyles }} />
+        <div className="content-constrain">
+          <div className="profile-hero" style={{background: '#e2e8f0'}}>
+            <div className="avatar-container" style={{background: '#cbd5e1'}}></div>
+            <div className="hero-info">
+                <div className="skeleton-line" style={{width: '200px', height: '24px', marginBottom: '10px'}}></div>
+                <div className="skeleton-line" style={{width: '100px', height: '16px'}}></div>
+            </div>
+          </div>
+          <div className="main-grid">
+            <div className="glass-card"><div className="skeleton-line" style={{height: '150px'}}></div></div>
+            <div className="glass-card"><div className="skeleton-line" style={{height: '150px'}}></div></div>
+          </div>
+        </div>
+        <style jsx>{`
+          .skeleton-line { background: #cbd5e1; border-radius: 8px; }
+          .animate-pulse { animation: pulse 2s infinite; }
+          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        `}</style>
+      </div>
+    );
 
+    if (error || !user) return (
+      <div className="profile-wrapper">
+        <style dangerouslySetInnerHTML={{ __html: modernUIStyles }} />
+        <div className="content-constrain">
+          <div className="error-card">
+            <div className="error-icon">🔍</div>
+            <h2 className="error-title">Người dùng không tồn tại</h2>
+            <p className="error-message">
+              {error || "Rất tiếc, chúng tôi không thể tìm thấy thông tin của người dùng này trên hệ thống Kra Tognoek."}
+            </p>
+            <div className="error-actions">
+              <button onClick={() => router.push("/")} className="error-btn-primary">Quay lại trang chủ</button>
+              <button onClick={() => router.back()} className="error-btn-secondary">Quay lại</button>
+            </div>
+          </div>
+        </div>
+        <style jsx>{`
+          .error-card {
+            background: white; padding: 60px 40px; border-radius: 32px; text-align: center;
+            border: 1px solid #f1f5f9; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); margin-top: 40px;
+          }
+          .error-icon { font-size: 64px; margin-bottom: 24px; }
+          .error-title { font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 12px; }
+          .error-message { color: #64748b; font-size: 16px; margin-bottom: 32px; max-width: 400px; margin: 0 auto 32px auto; line-height: 1.6; }
+          .error-actions { display: flex; gap: 12px; justify-content: center; }
+          .error-btn-primary { padding: 12px 24px; border-radius: 14px; font-weight: 700; background: #2563eb; color: white; border: none; cursor: pointer; }
+          .error-btn-secondary { padding: 12px 24px; border-radius: 14px; font-weight: 700; background: #f1f5f9; color: #64748b; border: none; cursor: pointer; }
+          .error-btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); transition: 0.2s; }
+        `}</style>
+      </div>
+    );
   const acRate = user.stats.totalSubmissions > 0 
     ? Math.round((user.stats.successfulSubmissions / user.stats.totalSubmissions) * 100) 
     : 0;
@@ -281,7 +333,7 @@ export default function UserProfilePage() {
 }
 
 const modernUIStyles = `
-  .profile-wrapper { padding: 40px 20px; font-family: 'Inter', sans-serif; background: #f8fafc; min-height: 100vh; }
+  .profile-wrapper { padding: 40px 20px; font-family: 'Inter', sans-serif; min-height: 100vh; }
   .content-constrain { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
 
   .profile-hero { display: flex; align-items: center; gap: 24px; background: white; padding: 24px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }

@@ -118,8 +118,121 @@ export default function ContestDetailPage() {
     finally { setProcessing(false); }
   };
 
-  if (loading) return <div className="loading-state">⌛ Đang chuẩn bị dữ liệu...</div>;
-  if (!contest) return <div className="error-state">⚠️ Cuộc thi không tồn tại</div>;
+  if (loading) return (
+      <div className="contest-page animate-pulse">
+        <style dangerouslySetInnerHTML={{ __html: contestStyles }} />
+        <div className="top-nav">
+          <div className="skeleton" style={{ width: '200px', height: '30px', borderRadius: '12px' }}></div>
+        </div>
+
+        {/* Skeleton Header */}
+        <div className="contest-header-compact" style={{ background: '#334155' }}>
+          <div className="skeleton" style={{ width: '60%', height: '35px', marginBottom: '15px', background: '#475569' }}></div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="skeleton" style={{ width: '80px', height: '24px', borderRadius: '20px', background: '#475569' }}></div>
+            <div className="skeleton" style={{ width: '120px', height: '24px', borderRadius: '20px', background: '#475569' }}></div>
+          </div>
+        </div>
+
+        <div className="contest-body-layout">
+          <div className="main-content">
+            {/* Skeleton Description */}
+            <div className="content-card">
+              <div className="skeleton" style={{ width: '30%', height: '20px', marginBottom: '20px' }}></div>
+              <div className="skeleton" style={{ width: '100%', height: '15px', marginBottom: '10px' }}></div>
+              <div className="skeleton" style={{ width: '90%', height: '15px', marginBottom: '10px' }}></div>
+              <div className="skeleton" style={{ width: '40%', height: '15px' }}></div>
+            </div>
+
+            {/* Skeleton Table */}
+            <div className="content-card">
+              <div className="skeleton" style={{ width: '40%', height: '20px', marginBottom: '20px' }}></div>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="skeleton" style={{ width: '100%', height: '50px', marginBottom: '10px', borderRadius: '8px' }}></div>
+              ))}
+            </div>
+          </div>
+
+          <aside className="sidebar">
+            {[1, 2].map(i => (
+              <div key={i} className="side-card">
+                <div className="skeleton" style={{ width: '50%', height: '15px', marginBottom: '15px' }}></div>
+                <div className="skeleton" style={{ width: '100%', height: '12px', marginBottom: '10px' }}></div>
+                <div className="skeleton" style={{ width: '100%', height: '12px' }}></div>
+              </div>
+            ))}
+          </aside>
+        </div>
+
+        <style jsx>{`
+          .skeleton {
+            background: #e2e8f0;
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: loading-shimmer 1.5s infinite;
+            border-radius: 4px;
+          }
+
+          @keyframes loading-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+
+          .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .85; }
+          }
+        `}</style>
+      </div>
+    );
+  if (!contest) return (
+      <div className="contest-page">
+        <style dangerouslySetInnerHTML={{ __html: contestStyles }} />
+        <div className="error-container-glass">
+          <div className="error-icon-box">⚠️</div>
+          <h1 className="error-title">Không tìm thấy cuộc thi</h1>
+          <p className="error-desc">
+            Xin lỗi, cuộc thi bạn đang tìm kiếm không tồn tại hoặc đã bị xóa khỏi hệ thống. 
+            Vui lòng kiểm tra lại đường dẫn hoặc quay về danh sách để tìm cuộc thi khác.
+          </p>
+          <Link href="/contests" className="btn btn-primary" style={{marginTop: '20px'}}>
+            Khám phá cuộc thi khác
+          </Link>
+        </div>
+
+        <style jsx>{`
+          .error-container-glass {
+            background: white;
+            padding: 60px 40px;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            max-width: 600px;
+            margin: 40px auto;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+          }
+          .error-icon-box {
+            font-size: 64px;
+            margin-bottom: 24px;
+          }
+          .error-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 16px;
+          }
+          .error-desc {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 30px;
+          }
+        `}</style>
+      </div>
+    );
 
   const start = new Date(contest.ThoiGianBatDau);
   const end = new Date(contest.ThoiGianKetThuc);
@@ -275,7 +388,7 @@ export default function ContestDetailPage() {
 }
 
 const contestStyles = `
-  .contest-page { max-width: 1200px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; background: #f8fafc; min-height: 100vh; }
+  .contest-page { max-width: 1200px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; min-height: 100vh; }
   
   .top-nav { margin-bottom: 20px; }
   .back-link {background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px;
