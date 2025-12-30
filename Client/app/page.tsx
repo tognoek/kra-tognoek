@@ -148,7 +148,9 @@ const homeStyles = `
   .author-img { width: 100%; height: 100%; object-fit: cover; }
   .author-name { font-size: 13px; font-weight: 700; color: #2563eb; }
   .post-date { font-size: 11px; color: #94a3b8; }
-
+  .markdown-body code { background: rgba(235, 235, 235, 0.64); color: #2563eb; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 90%; }
+  .markdown-body pre { background: #f5f5f5ff; color: #f8fafc; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; }
+  .markdown-body pre code { background: none; color: black; padding: 0; }
   /* Sidebar */
   .sidebar { display: flex; flex-direction: column; gap: 24px; }
   .widget-card {

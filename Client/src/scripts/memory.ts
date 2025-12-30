@@ -1,5 +1,8 @@
 export const formatMemory = (memory: number) => {
-  if (memory <= 1024) {
+  if (memory === null || memory === undefined) {
+    return "0 KB";
+  }
+  if (memory < 1024) {
     return memory + " KB";
   }
   const mbValue = memory / 1024;
