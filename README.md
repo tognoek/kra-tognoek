@@ -1,15 +1,20 @@
-# Online Judge System
+## Kra-tognoek – Online Judge System
 
-Hệ thống chấm bài tự động (Online Judge) được xây dựng với kiến trúc microservices, hỗ trợ upload code, chấm bài tự động và quản lý contests/problems.
+Hệ thống chấm bài tự động (Online Judge) với kiến trúc microservices, hỗ trợ nộp bài, chấm tự động, tổ chức cuộc thi, blog / bài đăng và hệ thống thống kê phong phú.
 
-## 🏗️ Kiến trúc
+### 🏗️ Kiến trúc tổng quan
 
-Dự án bao gồm 4 services chính:
+Trong repo có 4 services chính:
 
-- **S3** (Rust/Axum): File storage service - Upload/download code và test cases
-- **Kra** (Rust/Tokio): Worker service - Chấm bài tự động, compile và chạy test cases
-- **Server** (Node.js/Express): REST API backend - Quản lý users, problems, contests, submissions
-- **FE** (Next.js/React): Frontend web application - Giao diện người dùng
+- **S3** (`S3/`, Rust + Axum): dịch vụ lưu trữ file – upload / download code và bộ test, gắn kèm thống kê tài nguyên.
+- **Kra** (`Kra/`, Rust + Tokio + Axum): worker chấm bài + web UI:
+  - Worker: nghe job từ Redis, tải bundle test từ S3, compile & chạy test, gửi callback về Server.
+  - Web UI (`Kra/ui/index.html`): form tạo job thủ công để test KRA.
+- **Ark** (`Ark/`, Rust): service hỗ trợ/tiện ích (ví dụ: kiểm duyệt nội dung comment bằng OpenAI – xem `Ark/src/main.rs`). 
+- **Server** (`Server/`, Node.js + Express + Prisma + Redis): REST API backend quản lý Users, Problems, Contests, Submissions, Comments, Posts, Languages,...
+- **Client** (`Client/`, Next.js App Router + React): giao diện web cho thí sinh, admin, contest creator.
+
+Luồng chính: **Client → Server → Redis → Kra → S3 → Kra → Server → Client**.
 
 ## 📋 Yêu cầu hệ thống
 
@@ -208,7 +213,7 @@ Base URL: `http://localhost:5000/api`
 ## 📁 Cấu trúc thư mục
 
 ```
-DoAn/
+Kra-tognoek/
 ├── S3/                    # File storage service (Rust)
 │   ├── src/
 │   │   ├── main.rs        # Axum server, upload/download endpoints
@@ -359,16 +364,3 @@ Xem chi tiết trong `Server/prisma/schema.prisma`
 ### Cargo build errors:
 - Update Rust: `rustup update`
 - Clean build: `cargo clean && cargo build`
-
-## 📄 License
-
-[Thêm license của bạn]
-
-## 👥 Contributors
-
-[Thêm contributors]
-
-## 📞 Liên hệ
-
-[Thêm thông tin liên hệ]
-
