@@ -71,6 +71,7 @@ Chạy MySQL
 ```shell
 sudo systemctl status mysql
 sudo systemctl start apache2
+mysqldump -u [username] -p [database_name] > backup_file.sql
 ```
 Open web [UI MySQL](http://localhost/phpmyadmin/)
 ### 3. Cấu hình Environment Variables
