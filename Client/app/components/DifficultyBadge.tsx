@@ -7,14 +7,14 @@ export default function DifficultyBadge({ difficulty, className = "" }: Difficul
   const getDifficultyClass = (d: string) => {
     const num = parseInt(d);
     if (num <= 3) return "difficulty difficulty-easy";
-    if (num <= 6) return "difficulty difficulty-medium";
+    if (num <= 7) return "difficulty difficulty-medium";
     return "difficulty difficulty-hard";
   };
 
   const getLabel = (d: string) => {
     const num = typeof d === "string" ? parseInt(d) : d;
     if (num <= 3) return "Easy";
-    if (num <= 6) return "Medium";
+    if (num <= 7) return "Medium";
     return "Hard";
   };
 
