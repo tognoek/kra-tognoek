@@ -77,6 +77,18 @@ export default function UserProfilePage() {
     }
   }, [params.id, fetchUserData]);
 
+  const getStatusUI = (status: string | null) => {
+    if (!status) return <span className="st-badge pending">⏳ Đang chấm...</span>;
+    if (status === "accepted") return <span className="st-badge accepted">✅ Accepted</span>;
+    if (status === "compile_error") return <span className="st-badge error">❌ Lỗi biên dịch</span>;
+    
+    let label = status;
+    if (status.includes("wrong_answer")) label = `❌ Sai test ${status.split(":")[1]}`;
+    if (status.includes("time_limit")) label = `⏳ Quá thời gian ${status.split(":")[1]}`;
+    if (status.includes("memory_limit")) label = `💾 Quá bộ nhớ ${status.split(":")[1]}`;
+    return <span className="st-badge error">{label}</span>;
+  };
+
   useEffect(() => {
     if (params.id && activeTab === 'submissions') {
       const delayDebounce = setTimeout(() => {
@@ -269,9 +281,7 @@ export default function UserProfilePage() {
                         <tr key={s.IdBaiNop}>
                           <td><Link href={`/problems/${s.IdDeBai}`} className="p-link">{s.deBai?.TieuDe}</Link></td>
                           <td>
-                            <span className={`st-badge ${s.TrangThaiCham === "accepted" || s.TrangThaiCham === "hoan_tat" ? "accepted" : "rejected"}`}>
-                              {s.TrangThaiCham || "Pending"}
-                            </span>
+                            {getStatusUI(s.TrangThaiCham)}
                           </td>
                           <td>{s.ThoiGianThucThi}ms</td>
                           <td className="date-cell">{new Date(s.NgayNop).toLocaleDateString("vi-VN")}</td>
@@ -346,6 +356,11 @@ const modernUIStyles = `
   .main-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: stretch; }
   .glass-card { background: white; padding: 24px; border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
   .card-title { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 20px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+
+  .st-badge { padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; display: inline-block; }
+  .st-badge.accepted { background: #dcfce7; color: #15803d; }
+  .st-badge.error { background: #fee2e2; color: #b91c1c; }
+  .st-badge.pending { background: #fefce8; color: #a16207; }
 
   .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f8fafc; font-size: 14px; }
   .info-label { color: #64748b; }

@@ -142,7 +142,7 @@ export default function ProfilePage() {
     finally { setPwdLoading(false); }
   };
 
-    const getStatusUI = (status: string | null) => {
+  const getStatusUI = (status: string | null) => {
     if (!status) return <span className="st-badge pending">⏳ Đang chấm...</span>;
     if (status === "accepted") return <span className="st-badge accepted">✅ Accepted</span>;
     if (status === "compile_error") return <span className="st-badge error">❌ Lỗi biên dịch</span>;
@@ -151,7 +151,6 @@ export default function ProfilePage() {
     if (status.includes("wrong_answer")) label = `❌ Sai test ${status.split(":")[1]}`;
     if (status.includes("time_limit")) label = `⏳ Quá thời gian ${status.split(":")[1]}`;
     if (status.includes("memory_limit")) label = `💾 Quá bộ nhớ ${status.split(":")[1]}`;
-    
     return <span className="st-badge error">{label}</span>;
   };
 
