@@ -1,16 +1,16 @@
-# TỔNG HAI SỐ
+# PHẦN DƯ
 ## 📝 Đề bài
-Cho hai số nguyên A và B. Hãy tính tổng của hai số đó.
+Cho hai số nguyên A và B. Hãy tính phép chia dư của hai số đó.
 ## 📥 Dữ liệu vào
 - Một dòng chứa hai số nguyên A, B
 ## 📤 Dữ liệu ra
-- In ra tổng A + B
+- In ra giá trị A % B
 ## 📌 Ví dụ
 Input:
 ```
-3 5
+5 3
 ```
 Output:
 ```
-8
+2
 ```

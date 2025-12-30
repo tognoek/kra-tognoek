@@ -1,10 +1,10 @@
-# TỔNG HAI SỐ
+# HIỆU HAI SỐ
 ## 📝 Đề bài
-Cho hai số nguyên A và B. Hãy tính tổng của hai số đó.
+Cho hai số nguyên A và B. Hãy tính hiệu của hai số đó.
 ## 📥 Dữ liệu vào
 - Một dòng chứa hai số nguyên A, B
 ## 📤 Dữ liệu ra
-- In ra tổng A + B
+- In ra hiệu A - B
 ## 📌 Ví dụ
 Input:
 ```
@@ -12,5 +12,5 @@ Input:
 ```
 Output:
 ```
-8
+-2
 ```
