@@ -6,7 +6,6 @@ import { prisma } from "../db";
 const router = Router();
 const S3_BASE_URL = process.env.S3_BASE_URL || "http://127.0.0.1:3001";
 
-// POST /api/upload/code - Upload code file to S3
 router.post("/code", async (req: Request, res: Response) => {
   try {
     const { code, filename, language } = req.body;
@@ -15,12 +14,10 @@ router.post("/code", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Code and filename are required" });
     }
 
-    // Determine file extension
     const ext = language === "c" ? "c" : "cpp";
     const fileId = filename.replace(/\.(cpp|c)$/i, "");
     const fullFilename = `${fileId}.${ext}`;
 
-    // Create form data to send to S3
     const formData = new FormData();
     formData.append("file", Buffer.from(code, "utf-8"), {
       filename: fullFilename,
@@ -28,7 +25,6 @@ router.post("/code", async (req: Request, res: Response) => {
     });
     formData.append("name", fileId);
 
-    // Upload to S3
     const s3Response = await fetch(`${S3_BASE_URL}/upload/code`, {
       method: "POST",
       body: formData,
@@ -43,8 +39,6 @@ router.post("/code", async (req: Request, res: Response) => {
     }
 
     const s3Result = await s3Response.text();
-    
-    // Return the file path/URL
     const fileUrl = `${S3_BASE_URL}/data/code/${fullFilename}`;
     
     res.json({
@@ -59,7 +53,6 @@ router.post("/code", async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/upload/test - Upload test .zip to S3 and create BoTest
 router.post("/test", async (req: Request, res: Response) => {
   try {
     const { fileBase64, originalName, 
@@ -72,23 +65,20 @@ router.post("/test", async (req: Request, res: Response) => {
 
     const idDeBai = BigInt(problemId);
 
-    // Tạo BoTest trước để lấy IdBoTest
     const boTest = await prisma.boTest.create({
       data: {
         IdDeBai: idDeBai,
-        DuongDanInput: inputPath || null,   // Ví dụ: bai1.inp
-        DuongDanOutput: outputPath || null, // Ví dụ: bai1.out
-        DuongDanCode: checkerPath || "",  // Ví dụ: check.cpp
+        DuongDanInput: inputPath || null,  
+        DuongDanOutput: outputPath || null, 
+        DuongDanCode: checkerPath || "",
       },
     });
 
     const testId = boTest.IdBoTest.toString();
     const filename = `${testId}.zip`;
 
-    // Giải mã base64 sang Buffer
     const buffer = Buffer.from(fileBase64, "base64");
 
-    // Gửi file lên S3
     const formData = new FormData();
     formData.append("file", buffer, {
       filename,

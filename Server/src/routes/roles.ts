@@ -3,11 +3,9 @@ import { prisma } from "../db";
 
 const router = Router();
 
-// GET /api/roles
 router.get("/", async (_req, res) => {
   try {
     const data = await prisma.vaiTro.findMany();
-    // Tránh BigInt trong JSON response
     res.json(
       data.map((r) => ({
         IdVaiTro: r.IdVaiTro.toString(),
@@ -21,7 +19,6 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /api/roles
 router.post("/", async (req, res) => {
   const { TenVaiTro, MoTa } = req.body;
   if (!TenVaiTro) return res.status(400).json({ error: "TenVaiTro is required" });

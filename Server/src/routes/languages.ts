@@ -3,7 +3,6 @@ import { prisma } from "../db";
 
 const router = Router();
 
-// GET /api/languages
 router.get("/", async (_req, res) => {
   try {
     const data = await prisma.ngonNgu.findMany({
@@ -44,7 +43,6 @@ router.get("/", async (_req, res) => {
       };
     });
 
-    // Tính toán Rank dựa trên số bài thành công (descending)
     const sortedData = [...languagesWithStats].sort((a, b) => b.successfulSubmissions - a.successfulSubmissions);
     
     const finalResult = languagesWithStats.map(l => {
@@ -58,7 +56,6 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /api/languages
 router.post("/", async (req, res) => {
   const { TenNgonNgu, TenNhanDien, TrangThai } = req.body;
   if (!TenNgonNgu || !TenNhanDien) return res.status(400).json({ error: "Missing fields" });
@@ -68,7 +65,6 @@ router.post("/", async (req, res) => {
   res.json(created);
 });
 
-//PUT /api/languages/:id
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { TenNgonNgu, TenNhanDien, TrangThai } = req.body;

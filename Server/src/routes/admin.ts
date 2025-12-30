@@ -7,7 +7,6 @@ const router = Router();
 router.use(authMiddleware);
 router.use(adminMiddleware);
 
-// GET /api/admin/users - Lấy danh sách users
 router.get("/users", async (_req: AuthRequest, res: Response) => {
   try {
     const users = await prisma.taiKhoan.findMany({
@@ -35,7 +34,6 @@ router.get("/users", async (_req: AuthRequest, res: Response) => {
   }
 });
 
-// PUT /api/admin/users/:id - Cập nhật user
 router.put("/users/:id", async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -65,7 +63,6 @@ router.put("/users/:id", async (req: AuthRequest, res: Response) => {
   }
 });
 
-// DELETE /api/admin/users/:id - Xóa user (soft delete)
 router.delete("/users/:id", async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -81,7 +78,6 @@ router.delete("/users/:id", async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/admin/problems - Lấy danh sách problems (admin view)
 router.get("/problems", async (_req: AuthRequest, res: Response) => {
   try {
     const problems = await prisma.deBai.findMany({
@@ -125,7 +121,6 @@ router.get("/problems", async (_req: AuthRequest, res: Response) => {
   }
 });
 
-// PUT /api/admin/problems/:id - Cập nhật problem
 router.put("/problems/:id", async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -149,7 +144,6 @@ router.put("/problems/:id", async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/admin/contests - Lấy danh sách contests (admin view)
 router.get("/contests", async (_req: AuthRequest, res: Response) => {
   try {
     const contests = await prisma.cuocThi.findMany({
@@ -198,7 +192,6 @@ router.get("/contests", async (_req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/admin/stats - Thống kê tổng quan
 router.get("/stats", async (_req: AuthRequest, res: Response) => {
   try {
     const [users, problems, contests, submissions] = await Promise.all([

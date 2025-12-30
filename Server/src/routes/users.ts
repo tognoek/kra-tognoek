@@ -5,7 +5,6 @@ import { getAvatarUrl } from "../scripts/avatar";
 
 const router = Router();
 
-// GET /api/users
 router.get("/", async (_req, res) => {
   const data = await prisma.taiKhoan.findMany({
     include: { vaiTro: true },
@@ -13,7 +12,6 @@ router.get("/", async (_req, res) => {
   res.json(data);
 });
 
-// GET /api/users/:id - Lấy thông tin user theo ID (Bản cập nhật cho UI mới)
 router.get("/:id", async (req, res) => {
   try {
     const userId = BigInt(req.params.id);
@@ -24,9 +22,8 @@ router.get("/:id", async (req, res) => {
         vaiTro: {
           select: { TenVaiTro: true },
         },
-        // Lấy danh sách các cuộc thi đã đăng ký tham gia
         dangKys: {
-          where: { TrangThai: true }, // Chỉ lấy các cuộc thi đang tham gia hợp lệ
+          where: { TrangThai: true },
           include: {
             cuocThi: {
               select: {
@@ -40,9 +37,9 @@ router.get("/:id", async (req, res) => {
         },
         _count: {
           select: {
-            deBais: true,   // Đề bài đã tạo
-            baiNops: true,  // Tổng số bài nộp
-            cuocThis: true, // Cuộc thi đã tạo
+            deBais: true, 
+            baiNops: true, 
+            cuocThis: true,
           },
         },
       },
@@ -52,7 +49,6 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Người dùng không tồn tại" });
     }
 
-    // 1. Tính toán số bài nộp thành công (AC)
     const allSubmissions = await prisma.baiNop.findMany({
       where: { IdTaiKhoan: userId, TrangThaiCham: { not: null } },
       select: { TrangThaiCham: true },
@@ -60,10 +56,6 @@ router.get("/:id", async (req, res) => {
 
     let successfulSubmissions = 0;
     for (const submission of allSubmissions) {
-      if (submission.TrangThaiCham === "accepted" || submission.TrangThaiCham === "hoan_tat") {
-        successfulSubmissions++;
-        continue;
-      }
       try {
         const codes = JSON.parse(submission.TrangThaiCham!);
         if (Array.isArray(codes) && codes.length > 0 && codes.every((code) => code === 0)) {
@@ -72,8 +64,6 @@ router.get("/:id", async (req, res) => {
       } catch (e) {}
     }
 
-    // 2. Tổng hợp dữ liệu cuộc thi tham gia cho UI Tab
-    // Chúng ta cần đếm xem trong mỗi cuộc thi đó, user đã nộp bao nhiêu bài và AC bao nhiêu bài
     const participatedContestsData = await Promise.all(
       user.dangKys.map(async (dk) => {
         const contestStats = await prisma.baiNop.findMany({
@@ -86,7 +76,6 @@ router.get("/:id", async (req, res) => {
 
         const totalInContest = contestStats.length;
         const acInContest = contestStats.filter(s => {
-          if (s.TrangThaiCham === "accepted") return true;
           try {
             const codes = JSON.parse(s.TrangThaiCham!);
             return Array.isArray(codes) && codes.every(c => c === 0);
@@ -106,7 +95,6 @@ router.get("/:id", async (req, res) => {
       })
     );
 
-    // 3. Trả về kết quả
     res.json({
       IdTaiKhoan: user.IdTaiKhoan.toString(),
       TenDangNhap: user.TenDangNhap,
@@ -116,7 +104,7 @@ router.get("/:id", async (req, res) => {
       TrangThai: user.TrangThai,
       NgayTao: user.NgayTao,
       VaiTro: user.vaiTro.TenVaiTro,
-      participatedContests: participatedContestsData, // Phục vụ cho Tab Cuộc thi
+      participatedContests: participatedContestsData, 
       stats: {
         totalProblems: user._count.deBais,
         totalSubmissions: user._count.baiNops,
@@ -131,7 +119,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// POST /api/users
 router.post("/", async (req, res) => {
   const { IdVaiTro, TenDangNhap, MatKhau, HoTen, Email } = req.body;
   if (!IdVaiTro || !TenDangNhap || !MatKhau || !HoTen || !Email) {
@@ -143,7 +130,6 @@ router.post("/", async (req, res) => {
   res.json(created);
 });
 
-// PUT /api/users/:id - Cập nhật thông tin user
 router.put("/:id", async (req, res) => {
   try {
     const userId = BigInt(req.params.id);

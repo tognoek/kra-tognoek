@@ -191,7 +191,7 @@ const pageStyles = `
   .markdown-body { font-size: 15px; line-height: 1.8; color: #24292e; }
   .markdown-body h1, .markdown-body h2 { border-bottom: 1px solid #eaecef; padding-bottom: 0.4em; margin-top: 1.2em; margin-bottom: 0.8em; font-weight: 700; }
   .markdown-body p { margin-bottom: 16px; }
-  .markdown-body code { background: rgba(27,31,35,0.05); padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 90%; color: #e83e8c; }
+  .markdown-body code { background: rgba(27,31,35,0.05); padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 90%; color: #000000ff; }
   .markdown-body pre { background: #f6f8fa; padding: 16px; border-radius: 10px; overflow: auto; border: 1px solid #e1e4e8; margin-bottom: 16px; }
   .markdown-body table { border-collapse: collapse; width: 100%; margin: 16px 0; border: 1px solid #dfe2e5; }
   .markdown-body table th, .markdown-body table td { border: 1px solid #dfe2e5; padding: 8px 12px; }

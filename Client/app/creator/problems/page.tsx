@@ -233,7 +233,7 @@ export default function MyProblemListPage() {
                   </td>
                   <td style={{ padding: "16px 24px", fontSize: "13px", fontFamily: "monospace", color: "#4b5563" }}>
                     <div>⏱ {prob.GioiHanThoiGian}ms</div>
-                    <div style={{ marginTop: "2px" }}>💾 {prob.GioiHanBoNho} kb</div>
+                    <div style={{ marginTop: "2px" }}>💾 {prob.GioiHanBoNho} KB</div>
                   </td>
                   <td style={{ padding: "16px 24px", textAlign: "center" }}>
                     {prob.TrangThai ? (

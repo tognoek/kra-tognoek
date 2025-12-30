@@ -12,6 +12,7 @@ import rehypeKatex from "rehype-katex";
 import SubmitModal from "../../../components/SubmitModal";
 import 'highlight.js/styles/github.css';
 import 'katex/dist/katex.min.css';
+import { formatMemory } from "@/scripts/memory";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -99,7 +100,7 @@ export default function ContestProblemDetail() {
           <div className="print-only-specs">
             <div className="print-grid">
                 <div>⏱️ <b>Thời gian:</b> {problem.GioiHanThoiGian}ms</div>
-                <div>💾 <b>Bộ nhớ:</b> {problem.GioiHanBoNho} kb</div>
+                <div>💾 <b>Bộ nhớ:</b> {formatMemory(problem.GioiHanBoNho)}</div>
                 <div>📈 <b>Độ khó:</b> {problem.DoKho}/10</div>
                 <div>📥 <b>Nhập:</b> {inputMethod}</div>
                 <div>📤 <b>Xuất:</b> {outputMethod}</div>
@@ -129,7 +130,7 @@ export default function ContestProblemDetail() {
               </div>
               <div className="spec-item">
                 <span className="spec-label">💾 Bộ nhớ</span>
-                <span className="spec-value">{problem.GioiHanBoNho} kb</span>
+                <span className="spec-value">{formatMemory(problem.GioiHanBoNho)}</span>
               </div>
               <div className="spec-item">
                 <span className="spec-label">📈 Độ khó</span>
@@ -190,8 +191,8 @@ const customStyles = `
   .markdown-body table { border-collapse: collapse; width: 100%; margin: 20px 0; border: 1px solid #dfe2e5; }
   .markdown-body table th, .markdown-body table td { border: 1px solid #dfe2e5; padding: 10px 15px; text-align: left; }
   .markdown-body table tr:nth-child(2n) { background: #f6f8fa; }
-  .markdown-body code { background: rgba(37, 99, 235, 0.05); padding: 3px 6px; border-radius: 4px; font-family: monospace; color: #e11d48; }
-  .markdown-body pre { background: #1e293b; color: #f8fafc; padding: 20px; border-radius: 12px; overflow: auto; }
+  .markdown-body code { background: rgba(37, 99, 235, 0.05); padding: 3px 6px; border-radius: 4px; font-family: monospace; color: #000000ff; }
+  .markdown-body pre { background: #e6e6e6ff; color: #000000ff; padding: 20px; border-radius: 12px; overflow: auto; }
 
   .action-card { background: #fff; padding: 28px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); position: sticky; top: 30px; }
   .card-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin: 0 0 20px 0; font-weight: 700; }

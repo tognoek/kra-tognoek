@@ -223,7 +223,6 @@ async fn upload_code(
     let mut filename: Option<String> = None;
     let mut file_data: Option<Vec<u8>> = None;
 
-    // Parse multipart form data
     while let Ok(Some(field)) = multipart.next_field().await {
         let field_name = field.name().unwrap_or("").to_string();
         

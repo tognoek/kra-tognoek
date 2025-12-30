@@ -26,7 +26,8 @@
     "mysql2": "^3.11.3",
     "node-fetch": "^2.7.0",
     "prisma": "^5.20.0",
-    "redis": "^5.8.3"
+    "redis": "^5.8.3",
+    "resend": "^6.6.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

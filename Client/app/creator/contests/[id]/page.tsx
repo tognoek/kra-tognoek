@@ -228,7 +228,7 @@ export default function ManageContestPage() {
                 <div className="form-group full-width">
                   <label className="label warning-text-color">⚠️ Quy định & Lưu ý (Markdown)</label>
                   <div className="editor-layout-sync">
-                    <textarea className="textarea warning-border" rows={4} value={ChuY} onChange={(e) => setChuY(e.target.value)} placeholder="Các quy định quan trọng..." />
+                    <textarea className="textarea warning-border" value={ChuY} onChange={(e) => setChuY(e.target.value)} placeholder="Các quy định quan trọng..." required />
                     <div className="markdown-preview-box warning-preview-bg">
                       <div className="preview-label">Xem trước lưu ý</div>
                       <div className="preview-content markdown-body warning-text">
@@ -428,7 +428,7 @@ const pageStyles = `
   
   .label { font-size: 12px; font-weight: 800; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
   .warning-text-color { color: #e11d48; }
-  .input, .textarea { padding: 14px 18px; border: 1px solid #e2e8f0; border-radius: 14px; font-size: 15px; width: 100%; box-sizing: border-box; transition: 0.2s; outline: none; background: #fcfdfe; }
+  .input, .textarea {resize: none; overflow: hidden;  padding: 14px 18px; border: 1px solid #e2e8f0; border-radius: 14px; font-size: 15px; width: 100%; box-sizing: border-box; transition: 0.2s; outline: none; background: #fcfdfe; }
   .input:focus, .textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.08); background: white; }
 
   .editor-layout-sync { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }

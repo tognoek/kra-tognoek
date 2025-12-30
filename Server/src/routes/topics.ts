@@ -3,17 +3,15 @@ import { prisma } from "../db";
 
 const router = Router();
 
-// GET /api/topics
 router.get("/", async (_req, res) => {
   try {
     const data = await prisma.chuDe.findMany({
       orderBy: { IdChuDe: 'desc' }
     });
 
-    // Áp dụng kiểu map thủ công như bạn yêu cầu
     res.json(
       data.map((t) => ({
-        IdChuDe: t.IdChuDe.toString(), // Chuyển BigInt -> String
+        IdChuDe: t.IdChuDe.toString(),
         TenChuDe: t.TenChuDe,
         MoTa: t.MoTa,
       }))
@@ -23,7 +21,6 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /api/topics
 router.post("/", async (req, res) => {
   const { TenChuDe, MoTa } = req.body;
   if (!TenChuDe) return res.status(400).json({ error: "TenChuDe is required" });
@@ -33,7 +30,6 @@ router.post("/", async (req, res) => {
       data: { TenChuDe, MoTa: MoTa || "" },
     });
 
-    // Trả về object đơn lẻ cũng cần convert
     res.json({
       IdChuDe: created.IdChuDe.toString(),
       TenChuDe: created.TenChuDe,
@@ -44,21 +40,19 @@ router.post("/", async (req, res) => {
   }
 });
 
-// PUT /api/topics/:id
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { TenChuDe, MoTa } = req.body;
 
   try {
     const updated = await prisma.chuDe.update({
-      where: { IdChuDe: BigInt(id) }, // Chú ý: lúc query phải ép id từ URL về BigInt
+      where: { IdChuDe: BigInt(id) }, 
       data: {
         ...(TenChuDe && { TenChuDe }),
         ...(MoTa !== undefined && { MoTa }),
       },
     });
 
-    // Trả về object sau khi update
     res.json({
       IdChuDe: updated.IdChuDe.toString(),
       TenChuDe: updated.TenChuDe,

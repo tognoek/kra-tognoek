@@ -340,7 +340,7 @@ const pageStyles = `
   .markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; border: 1px solid #dfe2e5; }
   .markdown-body table th, .markdown-body table td { border: 1px solid #dfe2e5; padding: 8px 12px; }
   .markdown-body table tr:nth-child(2n) { background: #f6f8fa; }
-  .markdown-body code { background: rgba(27,31,35,0.05); padding: 2px 4px; border-radius: 3px; font-family: monospace; color: #e83e8c; }
+  .markdown-body code { background: rgba(27,31,35,0.05); padding: 2px 4px; border-radius: 3px; font-family: monospace; color: #000000ff; }
   .markdown-body pre { background: #f6f8fa; padding: 16px; border-radius: 8px; overflow: auto; border: 1px solid #e1e4e8; }
 
   .sub-heading { font-size: 13px; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; }

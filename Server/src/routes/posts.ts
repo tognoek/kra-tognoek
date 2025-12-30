@@ -8,7 +8,7 @@ const router = Router();
 router.get("/public", async (req, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = 5; // Mỗi trang 5 bài
+    const limit = 5;
     const skip = (page - 1) * limit;
 
     const [posts, total] = await Promise.all([
@@ -40,7 +40,7 @@ router.get("/public", async (req, res) => {
         IdTaiKhoan: p.IdTaiKhoan.toString(),
         taiKhoan: {
           ...taiKhoanWithoutEmail,
-          Avatar: avatarUrl 
+          Avatar: avatarUrl
         }
       };
     });
@@ -56,9 +56,8 @@ router.get("/public", async (req, res) => {
   }
 });
 
-// 2. [GET] Lấy danh sách bài đăng để QUẢN LÝ (Admin thấy hết, Creator thấy bài mình)
 router.get("/manage", async (req, res) => {
-  const { userId, role } = req.query; // Giả sử truyền từ middleware auth
+  const { userId, role } = req.query; 
 
   try {
     const whereCondition = role === "admin" ? {} : { IdTaiKhoan: BigInt(userId as string) };
@@ -74,7 +73,6 @@ router.get("/manage", async (req, res) => {
   }
 });
 
-// [POST] /api/posts - Tạo bài đăng mới
 router.post("/", async (req, res) => {
   const { IdTaiKhoan, TieuDe, NoiDung, UuTien, TrangThai } = req.body;
   try {
@@ -93,7 +91,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 3. [PUT] Cập nhật bài đăng (Xử lý phân quyền UuTien)
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { TieuDe, NoiDung, UuTien, TrangThai, role } = req.body;
@@ -101,7 +98,6 @@ router.put("/:id", async (req, res) => {
   try {
     const updateData: any = { TieuDe, NoiDung, TrangThai };
     
-    // Chỉ ADMIN mới được chỉnh sửa trường UuTien
     if (role === "admin" && UuTien !== undefined) {
       updateData.UuTien = parseInt(UuTien);
     }

@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import CryptoJS from "crypto-js";
+import { formatMemory } from "@/scripts/memory";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -26,13 +28,21 @@ export default function ProfilePage() {
   const [subTotalPages, setSubTotalPages] = useState(1);
   const [subSearch, setSubSearch] = useState("");
 
+  // Contests Search
+  const [contestSearch, setContestSearch] = useState("");
+
+  // Password Modal
+  const [showPwdModal, setShowPwdModal] = useState(false);
+  const [pwdData, setPwdData] = useState({ old: "", new: "", confirm: "" });
+  const [pwdLoading, setPwdLoading] = useState(false);
+
   const router = useRouter();
 
   const fetchUserStats = useCallback(async (userId: string) => {
     setLoading(true);
-      if (typeof document !== "undefined") {
+    if (typeof document !== "undefined") {
         document.title = `Hồ sơ cá nhân - Kra tognoek`;
-      }
+    }
     try {
       const res = await fetch(`${API_BASE}/api/users/${userId}`, { cache: "no-store" });
       if (res.ok) {
@@ -84,10 +94,6 @@ export default function ProfilePage() {
 
   const handleSaveName = async () => {
     if (!user || !newName.trim()) return;
-    if (newName.trim() === user.HoTen) {
-      setEditingName(false);
-      return;
-    }
     setSaving(true);
     setNameError(null);
     try {
@@ -100,21 +106,59 @@ export default function ProfilePage() {
       const data = await res.json();
       if (res.ok) {
         setUser((prev: any) => ({ ...prev, HoTen: data.HoTen }));
-        window.localStorage.setItem("oj_user", JSON.stringify({ ...user, HoTen: data.HoTen }));
+        const currentLocal = JSON.parse(window.localStorage.getItem("oj_user") || "{}");
+        window.localStorage.setItem("oj_user", JSON.stringify({ ...currentLocal, HoTen: data.HoTen }));
         setEditingName(false);
         window.dispatchEvent(new CustomEvent("authChange"));
+        toast.success("Cập nhật tên thành công");
       } else {
-        setNameError(data.error || "Không thể cập nhật tên");
+        setNameError(data.error);
+        toast.error(data.error);
       }
-    } catch (err) { setNameError("Lỗi kết nối máy chủ"); }
+    } catch (err) { toast.error("Lỗi kết nối máy chủ"); }
     finally { setSaving(false); }
   };
 
-  const getStatusClass = (status: string | null) => {
-    if (!status) return "pending";
-    if (status === "accepted" || status === "hoan_tat") return "accepted";
-    return "rejected";
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwdData.new !== pwdData.confirm) return toast.error("Mật khẩu mới không khớp");
+    setPwdLoading(true);
+    try {
+      const token = window.localStorage.getItem("oj_token");
+      const res = await fetch(`${API_BASE}/api/auth/change-password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ IdTaiKhoan: user.IdTaiKhoan, MatKhauCu: pwdData.old, MatKhauMoi: pwdData.new }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Đổi mật khẩu thành công");
+        setShowPwdModal(false);
+        setPwdData({ old: "", new: "", confirm: "" });
+      } else {
+        toast.error(data.error);
+      }
+    } catch (e) { toast.error("Lỗi hệ thống"); }
+    finally { setPwdLoading(false); }
   };
+
+    const getStatusUI = (status: string | null) => {
+    if (!status) return <span className="st-badge pending">⏳ Đang chấm...</span>;
+    if (status === "accepted") return <span className="st-badge accepted">✅ Accepted</span>;
+    if (status === "compile_error") return <span className="st-badge error">❌ Lỗi biên dịch</span>;
+    
+    let label = status;
+    if (status.includes("wrong_answer")) label = `❌ Sai test ${status.split(":")[1]}`;
+    if (status.includes("time_limit")) label = `⏳ Quá thời gian ${status.split(":")[1]}`;
+    if (status.includes("memory_limit")) label = `💾 Quá bộ nhớ ${status.split(":")[1]}`;
+    
+    return <span className="st-badge error">{label}</span>;
+  };
+
+  // Logic tìm kiếm cuộc thi cục bộ
+  const filteredContests = user?.participatedContests?.filter((c: any) => 
+    c.TenCuocThi.toLowerCase().includes(contestSearch.toLowerCase())
+  ) || [];
 
   if (!user) return <div className="loader-box">Đang tải hồ sơ...</div>;
 
@@ -124,10 +168,11 @@ export default function ProfilePage() {
 
   return (
     <div className="profile-wrapper">
+      <ToastContainer position="top-right" autoClose={2000} />
       <style dangerouslySetInnerHTML={{ __html: modernUIStyles }} />
 
       <div className="content-constrain">
-        {/* Header Profile */}
+        {/* Header Profile - Khôi phục giao diện gốc */}
         <div className="profile-hero">
           <div className="avatar-container">
              <img src={user.Avatar} alt="avatar" className="avatar-img" />
@@ -161,25 +206,22 @@ export default function ProfilePage() {
             )}
             <p className="user-handle">@{user.TenDangNhap} • <span className="role-badge">{user.VaiTro}</span></p>
           </div>
+          <button className="btn-password-trigger" onClick={() => setShowPwdModal(true)}>🔒 Đổi mật khẩu</button>
         </div>
 
         {/* Stats Grid */}
         <div className="main-grid">
           <div className="glass-card info-card">
             <h3 className="card-title">Thông tin tài khoản</h3>
-            <div className="info-row"><span className="info-label">Email</span><span className="info-value">{user.Email}</span></div>
+            <div className="info-row"><span className="info-label">Email</span><span className="info-value truncate-email" title={user.Email}>{user.Email}</span></div>
             <div className="info-row"><span className="info-label">Vai trò</span><span className="info-value">{user.VaiTro}</span></div>
-            <div className="info-row">
-              <span className="info-label">Ngày gia nhập</span>
-              <span className="info-value">{new Date(user.NgayTao).toLocaleDateString("vi-VN")}</span>
-            </div>
+            <div className="info-row"><span className="info-label">Gia nhập</span><span className="info-value">{new Date(user.NgayTao).toLocaleDateString("vi-VN")}</span></div>
             <div className="info-row"><span className="info-label">Trạng thái</span><span className="info-value text-green">Đang hoạt động</span></div>
           </div>
 
           <div className="glass-card skill-card">
             <h3 className="card-title">Thống kê hoạt động</h3>
             <div className="skill-content-layout">
-              {/* PHẦN BIỂU ĐỒ TRÒN ĐÃ ĐƯỢC KHÔI PHỤC VỀ NHƯ CŨ */}
               <div className="accuracy-container">
                 <div className="accuracy-circle">
                   <svg viewBox="0 0 36 36" className="circular-chart">
@@ -194,7 +236,6 @@ export default function ProfilePage() {
                   <div className="stat-mini"><span className="dot total"></span> Tổng bài: <strong>{totalSub}</strong></div>
                 </div>
               </div>
-
               <div className="extra-stats-grid">
                 <div className="extra-stat-item"><span className="extra-val">{userStats?.participatedContestsCount || 0}</span><span className="extra-lbl">Cuộc thi</span></div>
                 <div className="extra-stat-item"><span className="extra-val">{userStats?.totalContests || 0}</span><span className="extra-lbl">Đã tạo</span></div>
@@ -204,7 +245,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Tab Switcher History Section */}
+        {/* Tab Switcher & Search Section */}
         <div className="glass-card history-section">
           <div className="history-header">
             <div className="tab-switcher">
@@ -215,12 +256,22 @@ export default function ProfilePage() {
                 Cuộc thi tham gia
               </button>
             </div>
-            {activeTab === 'submissions' && (
-              <div className="search-box-mini">
-                <input type="text" placeholder="Tìm tên bài..." value={subSearch} onChange={(e) => { setSubSearch(e.target.value); setSubPage(1); }} />
-                <span className="search-icon">🔍</span>
-              </div>
-            )}
+            <div className="search-box-mini">
+              <input 
+                type="text" 
+                placeholder={activeTab === 'submissions' ? "Tìm tên bài tập..." : "Tìm tên cuộc thi..."} 
+                value={activeTab === 'submissions' ? subSearch : contestSearch} 
+                onChange={(e) => {
+                    if (activeTab === 'submissions') {
+                        setSubSearch(e.target.value);
+                        setSubPage(1);
+                    } else {
+                        setContestSearch(e.target.value);
+                    }
+                }} 
+              />
+              <span className="search-icon">🔍</span>
+            </div>
           </div>
 
           <div className="tab-body">
@@ -240,20 +291,24 @@ export default function ProfilePage() {
                     {subLoading ? (
                       <tr><td colSpan={5} className="loading-text">Đang tải...</td></tr>
                     ) : submissions.length === 0 ? (
-                      <tr><td colSpan={5} className="empty-text">Chưa có bài nộp nào.</td></tr>
+                      <tr><td colSpan={5} className="empty-text">Chưa có bài nộp nào phù hợp.</td></tr>
                     ) : (
                       submissions.map((s) => (
                         <tr key={s.IdBaiNop}>
-                          <td><Link href={`/problems/${s.IdDeBai}`} className="p-link">{s.deBai?.TieuDe}</Link></td>
-                          <td><span className={`st-badge ${getStatusClass(s.TrangThaiCham)}`}>{s.TrangThaiCham || "Pending"}</span></td>
+                          <td>
+                            <Link href={`/problems/${s.IdDeBai}`} className="p-link">{s.deBai?.TieuDe}</Link>
+                            {s.cuocThi && <div className="contest-small-tag">🏆 {s.cuocThi.TenCuocThi}</div>}
+                          </td>
+                          <td>{getStatusUI(s.TrangThaiCham)}</td>
                           <td>{s.ThoiGianThucThi}ms</td>
-                          <td>{s.BoNhoSuDung}kb</td>
+                          <td>{formatMemory(s.BoNhoSuDung)}</td>
                           <td className="date-cell">{new Date(s.NgayNop).toLocaleDateString("vi-VN")}</td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
+                {/* Khôi phục UI Phân trang cũ */}
                 {subTotalPages > 1 && (
                   <div className="pagination">
                     <button disabled={subPage === 1} onClick={() => setSubPage(p => p - 1)} className="p-btn">«</button>
@@ -275,10 +330,10 @@ export default function ProfilePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {!user.participatedContests || user.participatedContests.length === 0 ? (
-                      <tr><td colSpan={5} className="empty-text">Chưa tham gia cuộc thi nào.</td></tr>
+                    {filteredContests.length === 0 ? (
+                      <tr><td colSpan={5} className="empty-text">Không tìm thấy cuộc thi nào.</td></tr>
                     ) : (
-                      user.participatedContests.map((c: any) => (
+                      filteredContests.map((c: any) => (
                         <tr key={c.IdCuocThi}>
                           <td><Link href={`/contests/${c.IdCuocThi}`} className="p-link">🏆 {c.TenCuocThi}</Link></td>
                           <td className="date-cell">{new Date(c.ThoiGianBatDau).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' })}</td>
@@ -295,6 +350,36 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Popup Đổi mật khẩu */}
+      {showPwdModal && (
+        <div className="modal-overlay">
+           <div className="modal-container animate-pop">
+              <div className="modal-header-p">
+                 <h3>🔐 Đổi mật khẩu</h3>
+                 <button className="close-x" onClick={() => setShowPwdModal(false)}>✕</button>
+              </div>
+              <form onSubmit={handleChangePassword}>
+                 <div className="p-group">
+                    <label>Mật khẩu hiện tại</label>
+                    <input type="password" required value={pwdData.old} onChange={e => setPwdData({...pwdData, old: e.target.value})} />
+                 </div>
+                 <div className="p-group">
+                    <label>Mật khẩu mới</label>
+                    <input type="password" required value={pwdData.new} onChange={e => setPwdData({...pwdData, new: e.target.value})} />
+                 </div>
+                 <div className="p-group">
+                    <label>Xác nhận mật khẩu mới</label>
+                    <input type="password" required value={pwdData.confirm} onChange={e => setPwdData({...pwdData, confirm: e.target.value})} />
+                 </div>
+                 <div className="modal-btn-row">
+                    <button type="button" className="btn-s2" onClick={() => setShowPwdModal(false)}>Hủy</button>
+                    <button type="submit" className="btn-p2" disabled={pwdLoading}>{pwdLoading ? "Đang lưu..." : "Lưu thay đổi"}</button>
+                 </div>
+              </form>
+           </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -303,7 +388,8 @@ const modernUIStyles = `
   .profile-wrapper { padding: 40px 20px; font-family: 'Inter', sans-serif; min-height: 100vh; }
   .content-constrain { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
 
-  .profile-hero { display: flex; align-items: center; gap: 24px; background: white; padding: 32px; border-radius: 24px; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05); border: 1px solid #fff; }
+  /* Hero Section */
+  .profile-hero { display: flex; align-items: center; gap: 24px; background: white; padding: 32px; border-radius: 24px; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05); border: 1px solid #fff; position: relative; }
   .avatar-container { width: 90px; height: 90px; border-radius: 24px; overflow: hidden; background: #eee; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
   .avatar-img { width: 100%; height: 100%; object-fit: cover; }
   
@@ -317,15 +403,18 @@ const modernUIStyles = `
   .user-handle { font-size: 15px; color: #64748b; margin-top: 6px; }
   .role-badge { background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 
+  .btn-password-trigger { margin-left: auto; padding: 10px 16px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; font-weight: 700; color: #64748b; cursor: pointer; transition: 0.2s; font-size: 13px; }
+  .btn-password-trigger:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+
+  /* Info Cards */
   .main-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
   .glass-card { background: white; padding: 24px; border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
   .card-title { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 20px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
   .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f8fafc; font-size: 14px; }
   .info-label { color: #64748b; } .info-value { color: #1e293b; font-weight: 600; }
+  .truncate-email { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; }
 
-  .skill-content-layout { display: flex; flex-direction: column; gap: 24px; }
-  
-  /* CÁC STYLE BIỂU ĐỒ TRÒN 100PX CŨ */
+  /* Accuracy Stats */
   .accuracy-container { display: flex; align-items: center; gap: 30px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; }
   .accuracy-circle { width: 100px; text-align: center; }
   .circle-label { font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; display: block; margin-top: 5px; }
@@ -338,45 +427,53 @@ const modernUIStyles = `
   .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
   .dot.ac { background: #22c55e; } .dot.total { background: #6366f1; }
 
-  .extra-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .extra-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
   .extra-stat-item { background: #f8fafc; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #f1f5f9; }
   .extra-val { display: block; font-size: 18px; font-weight: 800; color: #1e293b; }
   .extra-lbl { font-size: 11px; color: #64748b; font-weight: 600; line-height: 1.2; display: block; margin-top: 2px; }
 
-  /* Tab Switcher Styles */
+  /* History Section */
   .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
   .tab-switcher { display: flex; background: #f1f5f9; padding: 4px; border-radius: 14px; gap: 4px; }
   .tab-item { padding: 10px 20px; border: none; background: transparent; border-radius: 10px; font-size: 14px; font-weight: 700; color: #64748b; cursor: pointer; transition: 0.2s; }
   .tab-item.active { background: white; color: #2563eb; box-shadow: 0 4px 10px -2px rgba(0,0,0,0.05); }
 
   .search-box-mini { position: relative; width: 250px; }
-  .search-box-mini input { width: 100%; padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; outline: none; }
+  .search-box-mini input { width: 100%; padding: 10px 35px 10px 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; outline: none; }
+  .search-icon { position: absolute; right: 12px; top: 10px; font-size: 14px; opacity: 0.4; }
+
   .sub-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .sub-table th { text-align: left; padding: 15px; color: #64748b; font-weight: 600; border-bottom: 2px solid #f1f5f9; }
   .sub-table td { padding: 15px; border-bottom: 1px solid #f8fafc; }
   .p-link { color: #2563eb; font-weight: 700; text-decoration: none; }
-  .st-badge { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+  .contest-small-tag { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+  .st-badge { padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; display: inline-block; }
   .st-badge.accepted { background: #dcfce7; color: #15803d; }
-  .st-badge.rejected { background: #fee2e2; color: #b91c1c; }
+  .st-badge.error { background: #fee2e2; color: #b91c1c; }
   .st-badge.pending { background: #fefce8; color: #a16207; }
 
-  .count-badge { padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 12px; }
-  .count-badge.grey { background: #f1f5f9; color: #475569; }
-  .count-badge.green { background: #dcfce7; color: #15803d; }
-  .date-cell { color: #64748b; font-size: 13px; }
-  .text-center { text-align: center; }
-  .text-green { color: #10b981; }
-  .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; }
-  .p-btn { padding: 6px 14px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; cursor: pointer; font-weight: bold; }
+  /* Phân trang - Khôi phục chuẩn */
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
+  .p-btn { padding: 6px 14px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; }
+  .p-info { font-size: 13px; color: #64748b; font-weight: 600; }
+
+  /* Modal Đổi mật khẩu */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+  .modal-container { background: white; width: 400px; padding: 32px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+  .modal-header-p { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header-p h3 { font-size: 20px; font-weight: 800; margin: 0; }
+  .close-x { background: none; border: none; font-size: 18px; cursor: pointer; color: #94a3b8; }
+  .p-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .p-group label { font-size: 13px; font-weight: 700; color: #64748b; }
+  .p-group input { padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; outline: none; transition: 0.2s; }
+  .p-group input:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); }
+  .modal-btn-row { display: flex; gap: 12px; margin-top: 24px; }
+  .btn-p2 { flex: 1; padding: 12px; border: none; background: #2563eb; color: white; border-radius: 12px; font-weight: 700; cursor: pointer; }
+  .btn-s2 { flex: 1; padding: 12px; border: none; background: #f1f5f9; color: #64748b; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
   .animate-slide { animation: slideIn 0.3s ease-out; }
   @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes pop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
   .loader-box { padding: 100px; text-align: center; color: #64748b; }
-
-  @media (max-width: 850px) {
-    .main-grid { grid-template-columns: 1fr; }
-    .history-header { flex-direction: column; align-items: flex-start; }
-    .tab-switcher { width: 100%; }
-    .tab-item { flex: 1; }
-    .search-box-mini { width: 100%; }
-  }
 `;

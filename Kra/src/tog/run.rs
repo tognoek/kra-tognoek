@@ -115,8 +115,6 @@ pub async fn run_single_test(
     let mut stderr_log = None;
     let mut time_ms = 0u128;
     let memory_kb = None; 
-
-    // 2. Chuẩn bị Input Data (nếu cần pipe vào stdin)
     let input_data = if let InputMode::Stdin = input_mode {
         match tokio::fs::read(input_path).await {
             Ok(d) => Some(d),
@@ -137,10 +135,7 @@ pub async fn run_single_test(
         cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
 
         let mut child = cmd.spawn().map_err(|e| format!("Không chạy được binary: {}", e))?;
-        // 2. Lấy PID
         let pid = child.id().ok_or("Không lấy được PID")?;
-
-        // 3. Bơm input vào stdin nếu cần
         if let (InputMode::Stdin, Some(data)) = (input_mode, input_data) {
             if let Some(mut stdin) = child.stdin.take() {
                 stdin.write_all(&data).await.map_err(|e| format!("Lỗi ghi stdin: {}", e))?;

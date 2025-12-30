@@ -1,11 +1,11 @@
 interface DifficultyBadgeProps {
-  difficulty: string | number;
+  difficulty: string;
   className?: string;
 }
 
 export default function DifficultyBadge({ difficulty, className = "" }: DifficultyBadgeProps) {
-  const getDifficultyClass = (d: string | number) => {
-    const num = typeof d === "string" ? parseInt(d) : d;
+  const getDifficultyClass = (d: string) => {
+    const num = parseInt(d);
     if (num <= 3) return "difficulty difficulty-easy";
     if (num <= 6) return "difficulty difficulty-medium";
     return "difficulty difficulty-hard";

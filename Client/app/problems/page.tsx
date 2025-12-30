@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import DifficultyBadge from "../components/DifficultyBadge";
+import { formatMemory } from "@/scripts/memory";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -124,7 +125,7 @@ export default function ProblemsPage() {
                           </div>
                         </td>
                         <td><DifficultyBadge difficulty={p.DoKho} /></td>
-                        <td className="specs-cell">{p.GioiHanThoiGian}ms / {p.GioiHanBoNho}kb</td>
+                        <td className="specs-cell">{p.GioiHanThoiGian}ms / {formatMemory(p.GioiHanBoNho)}</td>
                       </tr>
                     ))}
                   </tbody>

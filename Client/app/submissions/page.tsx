@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { formatMemory } from "@/scripts/memory";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -108,7 +109,6 @@ export default function SubmissionsPage() {
             {loading && data.length === 0 ? (
                <tr><td colSpan={7} className="loading-state">Đang tải dữ liệu...</td></tr>
             ) : data.map((s) => {
-              // Logic kiểm tra bản thân hay người khác
               const isMe = currentUser && s.taiKhoan?.IdTaiKhoan?.toString() === currentUser.IdTaiKhoan?.toString();
               const userProfileLink = isMe ? "/profile" : `/users/${s.taiKhoan?.IdTaiKhoan}`;
 
@@ -119,14 +119,13 @@ export default function SubmissionsPage() {
                   <td>
                     <Link href={userProfileLink} className="user-link-item">
                       <div className="u-info">
-                        {/* Chỉ hiện tên, màu sắc sẽ do class is-me-row ở thẻ tr quyết định */}
                         <span className="u-name">{s.taiKhoan?.HoTen}</span>
                       </div>
                     </Link>
                   </td>
                   <td>{getStatusUI(s.TrangThaiCham)}</td>
                   <td className="mono">{s.ThoiGianThucThi ?? 0}ms</td>
-                  <td className="mono">{s.BoNhoSuDung ?? 0} kb</td>
+                  <td className="mono">{formatMemory(s.BoNhoSuDung)}</td>
                   <td className="date-cell">{new Date(s.NgayNop).toLocaleString("vi-VN")}</td>
                 </tr>
               );
@@ -135,7 +134,6 @@ export default function SubmissionsPage() {
         </table>
       </div>
 
-      {/* Phân trang */}
       <div className="pagination">
         <button disabled={pagination.currentPage === 1} onClick={() => loadSubmissions(pagination.currentPage - 1)} className="p-btn">Trước</button>
         <div className="p-numbers">

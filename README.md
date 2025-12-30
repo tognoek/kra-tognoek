@@ -88,7 +88,7 @@ DATABASE_URL="mysql://user:password@localhost:3306/oj_system"
 REDIS_URL="redis://127.0.0.1:6379"
 ```
 
-### 4. Setup Database Schema
+### 4. Setup Database Schemaw
 
 ```bash
 cd Server

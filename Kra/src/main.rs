@@ -229,13 +229,11 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
         data.code_id, data.test_id
     );
 
-    // Map string input mode -> enum
     let input_mode = match data.input_mode.to_lowercase().as_str() {
         "file" => InputMode::File,
         _ => InputMode::Stdin,
     };
 
-    // Map string language -> enum (mặc định: Cpp)
     let language = match data
         .language
         .as_ref()
@@ -303,7 +301,6 @@ async fn send_callback(
         "BoNhoSuDung": max_mem_kb,
     });
 
-    // Xử lý lỗi biên dịch - gửi compileError nếu có
     match exec_res {
         Err(e) => {
             body["compileError"] = serde_json::json!(e.to_string());

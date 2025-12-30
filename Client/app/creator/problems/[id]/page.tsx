@@ -322,9 +322,9 @@ const pageStyles = `
   .markdown-body table { border-collapse: collapse; width: 100%; margin: 20px 0; border: 1px solid #dfe2e5; }
   .markdown-body table th, .markdown-body table td { border: 1px solid #dfe2e5; padding: 10px 15px; text-align: left; }
   .markdown-body table tr:nth-child(2n) { background: #f6f8fa; }
-  .markdown-body code { background: rgba(27,31,35,0.05); padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 90%; color: #e83e8c; }
+  .markdown-body code {padding: 3px 6px; border-radius: 4px; font-family: monospace; font-size: 90%; color: #000000ff; }
   .markdown-body pre { background: #f6f8fa; padding: 20px; border-radius: 10px; overflow: auto; border: 1px solid #e1e4e8; }
-  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body pre code { background: none; color: black; padding: 0; }
 
   .test-config-box { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 15px; padding: 30px; }
   .test-header h4 { margin: 0; color: #92400e; font-size: 18px; }

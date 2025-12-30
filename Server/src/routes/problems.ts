@@ -138,9 +138,7 @@ router.get("/:id", async (req, res) => {
       taiKhoan: problem.taiKhoan
         ? {
             IdTaiKhoan: problem.taiKhoan.IdTaiKhoan.toString(),
-            TenDangNhap: problem.taiKhoan.TenDangNhap,
             HoTen: problem.taiKhoan.HoTen,
-            Email: problem.taiKhoan.Email,
           }
         : null,
       

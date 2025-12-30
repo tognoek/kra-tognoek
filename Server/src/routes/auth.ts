@@ -1,14 +1,13 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../db";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { sendForgotPasswordEmail } from "../scripts/mail";
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
-/**
- * 1. API: KIỂM TRA TÊN TÀI KHOẢN & EMAIL TRƯỚC KHI GỌI FIREBASE
- */
 router.post("/check-availability", async (req: Request, res: Response) => {
     try {
         const { TenDangNhap, Email } = req.body;
@@ -40,13 +39,16 @@ router.post("/register", async (req: Request, res: Response) => {
             return res.status(400).json({ error: "Thiếu thông tin đăng ký bắt buộc" });
         }
 
-        // Tìm role "User" mặc định
         const userRole = await prisma.vaiTro.findFirst({
             where: { TenVaiTro: "User" },
         });
 
         if (!userRole) {
             return res.status(500).json({ error: "Hệ thống chưa cấu hình Vai trò người dùng" });
+        }
+
+        if (MatKhau.length < 6) {
+            return res.status(400).json({ error: "Mật khẩu phải có ít nhất 6 ký tự" });
         }
 
         const hashedPassword = await bcrypt.hash(MatKhau, 10);
@@ -141,6 +143,74 @@ router.post("/sync-verify", async (req: Request, res: Response) => {
         res.json({ success: true, message: "Đã cập nhật trạng thái xác thực" });
     } catch (error: any) {
         res.status(500).json({ error: "Không thể đồng bộ trạng thái: " + error.message });
+    }
+});
+
+router.put("/change-password", async (req: Request, res: Response) => {
+    try {
+        const { IdTaiKhoan, MatKhauCu, MatKhauMoi } = req.body;
+        const authHeader = req.headers.authorization;
+
+        if (!IdTaiKhoan || !MatKhauCu || !MatKhauMoi) {
+            return res.status(400).json({ error: "Vui lòng nhập đầy đủ thông tin" });
+        }
+
+        const token = authHeader?.replace("Bearer ", "");
+        if (!token) return res.status(401).json({ error: "Unauthorized" });
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+        if (decoded.userId !== IdTaiKhoan.toString()) {
+            return res.status(403).json({ error: "Bạn không có quyền thực hiện hành động này" });
+        }
+
+        const user = await prisma.taiKhoan.findUnique({
+            where: { IdTaiKhoan: BigInt(IdTaiKhoan) },
+        });
+
+        if (!user) return res.status(404).json({ error: "Người dùng không tồn tại" });
+
+        const isMatch = await bcrypt.compare(MatKhauCu, user.MatKhau);
+        if (!isMatch) {
+            return res.status(400).json({ error: "Mật khẩu cũ không chính xác" });
+        }
+
+        if (MatKhauMoi.length < 6) {
+            return res.status(400).json({ error: "Mật khẩu mới phải có ít nhất 6 ký tự" });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(MatKhauMoi, 10);
+        await prisma.taiKhoan.update({
+            where: { IdTaiKhoan: BigInt(IdTaiKhoan) },
+            data: { MatKhau: hashedNewPassword },
+        });
+
+        res.json({ success: true, message: "Đổi mật khẩu thành công" });
+    } catch (error: any) {
+        res.status(500).json({ error: "Lỗi hệ thống: " + error.message });
+    }
+});
+
+router.post("/forgot-password", async (req: Request, res: Response) => {
+    try {
+        const { Email } = req.body;
+        if (!Email) return res.status(400).json({ error: "Vui lòng nhập Email" });
+
+        const user = await prisma.taiKhoan.findUnique({ where: { Email } });
+        if (!user) return res.status(404).json({ error: "Email không tồn tại" });
+
+        const newRawPassword = "KRA-" + crypto.randomInt(1000000, 9999999);
+
+        const hashedPassword = await bcrypt.hash(newRawPassword, 10);
+
+        await prisma.taiKhoan.update({
+            where: { Email },
+            data: { MatKhau: hashedPassword }
+        });
+
+        await sendForgotPasswordEmail(Email, newRawPassword);
+
+        res.json({ message: "Mật khẩu mới đã được gửi vào Email của bạn!" });
+    } catch (error: any) {
+        res.status(500).json({ error: "Lỗi hệ thống: " + error.message });
     }
 });
 

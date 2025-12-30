@@ -6,13 +6,11 @@ use tokio::time::sleep;
 use chrono::{Utc, Duration as ChronoDuration};
 use serde::{Deserialize, Serialize};
 
-// Cấu trúc dữ liệu gửi lên OpenAI
 #[derive(Serialize)]
 struct ModerationRequest {
-    input: String,
+    input: Vec<String>, // Chuyển từ String thành Vec<String> để gửi một mẻ
 }
 
-// Cấu trúc dữ liệu nhận về từ OpenAI
 #[derive(Deserialize)]
 struct ModerationResponse {
     results: Vec<ModerationResult>,
@@ -25,12 +23,10 @@ struct ModerationResult {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Nạp biến môi trường từ .env
     dotenvy::dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let openai_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
 
-    // Khởi tạo kết nối Database Pool
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
@@ -38,16 +34,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = reqwest::Client::new();
 
-    println!("🤖 Service kiểm duyệt AI của Kra Tognoek đã sẵn sàng...");
-    println!("⏰ Tần suất quét: Mỗi 24 giờ một lần.");
+    println!("🤖 Service kiểm duyệt AI (Batch Mode) đã sẵn sàng...");
 
     loop {
         println!("🚀 [{}] Bắt đầu chu kỳ quét mới...", Utc::now().format("%Y-%m-%d %H:%M:%S"));
 
-        // 1. Lấy mốc thời gian (ví dụ: các comment trong 24h qua)
         let one_day_ago = Utc::now() - ChronoDuration::days(1);
         
-        // 2. Truy vấn các bình luận đang hiển thị (TrangThai = 1)
         let rows = sqlx::query("SELECT IdBinhLuan, NoiDung FROM BinhLuan WHERE TrangThai = 1 AND NgayTao > ?")
             .bind(one_day_ago)
             .fetch_all(&pool)
@@ -58,41 +51,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if comments.is_empty() {
                     println!("✅ Không có bình luận mới.");
                 } else {
-                    println!("🔍 Đang kiểm tra {} bình luận...", comments.len());
-                    
-                    for row in comments {
-                        let id: i64 = row.get("IdBinhLuan");
-                        let content: String = row.get("NoiDung");
+                    for chunk in comments.chunks(16) { 
+                        let mut ids = Vec::new();
+                        let mut contents = Vec::new();
 
-                        // 3. Gọi OpenAI Moderation API (Bản miễn phí)
+                        for row in chunk {
+                            ids.push(row.get::<i64, _>("IdBinhLuan"));
+                            contents.push(row.get::<String, _>("NoiDung"));
+                        }
+
+                        println!("🔍 Đang kiểm tra mẻ {} bình luận...", contents.len());
+
                         let api_res = client.post("https://api.openai.com/v1/moderations")
                             .header("Authorization", format!("Bearer {}", openai_key))
-                            .json(&ModerationRequest { input: content.clone() })
+                            .json(&ModerationRequest { input: contents.clone() })
                             .send()
                             .await;
 
                         if let Ok(res) = api_res {
                             if let Ok(json) = res.json::<ModerationResponse>().await {
-                                if json.results[0].flagged {
-                                    println!("🚫 VI PHẠM: ID {} - Nội dung: {}", id, content);
-                                    
-                                    // 4. Ẩn bình luận vi phạm
-                                    let _ = sqlx::query("UPDATE BinhLuan SET TrangThai = 0 WHERE IdBinhLuan = ?")
-                                        .bind(id)
-                                        .execute(&pool)
-                                        .await;
+                                for (idx, result) in json.results.iter().enumerate() {
+                                    if result.flagged {
+                                        let id = ids[idx];
+                                        println!("🚫 VI PHẠM: ID {} - Nội dung: {}", id, contents[idx]);
+                                        
+                                        let _ = sqlx::query("UPDATE BinhLuan SET TrangThai = 0 WHERE IdBinhLuan = ?")
+                                            .bind(id)
+                                            .execute(&pool)
+                                            .await;
+                                    }
                                 }
                             }
                         }
+                        sleep(Duration::from_millis(1000)).await;
                     }
                 }
             }
             Err(e) => eprintln!("❌ Lỗi truy vấn Database: {:?}", e),
         }
 
-        println!("😴 Chu kỳ hoàn tất. Hệ thống nghỉ ngơi...");
-        
-        // CHO NÓ NGỦ: 24 giờ (đơn vị giây)
+        println!("😴 Chu kỳ hoàn tất. Nghỉ 24h...");
         sleep(Duration::from_secs(24 * 60 * 60)).await;
     }
 }

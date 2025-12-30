@@ -33,7 +33,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
-  ],
+, "../Server/src/scripts/mail.ts"  ],
   "exclude": [
     "node_modules"
   ]

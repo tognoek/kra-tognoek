@@ -15,6 +15,7 @@ import rank from "./rank"
 import posts from "./posts"
 import creatorC from "./creatorContest";
 import creatorP from "./creatorProblem";
+import home from "./home";
 
 export const router = Router();
 
@@ -38,4 +39,5 @@ router.use("/posts", posts);
 router.use("/creator_contest", creatorC);
 router.use("/creator_problem", creatorP);
 router.use("/upload", upload);
+router.use("/home", home);
 

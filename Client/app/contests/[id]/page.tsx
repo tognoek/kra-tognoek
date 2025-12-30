@@ -13,6 +13,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import 'highlight.js/styles/github.css';
 import 'katex/dist/katex.min.css';
+import { formatMemory } from "@/scripts/memory";
 
 // Badge Trạng thái đồng bộ màu sắc mới
 const StatusBadge = ({ status }: { status: string }) => {
@@ -213,7 +214,7 @@ export default function ContestDetailPage() {
                       </Link>
                     </td>
                     <td><DifficultyBadge difficulty={item.deBai?.DoKho} /></td>
-                    <td className="specs">{item.deBai?.GioiHanThoiGian}ms / {item.deBai?.GioiHanBoNho}kb</td>
+                    <td className="specs">{item.deBai?.GioiHanThoiGian}ms / {formatMemory(item.deBai?.GioiHanBoNho)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -277,7 +278,10 @@ const contestStyles = `
   .contest-page { max-width: 1200px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; background: #f8fafc; min-height: 100vh; }
   
   .top-nav { margin-bottom: 20px; }
-  .back-link { text-decoration: none; color: #64748b; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.2s; width: fit-content; }
+  .back-link {background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px;
+  padding: 2px 6px; text-decoration: none; color: #64748b; 
+  font-size: 0.9rem; font-weight: 600; display: flex; 
+  align-items: center; gap: 8px; transition: 0.2s; width: fit-content; }
   .back-link:hover { color: #2563eb; transform: translateX(-4px); }
   .back-icon { font-size: 1.2rem; }
 
@@ -330,7 +334,7 @@ const contestStyles = `
   .markdown-body th, .markdown-body td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; }
   .markdown-body th { background: #f8fafc; font-weight: 700; }
   .markdown-body code { background: #f1f5f9; color: #e11d48; padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 13px; }
-  .markdown-body pre { background: #1e293b; color: white; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+  .markdown-body pre {background: #f6f6f6ff; ;color: #000000ff; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
   .markdown-body pre code { background: transparent; color: inherit; padding: 0; }
   .warning-text { color: #9a3412; }
 

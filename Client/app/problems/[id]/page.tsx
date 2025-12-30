@@ -13,6 +13,7 @@ import SubmitModal from "../../components/SubmitModal";
 import CommentsSection from "../../components/CommentsSection";
 import 'highlight.js/styles/github.css';
 import 'katex/dist/katex.min.css';
+import { formatMemory } from "@/scripts/memory";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -38,7 +39,7 @@ export default function ProblemDetailPage() {
         const data = await res.json();
         setProblem(data);
         if (typeof document !== "undefined") {
-          document.title = `${data.TieuDe || problemId} - Online Judge`;
+          document.title = `${data.TieuDe || problemId} - Kra tognoek`;
         }
       } catch (e: any) {
         setError(e.message);
@@ -119,7 +120,7 @@ export default function ProblemDetailPage() {
                <div className="print-specs">
                   <div className="print-specs-row">
                     <span>⏱️ <b>Thời gian:</b> {problem.GioiHanThoiGian}ms</span>
-                    <span>💾 <b>Bộ nhớ:</b> {problem.GioiHanBoNho} kb</span>
+                    <span>💾 <b>Bộ nhớ:</b> {formatMemory(problem.GioiHanBoNho)}</span>
                     <span>📈 <b>Độ khó:</b> {diffVal}/10</span>
                   </div>
                   <div className="print-specs-row">
@@ -177,7 +178,7 @@ export default function ProblemDetailPage() {
                 <span className="icon">💾</span>
                 <div className="stat-info">
                     <span className="stat-label">Bộ nhớ</span>
-                    <span className="stat-value">{problem.GioiHanBoNho} kb</span>
+                    <span className="stat-value">{formatMemory(problem.GioiHanBoNho)}</span>
                 </div>
               </div>
 
@@ -283,9 +284,9 @@ const modernProblemStyles = `
   .markdown-body table { border-collapse: collapse; width: 100%; margin: 20px 0; }
   .markdown-body th, .markdown-body td { border: 1px solid #e5e7eb; padding: 12px 15px; text-align: left; }
   .markdown-body th { background: #f8fafc; font-weight: 700; }
-  .markdown-body code { background: rgba(37, 99, 235, 0.08); color: #2563eb; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 90%; }
-  .markdown-body pre { background: #1e293b; color: #f8fafc; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; }
-  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body code { background: rgba(235, 235, 235, 0.64); color: #2563eb; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 90%; }
+  .markdown-body pre { background: #f5f5f5ff; color: #f8fafc; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; }
+  .markdown-body pre code { background: none; color: black; padding: 0; }
 
   .loading-state { text-align: center; padding: 100px; font-size: 18px; color: #6b7280; font-weight: 600; }
 

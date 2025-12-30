@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getTextIcon } from "@/scripts/icon";
 
 interface User {
   IdTaiKhoan: string;
@@ -75,7 +76,7 @@ export default function AuthBar() {
           }}
           onClick={() => setShowDropdown(!showDropdown)}
         >
-          👤 {user.TenDangNhap}
+          {getTextIcon(user.TenDangNhap)} {user.HoTen}
         </button>
         {showDropdown && (
           <>
