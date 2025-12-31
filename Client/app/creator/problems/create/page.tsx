@@ -12,6 +12,7 @@ import { ToastContainer, toast, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'highlight.js/styles/github.css'; 
 import 'katex/dist/katex.min.css';
+import test from "node:test";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -95,6 +96,12 @@ export default function CreateProblemPage() {
         window.scrollTo({ top: 0, behavior: "smooth" });
         throw new Error("Vui lòng chọn ít nhất 1 chủ đề.");
       }
+      if (!testFile) {
+        throw new Error("Vui lòng tải lên file test.");
+      }
+      if (testFile && !testFile.name.toLowerCase().endsWith(".zip")) {
+        throw new Error("File test phải là file nén .zip");
+      }
 
       const res = await fetch(`${API_BASE}/api/creator_problem`, {
         method: "POST",
@@ -125,7 +132,7 @@ export default function CreateProblemPage() {
             problemId: data.IdDeBai,
             inputPath: inputPath || null,
             outputPath: outputPath || null,
-            checkerPath: checkerPath || null,
+            checkerPath: checkerPath || "check.cpp",
           }),
         });
         if (!upRes.ok) throw new Error("Bài tập đã tạo nhưng lỗi upload file test.");
@@ -240,7 +247,6 @@ export default function CreateProblemPage() {
             </div>
           </div>
 
-          {/* Section: Cấu hình kỹ thuật */}
           <div className="form-section">
             <h3 className="section-title">⚙️ Cấu hình Kỹ thuật & Test Data</h3>
             
@@ -258,7 +264,7 @@ export default function CreateProblemPage() {
             <div className="test-config-box">
               <div className="test-header">
                 <h4>⚠️ Dữ liệu chấm bài</h4>
-                <p>Nén các file test thành .zip (Ví dụ: test01.inp, test01.out...)</p>
+                <p>Nén các file test thành .zip theo mẫu đã cung cấp</p>
               </div>
               
               <div className="row-3-cols">

@@ -70,7 +70,7 @@ router.post("/test", async (req: Request, res: Response) => {
         IdDeBai: idDeBai,
         DuongDanInput: inputPath || null,  
         DuongDanOutput: outputPath || null, 
-        DuongDanCode: checkerPath || "",
+        DuongDanCode: checkerPath || "check.cpp",
       },
     });
 

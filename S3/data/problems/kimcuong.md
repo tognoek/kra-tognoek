@@ -19,7 +19,7 @@ Hãy tìm giá trị **lớn thứ nhì** trong mảng đó.
 - Dòng thứ hai chứa **n** số nguyên dương $a_i$ ($1 \le a_i \le 10^9$), mỗi số cách nhau một khoảng trắng.
 ---
 ## 📤 Dữ liệu ra
-- Một số nguyên duy nhất là giá trị lớn thứ nhì. Nếu không tồn tại giá trị lớn thứ nhì (ví dụ tất cả các số bằng nhau), in ra `NOT FOUND`.
+- Một số nguyên duy nhất là giá trị lớn thứ nhì. Nếu không tồn tại giá trị lớn thứ nhì (ví dụ tất cả các số bằng nhau), in ra `-1`.
 ---
 ## 📌 Ví dụ
 **Input**
