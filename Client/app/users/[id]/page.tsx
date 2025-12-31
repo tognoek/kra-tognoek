@@ -187,7 +187,7 @@ export default function UserProfilePage() {
             <div className="info-row">
               <span className="info-label">Trạng thái</span>
               <span className={`info-value ${user.TrangThai ? 'text-green' : ''}`}>
-                {user.TrangThai ? "Đang hoạt động" : "Ngoại tuyến"}
+                {user.TrangThai ? "Hoạt động" : "Bị khoá"}
               </span>
             </div>
             <div className="info-row">
