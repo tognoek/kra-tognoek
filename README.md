@@ -24,6 +24,26 @@ Luồng chính: **Client → Server → Redis → Kra → S3 → Kra → Server 
 - **MySQL** (8.0+): Database chính
 - **Redis** (6.0+): Job queue cho Kra worker
 
+
+### Cài đặt isolate
+```shell
+sudo apt update
+sudo apt install -y build-essential libcap-dev git
+git clone https://github.com/ioi/isolate.git
+cd isolate
+make
+sudo make install
+```
+### Kiểm tra isolate được cài hay chưa
+```
+which isolate
+# => /usr/local/bin/isolate
+```
+### Cấp quyền cho hệ thống
+```
+sudo chown root:root /usr/local/bin/isolate
+sudo chmod u+s /usr/local/bin/isolate
+```
 ### Reset Prisma
 ```shell
 npx prisma generate

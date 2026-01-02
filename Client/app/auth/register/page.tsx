@@ -13,7 +13,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" | null }>({ text: "", type: null });
 
-  // Xác thực con người nâng cao
   const [mathQuiz, setMathQuiz] = useState({ q: "", a: 0 });
   const [userAnswer, setUserAnswer] = useState("");
 
@@ -29,12 +28,10 @@ export default function RegisterPage() {
         answer = n1 + n2;
         break;
       case "-":
-        // Đảm bảo số lớn trừ số nhỏ cho dễ
         if (n1 < n2) [n1, n2] = [n2, n1];
         answer = n1 - n2;
         break;
       case "*":
-        // Phép nhân dùng số nhỏ hơn (2-12) để không quá đánh đố
         n1 = Math.floor(Math.random() * 11) + 2;
         n2 = Math.floor(Math.random() * 11) + 2;
         answer = n1 * n2;
