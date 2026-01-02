@@ -255,21 +255,18 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
         language,
     };
 
-    println!("Chạy Executor::run_job với config: {:?}", cfg);
     let exec_res = Executor::run_job(cfg).await;
 
     let codes = build_result_codes(&exec_res);
     println!("KRA_RESULT_CODES {:?}", codes);
 
-    let (status, total_time_ms, total_mem_kb) = summarize_result(&exec_res);
+    let (total_time_ms, total_mem_kb) = summarize_result(&exec_res);
 
     if let Some(submission_id) = &data.submission_id {
         if let Some(server_url) = &data.server_base_url {
             send_callback(
                 server_url,
                 submission_id,
-                &exec_res,
-                status,
                 total_time_ms,
                 total_mem_kb,
                 &codes,
@@ -284,8 +281,6 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
 async fn send_callback(
     server_url: &str,
     submission_id: &str,
-    exec_res: &Result<ExecResult, BoxError>,
-    _status: &str,
     max_time_ms: i32,
     max_mem_kb: i32,
     codes: &[i8],
@@ -300,17 +295,6 @@ async fn send_callback(
         "ThoiGianThucThi": max_time_ms,
         "BoNhoSuDung": max_mem_kb,
     });
-
-    match exec_res {
-        Err(e) => {
-            body["compileError"] = serde_json::json!(e.to_string());
-        }
-        Ok(exec) => {
-            if !exec.compile_ok {
-                body["compileError"] = serde_json::json!(exec.compile_log);
-            }
-        }
-    }
 
     match client
     .post(&callback_url)
@@ -330,12 +314,12 @@ async fn send_callback(
     }
 }
 
-fn summarize_result(res: &Result<ExecResult, BoxError>) -> (&'static str, i32, i32) {
+fn summarize_result(res: &Result<ExecResult, BoxError>) -> (i32, i32) {
     match res {
-        Err(_) => ("error", 0, 0),
+        Err(_) => (0, 0),
         Ok(exec) => {
             if !exec.compile_ok {
-                return ("compile_error", 0, 0);
+                return (0, 0);
             }
 
             let mut ok = true;
@@ -356,13 +340,12 @@ fn summarize_result(res: &Result<ExecResult, BoxError>) -> (&'static str, i32, i
                 }
             }
 
-            let status = if ok { "accepted" } else { "wrong_answer" };
-            (status, max_time, max_mem)
+            (max_time, max_mem)
         }
     }
 }
 
-/// -1 = lỗi biên dịch, 0 = đúng, 1 = sai, 2 = quá thời gian, 3 = quá bộ nhớ.
+/// -1 = lỗi biên dịch, 0 = đúng, 1 = sai, 2 = quá thời gian, 3 = quá bộ nhớ, 4 = lỗi thực thi.
 fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<i8> {
     match res {
         Err(_) => vec![-1],
@@ -374,18 +357,7 @@ fn build_result_codes(res: &Result<ExecResult, BoxError>) -> Vec<i8> {
             exec.tests
                 .iter()
                 .map(|t| {
-                    if !t.passed {
-                        if let Some(msg) = &t.stderr {
-                            if msg.contains("Timeout") {
-                                return 2;
-                            }
-                            if msg.contains("Memory") || msg.contains("memory") || msg.contains("Memory limit") {
-                                return 3;
-                            }
-                        }
-                        return 1;
-                    }
-                    0
+                    t.stderr.unwrap_or(-1)
                 })
                 .collect()
         }

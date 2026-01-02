@@ -30,6 +30,7 @@ export default function ContestSubmissionsPage() {
     try {
       const codes = JSON.parse(trangThai);
       if (codes[0] === -1) return <span className="st-error">Compile Error</span>;
+      if (codes[0] === 4) return <span className="st-error">Runtime Error</span>;
       
       const isAC = codes.every((c: number) => c === 0);
       if (isAC) return <span className="st-ac">Accepted</span>;

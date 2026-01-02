@@ -112,73 +112,76 @@ pub async fn run_single_test(
     
     let mut passed = false;
     let mut checker_exit_ok = false;
-    let mut stderr_log = None;
+    let mut stderr_log: i8 = 0;
     let mut time_ms = 0u128;
     let memory_kb = None; 
     let input_data = if let InputMode::Stdin = input_mode {
         match tokio::fs::read(input_path).await {
             Ok(d) => Some(d),
-            Err(e) => return quick_err(case_name, format!("Lỗi đọc input: {}", e)),
+            Err(e) => return quick_err(case_name, -1),
         }
     } else { None };
 
     let start = Instant::now();
     let run_process = async {
-        let mut cmd = Command::new(submission_bin);
-        
-        if let InputMode::Stdin = input_mode {
-            cmd.stdin(Stdio::piped());
-        } else {
-            cmd.stdin(Stdio::null()); 
-        }
-
-        cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-        let mut child = cmd.spawn().map_err(|e| format!("Không chạy được binary: {}", e))?;
-        let pid = child.id().ok_or("Không lấy được PID")?;
-        if let (InputMode::Stdin, Some(data)) = (input_mode, input_data) {
-            if let Some(mut stdin) = child.stdin.take() {
-                stdin.write_all(&data).await.map_err(|e| format!("Lỗi ghi stdin: {}", e))?;
+        let res: Result<(std::process::Output, u64), String> = {
+            let mut cmd = Command::new(submission_bin);
+            
+            if let InputMode::Stdin = input_mode {
+                cmd.stdin(Stdio::piped());
+            } else {
+                cmd.stdin(Stdio::null()); 
             }
-        }
 
-        use std::sync::atomic::{AtomicU64, Ordering};
-        use std::sync::Arc;
-        
-        let max_ram = Arc::new(AtomicU64::new(0));
-        let max_ram_clone = max_ram.clone();
-        
-        let monitor_task = tokio::spawn(async move {
-            loop {
-                if let Some(mem) = get_memory_usage(pid).await {
-                    let current_max = max_ram_clone.load(Ordering::Relaxed);
-                    if mem > current_max {
-                        max_ram_clone.store(mem, Ordering::Relaxed);
-                    }
-                } else {
-                    break; 
+            cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+            let mut child = cmd.spawn().map_err(|e| format!("Không chạy được binary: {}", e))?;
+            let pid = child.id().ok_or("Không lấy được PID")?;
+            
+            if let (InputMode::Stdin, Some(data)) = (input_mode, input_data) {
+                if let Some(mut stdin) = child.stdin.take() {
+                    stdin.write_all(&data).await.map_err(|e| format!("Lỗi ghi stdin: {}", e))?;
                 }
-                tokio::time::sleep(Duration::from_millis(10)).await;
             }
-        });
 
-        let output = child.wait_with_output().await.map_err(|e| e.to_string())?;
-        
-        monitor_task.abort();
+            use std::sync::atomic::{AtomicU64, Ordering};
+            use std::sync::Arc;
+            
+            let max_ram = Arc::new(AtomicU64::new(0));
+            let max_ram_clone = max_ram.clone();
+            
+            let monitor_task = tokio::spawn(async move {
+                loop {
+                    if let Some(mem) = get_memory_usage(pid).await {
+                        let current_max = max_ram_clone.load(Ordering::Relaxed);
+                        if mem > current_max {
+                            max_ram_clone.store(mem, Ordering::Relaxed);
+                        }
+                    } else {
+                        break; 
+                    }
+                    tokio::time::sleep(Duration::from_millis(10)).await;
+                }
+            });
 
-        let final_mem = max_ram.load(Ordering::Relaxed);
-        Ok((output, final_mem))
+            let output = child.wait_with_output().await.map_err(|e| e.to_string())?;
+            monitor_task.abort();
+
+            let final_mem = max_ram.load(Ordering::Relaxed);
+            Ok((output, final_mem))
+        };
+        res
     };
 
     let (output, measured_mem) = match timeout(Duration::from_millis(time_limit_ms), run_process).await {
         Ok(res) => match res {
             Ok(val) => val,
-            Err(e) => return quick_err(case_name, e),
+            Err(e) => return quick_err(case_name, -1),
         },
         Err(_) => {
             return TestCaseResult {
                 case_name, passed: false, time_ms: time_limit_ms as u128, 
-                memory_kb, checker_exit_ok: false, stderr: Some("Time Limit Exceeded".to_string())
+                memory_kb, checker_exit_ok: false, stderr: Some(2)
             };
         }
     };
@@ -190,7 +193,7 @@ pub async fn run_single_test(
     let user_output_content = match input_mode {
         InputMode::Stdin => {
             if let Err(e) = tokio::fs::write(&user_out_path, &output.stdout).await {
-                return quick_err(case_name, format!("Không ghi được file .out: {}", e));
+                return quick_err(case_name, -1);
             }
             output.stdout
         },
@@ -217,46 +220,42 @@ pub async fn run_single_test(
                 Ok(co) => {
                     checker_exit_ok = co.status.success();
                     let out_str = String::from_utf8_lossy(&co.stdout);
-                    if out_str.trim().starts_with("1") { passed = true; }
-                    else { 
-                        passed = false; 
-                        let err_str = String::from_utf8_lossy(&co.stderr).to_string();
-                        if !err_str.is_empty() { stderr_log = Some(err_str); }
+                    passed = false;
+                    if out_str.trim().starts_with("1") { 
+                        passed = true; 
                     }
+                    stderr_log = if passed { 0 } else { 1 };
                 },
-                Err(e) => stderr_log = Some(format!("Lỗi chạy checker: {}", e)),
+                Err(e) => stderr_log = -1,
             }
         } else {
-            stderr_log = Some("Có Checker nhưng thiếu file .res (answer)".to_string());
+            stderr_log = -1;
         }
     } else {
         if let Some(res_path) = answer_path {
             match tokio::fs::read(res_path).await {
                 Ok(expected_content) => {
                     passed = compare_lenient(&user_output_content, &expected_content);
-                    
-                    if !passed {
-                        stderr_log = Some("Kết quả sai (Wrong Answer)".to_string());
-                    }
+                    stderr_log = if passed { 0 } else { 1 };
                 },
-                Err(e) => stderr_log = Some(format!("Không đọc được file .res: {}", e)),
+                Err(e) => stderr_log = -1,
             }
         } else {
             passed = true;
-            stderr_log = Some("Không có file .res để chấm".to_string());
+            stderr_log = 0;
         }
     }
 
     if let Some(mem) = memory_kb {
-        if mem > memory_limit_kb { passed = false; stderr_log = Some("Memory Limit Exceeded".to_string()); }
+        if mem > memory_limit_kb { passed = false; stderr_log = 3; }
     }
 
     TestCaseResult {
-        case_name, passed, time_ms, memory_kb, checker_exit_ok, stderr: stderr_log,
+        case_name, passed, time_ms, memory_kb, checker_exit_ok, stderr: Some(stderr_log),
     }
 }
 
-fn compare_lenient(user_bytes: &[u8], expected_bytes: &[u8]) -> bool {
+pub fn compare_lenient(user_bytes: &[u8], expected_bytes: &[u8]) -> bool {
     let user_str = String::from_utf8_lossy(user_bytes);
     let expected_str = String::from_utf8_lossy(expected_bytes);
 
@@ -283,7 +282,7 @@ fn compare_lenient(user_bytes: &[u8], expected_bytes: &[u8]) -> bool {
     true
 }
 
-fn quick_err(case_name: String, err: String) -> TestCaseResult {
+fn quick_err(case_name: String, err: i8) -> TestCaseResult {
     TestCaseResult {
         case_name, passed: false, time_ms: 0, memory_kb: None, 
         checker_exit_ok: false, stderr: Some(err)

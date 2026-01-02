@@ -58,6 +58,7 @@ export default function SubmissionsPage() {
     if (!status) return <span className="st-badge pending">⏳ Đang chấm...</span>;
     if (status === "accepted") return <span className="st-badge accepted">✅ Accepted</span>;
     if (status === "compile_error") return <span className="st-badge error">❌ Lỗi biên dịch</span>;
+    if (status === "runtime_error") return <span className="st-badge error">🐞 Lỗi thực thi</span>;
     
     let label = status;
     if (status.includes("wrong_answer")) label = `❌ Sai test ${status.split(":")[1]}`;

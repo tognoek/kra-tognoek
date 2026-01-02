@@ -30,7 +30,7 @@ pub struct TestCaseResult {
     pub time_ms: u128,
     pub memory_kb: Option<u64>,
     pub checker_exit_ok: bool,
-    pub stderr: Option<String>,
+    pub stderr: Option<i8>,
 }
 
 #[derive(Debug, Clone)]

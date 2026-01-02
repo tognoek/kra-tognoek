@@ -57,17 +57,21 @@ router.get("/", async (req, res) => {
             const compileErrorIndex = codes.findIndex((c) => c === -1);
             if (compileErrorIndex !== -1) trangThaiCham = "compile_error";
             else {
-              const memoryIndex = codes.findIndex((c) => c === 3);
-              if (memoryIndex !== -1) trangThaiCham = `memory_limit_exceeded:${memoryIndex + 1}/${totalTests}`;
-              else {
-                const timeoutIndex = codes.findIndex((c) => c === 2);
-                if (timeoutIndex !== -1) trangThaiCham = `time_limit_exceeded:${timeoutIndex + 1}/${totalTests}`;
+              const compileREIndex = codes.findIndex((c) => c === 4);
+              if (compileREIndex !== -1) trangThaiCham = "runtime_error"
                 else {
-                  const wrongIndex = codes.findIndex((c) => c === 1);
-                  if (wrongIndex !== -1) trangThaiCham = `wrong_answer:${wrongIndex + 1}/${totalTests}`;
-                  else if (codes.every((c) => c === 0)) trangThaiCham = "accepted";
+                  const memoryIndex = codes.findIndex((c) => c === 3);
+                if (memoryIndex !== -1) trangThaiCham = `memory_limit_exceeded:${memoryIndex + 1}/${totalTests}`;
+                else {
+                  const timeoutIndex = codes.findIndex((c) => c === 2);
+                  if (timeoutIndex !== -1) trangThaiCham = `time_limit_exceeded:${timeoutIndex + 1}/${totalTests}`;
+                  else {
+                    const wrongIndex = codes.findIndex((c) => c === 1);
+                    if (wrongIndex !== -1) trangThaiCham = `wrong_answer:${wrongIndex + 1}/${totalTests}`;
+                    else if (codes.every((c) => c === 0)) trangThaiCham = "accepted";
+                  }
                 }
-              }
+                }
             }
           }
         } catch (e) { console.error(e); }
@@ -264,7 +268,6 @@ router.post("/:id/callback", async (req, res) => {
     const {
       ThoiGianThucThi,
       BoNhoSuDung,
-      compileError,
       TrangThaiCham,  // Kra: [-1] hoặc [0,0,1,2,0] - -1=compile error, 0=đúng, 1=sai, 2=timeout, 3=memory limit
     } = req.body;
 
@@ -274,7 +277,7 @@ router.post("/:id/callback", async (req, res) => {
 
     if (TrangThaiCham && Array.isArray(TrangThaiCham)) {
       statusMessage = JSON.stringify(TrangThaiCham);
-    } else if (compileError) {
+    } else {
       statusMessage = JSON.stringify([-1]);
     }
 
