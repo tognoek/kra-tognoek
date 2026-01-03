@@ -7,19 +7,34 @@ const router = Router();
 router.use(authMiddleware);
 router.use(adminMiddleware);
 
-router.get("/users", async (_req: AuthRequest, res: Response) => {
+router.get("/users", async (req: AuthRequest, res: Response) => {
   try {
-    const users = await prisma.taiKhoan.findMany({
-      include: {
-        vaiTro: true,
-      },
-      orderBy: {
-        NgayTao: "desc",
-      },
-    });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+    const searchTerm = (req.query.q as string) || "";
 
-    res.json(
-      users.map((u) => ({
+    const where = searchTerm ? {
+      OR: [
+        { TenDangNhap: { contains: searchTerm } },
+        { HoTen: { contains: searchTerm } },
+        { Email: { contains: searchTerm } },
+      ],
+    } : {};
+
+    const [users, total] = await Promise.all([
+      prisma.taiKhoan.findMany({
+        where,
+        include: { vaiTro: true },
+        orderBy: { NgayTao: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.taiKhoan.count({ where }),
+    ]);
+
+    res.json({
+      users: users.map((u) => ({
         IdTaiKhoan: u.IdTaiKhoan.toString(),
         TenDangNhap: u.TenDangNhap,
         HoTen: u.HoTen,
@@ -27,8 +42,11 @@ router.get("/users", async (_req: AuthRequest, res: Response) => {
         TrangThai: u.TrangThai,
         NgayTao: u.NgayTao,
         VaiTro: u.vaiTro.TenVaiTro,
-      }))
-    );
+      })),
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

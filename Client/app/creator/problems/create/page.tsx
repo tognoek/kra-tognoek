@@ -37,7 +37,7 @@ export default function CreateProblemPage() {
   const [DoKho, setDoKho] = useState("1"); 
   const [DangCongKhai, setPublic] = useState(true);
   const [GioiHanThoiGian, setTimeLimit] = useState(1000);
-  const [GioiHanBoNho, setMemoryLimit] = useState(256);
+  const [GioiHanBoNho, setMemoryLimit] = useState(262144);
   const [testFile, setTestFile] = useState<File | null>(null);
   const [inputPath, setInputPath] = useState("");
   const [outputPath, setOutputPath] = useState("");

@@ -45,14 +45,48 @@ router.get("/", async (_req, res) => {
 
     const sortedData = [...languagesWithStats].sort((a, b) => b.successfulSubmissions - a.successfulSubmissions);
     
-    const finalResult = languagesWithStats.map(l => {
-      const rank = sortedData.findIndex(s => s.IdNgonNgu === l.IdNgonNgu) + 1;
-      return { ...l, rank };
-    });
+    const finalResult = languagesWithStats
+      .sort((a, b) => b.successfulSubmissions - a.successfulSubmissions)
+      .map((l, index) => ({
+        ...l,
+        rank: index + 1
+      }));
 
     res.json(finalResult);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to load languages" });
+  }
+});
+
+router.get("/active", async (req, res) => {
+  try {
+    // Chỉ lấy các ngôn ngữ có TrangThai là true (Active)
+    const activeLanguages = await prisma.ngonNgu.findMany({
+      where: {
+        TrangThai: true,
+      },
+      // Select đúng các trường mà interface Language yêu cầu
+      select: {
+        IdNgonNgu: true,
+        TenNgonNgu: true,
+        TenNhanDien: true,
+        TrangThai: true,
+      },
+    });
+
+    // Format lại dữ liệu (chuyển BigInt sang String nếu cần)
+    const formattedData = activeLanguages.map((lang) => ({
+      IdNgonNgu: lang.IdNgonNgu.toString(),
+      TenNgonNgu: lang.TenNgonNgu,
+      TenNhanDien: lang.TenNhanDien,
+      TrangThai: lang.TrangThai,
+    }));
+
+    // Trả về kết quả
+    res.json(formattedData);
+  } catch (error: any) {
+    console.error("Fetch Active Languages Error:", error);
+    res.status(500).json({ error: "Lỗi server khi lấy danh sách ngôn ngữ" });
   }
 });
 

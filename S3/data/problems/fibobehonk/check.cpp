@@ -2,8 +2,8 @@
 
 using namespace std;
 
-vector<string> read_all_strings(string filename) {
-    vector<string> data;
+vector<long long> read_all_numbers(string filename) {
+    vector<long long> data;
     ifstream file(filename);
     
     if (!file.is_open()) {
@@ -11,14 +11,14 @@ vector<string> read_all_strings(string filename) {
         exit(1);
     }
 
-    string val;
+    long long val;
     while (file >> val) {
         data.push_back(val);
     }
     return data;
 }
 
-int solve(vector<string> user_out, vector<string> answer_res) {
+int solve(vector<long long> user_out, vector<long long> answer_res) {
     if (user_out.size() != answer_res.size()) {
         return 0;
     }
@@ -37,14 +37,14 @@ int main(int argc, char* argv[]) {
     // argv[1]: File Input (đề bài)
     // argv[2]: File Output của thí sinh (.out)
     // argv[3]: File Đáp án chuẩn (.res)
-    
+
     if (argc < 4) {
         cerr << "Loi: Thieu tham so dong lenh!" << endl;
         return 1;
     }
 
-    vector<string> user_out = read_all_strings(argv[2]); 
-    vector<string> answer_res = read_all_strings(argv[3]);
+    vector<long long> user_out = read_all_numbers(argv[2]); 
+    vector<long long> answer_res = read_all_numbers(argv[3]);
 
     cout << solve(user_out, answer_res);
     

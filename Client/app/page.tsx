@@ -74,7 +74,7 @@ export default function Home() {
         {totalPages > 1 && (
           <div className="pagination-posts">
             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-btn">« Trước</button>
-            <div className="p-indicator">Trang <b>{page}</b> / {totalPages}</div>
+            <div className="p-indicator">Trang <b>{page} / {totalPages}</b></div>
             <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="p-btn">Sau »</button>
           </div>
         )}
@@ -93,7 +93,7 @@ export default function Home() {
                 <img src={u.avatar} className="rank-avatar" alt="" />
                 <div className="rank-info">
                   <Link href={`/users/${u.id}`} className="rank-name">{u.name}</Link>
-                  <div className="rank-val">{u.acCount} AC</div>
+                  <div className="rank-val">{u.acCount} Bài</div>
                 </div>
               </div>
             ))}
@@ -101,7 +101,7 @@ export default function Home() {
         </div>
 
         {/* WIDGET TOP PROBLEMS */}
-        <div className="widget-card">
+        <div className="widget-card"> 
           <h3 className="widget-title">⭐ Bài Tập Hot</h3>
           <div className="rank-list">
             {topStats?.problems.map((p: any, idx: number) => (
@@ -111,7 +111,7 @@ export default function Home() {
                 </div>
                 <div className="rank-info">
                   <Link href={`/problems/${p.id}`} className="rank-link-title">{p.title}</Link>
-                  <div className="rank-val">{p.acCount} AC</div>
+                  <div className="rank-val">{p.acCount} Thí sinh</div>
                 </div>
               </div>
             ))}

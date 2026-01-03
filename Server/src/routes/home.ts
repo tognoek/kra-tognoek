@@ -8,7 +8,7 @@ router.get("/", async (req: Request, res: Response) => {
   try {
     const allSuccessfulSubmissions = await prisma.baiNop.findMany({
       where: { TrangThaiCham: { not: null } },
-      select: { IdTaiKhoan: true, TrangThaiCham: true }
+      select: { IdTaiKhoan: true, IdDeBai: true, TrangThaiCham: true }
     });
 
     const isAccepted = (statusStr: string | null) => {
@@ -19,20 +19,23 @@ router.get("/", async (req: Request, res: Response) => {
       } catch { return false; }
     };
 
-    const userAcCount: Record<string, number> = {};
-    allSuccessfulSubmissions.forEach(sub => {
-      if (isAccepted(sub.TrangThaiCham)) {
-        const uid = sub.IdTaiKhoan.toString();
-        userAcCount[uid] = (userAcCount[uid] || 0) + 1;
-      }
+    const acSubmissions = allSuccessfulSubmissions.filter(sub => isAccepted(sub.TrangThaiCham));
+
+    const userSolvedMap: Record<string, Set<string>> = {};
+    acSubmissions.forEach(sub => {
+      const uid = sub.IdTaiKhoan.toString();
+      const pid = sub.IdDeBai.toString();
+      if (!userSolvedMap[uid]) userSolvedMap[uid] = new Set();
+      userSolvedMap[uid].add(pid); // Thêm IdDeBai vào Set của User đó
     });
 
-    const topUserIds = Object.entries(userAcCount)
-      .sort(([, a], [, b]) => b - a)
+    const topUserIds = Object.entries(userSolvedMap)
+      .map(([uid, solvedSet]) => ({ uid, count: solvedSet.size }))
+      .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
     const topUsers = await Promise.all(
-      topUserIds.map(async ([uid, count]) => {
+      topUserIds.map(async ({ uid, count }) => {
         const user = await prisma.taiKhoan.findUnique({
           where: { IdTaiKhoan: BigInt(uid) },
           select: { HoTen: true, Email: true }
@@ -46,25 +49,21 @@ router.get("/", async (req: Request, res: Response) => {
       })
     );
 
-    const allSubmissionsForProblems = await prisma.baiNop.findMany({
-      where: { TrangThaiCham: { not: null } },
-      select: { IdDeBai: true, TrangThaiCham: true }
+    const problemUserMap: Record<string, Set<string>> = {};
+    acSubmissions.forEach(sub => {
+      const pid = sub.IdDeBai.toString();
+      const uid = sub.IdTaiKhoan.toString();
+      if (!problemUserMap[pid]) problemUserMap[pid] = new Set();
+      problemUserMap[pid].add(uid); // Thêm IdTaiKhoan vào Set của Bài tập đó
     });
 
-    const problemAcCount: Record<string, number> = {};
-    allSubmissionsForProblems.forEach(sub => {
-      if (isAccepted(sub.TrangThaiCham)) {
-        const pid = sub.IdDeBai.toString();
-        problemAcCount[pid] = (problemAcCount[pid] || 0) + 1;
-      }
-    });
-
-    const topProblemEntries = Object.entries(problemAcCount)
-      .sort(([, a], [, b]) => b - a)
+    const topProblemEntries = Object.entries(problemUserMap)
+      .map(([pid, userSet]) => ({ pid, count: userSet.size }))
+      .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
     const topProblems = await Promise.all(
-      topProblemEntries.map(async ([pid, count]) => {
+      topProblemEntries.map(async ({ pid, count }) => {
         const problem = await prisma.deBai.findUnique({
           where: { IdDeBai: BigInt(pid) },
           select: { TieuDe: true }

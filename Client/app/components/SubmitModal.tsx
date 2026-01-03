@@ -57,12 +57,11 @@ export default function SubmitModal({
 
   const fetchLanguages = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/languages`);
+      const res = await fetch(`${API_BASE}/api/languages/active`);
       if (res.ok) {
         const data = await res.json();
-        const activeLangs = data.filter((l: Language) => l.TrangThai);
-        setLanguages(activeLangs);
-        if (activeLangs.length > 0) setSelectedLanguage(activeLangs[0].IdNgonNgu);
+        setLanguages(data);
+        if (data.length > 0) setSelectedLanguage(data[0].IdNgonNgu);
       }
     } catch (err) {
       console.error("Failed to fetch languages:", err);

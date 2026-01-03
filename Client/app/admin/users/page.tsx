@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import CryptoJS from "crypto-js"; // Cài đặt bằng: npm install crypto-js
+import CryptoJS from "crypto-js";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -40,22 +40,33 @@ export default function AdminUsersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
-  // --- LOGIC LẤY AVATAR ---
+  // --- PHÂN TRANG STATE ---
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const limit = 10;
+
   const getAvatarUrl = (email: string) => {
     const address = String(email || "default").trim().toLowerCase();
     const hash = CryptoJS.MD5(address).toString();
     return `https://www.gravatar.com/avatar/${hash}?s=80&d=identicon`;
   };
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       const token = getToken();
       if (!token) throw new Error("Bạn chưa đăng nhập.");
 
+      const query = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        q: searchTerm
+      });
+
       const [usersRes, rolesRes] = await Promise.all([
-        fetch(`${API_BASE}/api/admin/users`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        fetch(`${API_BASE}/api/admin/users?${query}`, {
+          headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_BASE}/api/roles`),
       ]);
@@ -63,18 +74,29 @@ export default function AdminUsersPage() {
       if (!usersRes.ok) throw new Error("Không tải được danh sách users.");
       
       const [usersData, rolesData] = await Promise.all([usersRes.json(), rolesRes.json()]);
-      setUsers(usersData);
+      
+      // Hỗ trợ cả 2 trường hợp: API trả về mảng trực tiếp hoặc trả về object phân trang
+      if (usersData.users) {
+        setUsers(usersData.users);
+        setTotalPages(usersData.totalPages || 1);
+        setTotalUsers(usersData.total || 0);
+      } else {
+        setUsers(usersData);
+      }
       setRoles(rolesData);
     } catch (e: any) {
       toast.error(e.message || "Lỗi tải dữ liệu");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, searchTerm]);
 
   useEffect(() => {
-    load();
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      load();
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [load]);
 
   const onChangeRole = async (userId: string, newRoleId: string) => {
     const promise = async () => {
@@ -110,11 +132,9 @@ export default function AdminUsersPage() {
 
   const confirmToggleStatus = async () => {
     if (!selectedUser) return;
-    
     try {
       setSavingId(selectedUser.IdTaiKhoan);
       handleCloseModal();
-
       const token = getToken();
       const res = await fetch(`${API_BASE}/api/admin/users/${selectedUser.IdTaiKhoan}`, {
         method: "PUT",
@@ -124,24 +144,15 @@ export default function AdminUsersPage() {
         },
         body: JSON.stringify({ TrangThai: !selectedUser.TrangThai }),
       });
-
       if (!res.ok) throw new Error("Thất bại");
-      
       toast.success(`Đã ${selectedUser.TrangThai ? "khóa" : "mở khóa"} tài khoản ${selectedUser.TenDangNhap}`);
       await load();
-
     } catch (e: any) {
       toast.error("Cập nhật trạng thái thất bại");
     } finally {
       setSavingId(null);
     }
   };
-
-  const filteredUsers = users.filter(u => 
-    u.TenDangNhap.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.Email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.HoTen.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="admin-page">
@@ -153,7 +164,7 @@ export default function AdminUsersPage() {
           <h1 className="page-title">Quản lý Người dùng</h1>
           <p className="page-subtitle">Kiểm soát truy cập và phân quyền hệ thống.</p>
         </div>
-        <button className="btn btn-secondary" onClick={load} disabled={loading}>
+        <button className="btn btn-secondary" onClick={() => {setPage(1); load();}} disabled={loading}>
           🔄 Làm mới
         </button>
       </div>
@@ -166,11 +177,11 @@ export default function AdminUsersPage() {
               type="text" 
               placeholder="Tìm kiếm thành viên..." 
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {setSearchTerm(e.target.value); setPage(1);}}
             />
           </div>
           <div className="user-count">
-            <strong>{filteredUsers.length}</strong> thành viên
+            Tổng số: <strong>{totalUsers}</strong> thành viên
           </div>
         </div>
 
@@ -188,19 +199,15 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="text-center p-5">Đang tải...</td></tr>
-              ) : filteredUsers.length === 0 ? (
+                <tr><td colSpan={6} className="text-center p-5">Đang tải dữ liệu...</td></tr>
+              ) : users.length === 0 ? (
                 <tr><td colSpan={6} className="text-center p-5 text-gray-500">Không tìm thấy dữ liệu.</td></tr>
               ) : (
-                filteredUsers.map((u) => (
+                users.map((u) => (
                   <tr key={u.IdTaiKhoan}>
                     <td>
                       <div className="avatar-box">
-                        <img 
-                          src={getAvatarUrl(u.Email)} 
-                          alt="avatar" 
-                          className="avatar-img"
-                        />
+                        <img src={getAvatarUrl(u.Email)} alt="avatar" className="avatar-img" />
                       </div>
                     </td>
                     <td>
@@ -240,9 +247,31 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* --- UI PHÂN TRANG --- */}
+        <div className="pagination-bar">
+          <div className="pagination-info">
+            Trang <strong>{page}</strong> / {totalPages}
+          </div>
+          <div className="pagination-actions">
+            <button 
+              className="btn btn-nav" 
+              disabled={page <= 1 || loading} 
+              onClick={() => setPage(p => p - 1)}
+            >
+              &laquo; Trước
+            </button>
+            <button 
+              className="btn btn-nav" 
+              disabled={page >= totalPages || loading} 
+              onClick={() => setPage(p => p + 1)}
+            >
+              Sau &raquo;
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* --- POPUP XÁC NHẬN --- */}
       {modalOpen && selectedUser && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -252,7 +281,6 @@ export default function AdminUsersPage() {
               </h3>
               <button className="modal-close" onClick={handleCloseModal}>&times;</button>
             </div>
-            
             <div className="modal-body">
               <div className="modal-user-preview">
                 <img src={getAvatarUrl(selectedUser.Email)} alt="user" className="modal-avatar" />
@@ -262,11 +290,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
               <p>Bạn có chắc chắn muốn {selectedUser.TrangThai ? "khóa" : "mở khóa"} tài khoản này?</p>
-              {selectedUser.TrangThai && (
-                <p className="warning-text">⚠️ Người dùng sẽ không thể truy cập hệ thống sau khi bị khóa.</p>
-              )}
             </div>
-
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={handleCloseModal}>Hủy bỏ</button>
               <button 
@@ -284,65 +308,44 @@ export default function AdminUsersPage() {
 }
 
 const cssStyles = `
-  .admin-page { max-width: 1200px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', system-ui, sans-serif; color: #1f2937; }
+  .admin-page { max-width: 1200px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', sans-serif; color: #1f2937; }
   .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
   .page-title { font-size: 24px; font-weight: 800; margin: 0; color: #111827; }
   .page-subtitle { margin: 4px 0 0; color: #6b7280; font-size: 14px; }
-  
-  .content-card { background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; overflow: hidden; }
-  
-  .toolbar { padding: 20px 24px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; background-color: #fff; gap: 12px; }
+  .content-card { background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; overflow: hidden; }
+  .toolbar { padding: 20px 24px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
   .search-box { position: relative; width: 320px; }
   .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
-  .search-box input { width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #e5e7eb; border-radius: 10px; outline: none; transition: 0.2s; font-size: 14px; }
-  .search-box input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-
+  .search-box input { width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #e5e7eb; border-radius: 10px; outline: none; font-size: 14px; }
   .data-table { width: 100%; border-collapse: collapse; }
-  .data-table th { background-color: #f9fafb; padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e7eb; }
+  .data-table th { background-color: #f9fafb; padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #4b5563; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
   .data-table td { padding: 16px 24px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
-  .data-table tr:hover { background-color: #f9fafb; }
-
   .avatar-box { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
   .avatar-img { width: 100%; height: 100%; object-fit: cover; }
-  
   .user-info { display: flex; flex-direction: column; }
   .user-name { font-weight: 700; color: #111827; font-size: 14px; }
   .user-fullname { font-size: 12px; color: #6b7280; }
-  .user-email { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #4b5563; font-size: 13px; }
-
-  .role-select { padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; background-color: #fff; }
-  
-  .status-badge { padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; border: none; cursor: pointer; transition: 0.2s; }
+  .role-select { padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; }
+  .status-badge { padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; border: none; cursor: pointer; }
   .status-badge.active { background-color: #dcfce7; color: #166534; }
   .status-badge.blocked { background-color: #fee2e2; color: #991b1b; }
-  .status-badge:hover { filter: brightness(0.95); transform: translateY(-1px); }
-
-  .btn { padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn { padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
   .btn-secondary { background: white; border: 1px solid #e5e7eb; color: #374151; }
-  .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
   .btn-danger { background: #ef4444; color: white; }
   .btn-success { background: #10b981; color: white; }
 
-  /* MODAL */
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.2s ease-out; }
-  .modal-content { background: white; padding: 32px; border-radius: 20px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  /* PAGINATION STYLES */
+  .pagination-bar { padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; background-color: #f9fafb; border-top: 1px solid #e5e7eb; }
+  .pagination-info { font-size: 14px; color: #6b7280; }
+  .pagination-actions { display: flex; gap: 8px; }
+  .btn-nav { background: white; border: 1px solid #e5e7eb; color: #374151; padding: 6px 14px; font-size: 13px; }
+  .btn-nav:hover:not(:disabled) { background: #f3f4f6; }
+  .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+  .modal-content { background: white; padding: 32px; border-radius: 20px; width: 100%; max-width: 420px; }
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-  .modal-title { margin: 0; font-size: 20px; font-weight: 800; color: #111827; }
-  .modal-close { background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 20px; color: #6b7280; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  
-  .modal-body { margin-bottom: 28px; font-size: 15px; color: #4b5563; line-height: 1.6; }
   .modal-user-preview { display: flex; align-items: center; gap: 14px; padding: 12px; background: #f8fafc; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e5e7eb; }
   .modal-avatar { width: 44px; height: 44px; border-radius: 10px; }
-  .warning-text { color: #b91c1c; margin-top: 12px; font-size: 13px; background: #fef2f2; padding: 10px; border-radius: 8px; border: 1px solid #fee2e2; }
-
   .modal-footer { display: flex; justify-content: flex-end; gap: 12px; }
-
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-  @media (max-width: 768px) {
-    .search-box { width: 100%; }
-    .toolbar { flex-direction: column; align-items: flex-start; }
-    .user-count { display: none; }
-  }
 `;
