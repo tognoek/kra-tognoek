@@ -101,7 +101,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { IdTaiKhoan, IdDeBai, IdNgonNgu, IdCuocThi, DuongDanCode } = req.body;
+  const { IdTaiKhoan, IdDeBai, IdNgonNgu, IdCuocThi, DuongDanCode, Code } = req.body;
   if (!IdTaiKhoan || !IdDeBai || !IdNgonNgu || !DuongDanCode) {
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -153,6 +153,7 @@ router.post("/", async (req, res) => {
       IdDeBai: BigInt(IdDeBai),
       IdNgonNgu: BigInt(IdNgonNgu),
       IdCuocThi: IdCuocThi ? BigInt(IdCuocThi) : null,
+      Code: Code || "",
       DuongDanCode,
       TrangThaiCham: null,
     },
@@ -192,6 +193,39 @@ router.post("/", async (req, res) => {
     BoNhoSuDung: submission.BoNhoSuDung,
     NgayNop: submission.NgayNop,
   });
+});
+
+// GET /api/submissions/:id/source?userId=...
+router.get("/:id/source", async (req, res) => {
+  try {
+    const id = BigInt(req.params.id);
+    const userId = req.query.userId ? BigInt(req.query.userId as string) : null;
+
+    if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+    const submission = await prisma.baiNop.findUnique({
+      where: { IdBaiNop: id },
+      select: {
+        IdTaiKhoan: true,
+        Code: true,
+        ngonNgu: { select: { TenNhanDien: true } }
+      }
+    });
+
+    if (!submission) return res.status(404).json({ error: "Không tìm thấy bài nộp" });
+
+    // Kiểm tra quyền sở hữu (Security Check)
+    if (submission.IdTaiKhoan !== userId) {
+      return res.status(403).json({ error: "Bạn không có quyền xem mã nguồn này" });
+    }
+
+    res.json({
+      code: submission.Code || "",
+      language: submission.ngonNgu?.TenNhanDien || "cpp"
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi server" });
+  }
 });
 
 router.get("/:id", async (req, res) => {

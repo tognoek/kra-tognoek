@@ -414,6 +414,6 @@ async fn main() {
 
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
-    println!("Server chạy tại http://127.0.0.1:3001");
+    println!("S3 chạy tại http://127.0.0.1:3001");
     axum::serve(listener, app).await.unwrap();
 }

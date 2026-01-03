@@ -373,7 +373,7 @@ const modernUIStyles = `
   .accuracy-circle { width: 100px; text-align: center; }
   .circle-label { font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; display: block; margin-top: 5px; }
   .circular-chart { display: block; max-width: 100%; }
-  .circle-bg { fill: none; stroke: #eee; stroke-width: 3; }
+  .circle-bg { fill: none; stroke: #2563eb; stroke-width: 3; }
   .circle { fill: none; stroke-width: 3; stroke-linecap: round; stroke: #22c55e; transition: stroke-dasharray 1s ease; }
   .percentage { fill: #1e293b; font-size: 0.5em; text-anchor: middle; font-weight: 800; }
   .accuracy-stats { flex: 1; display: flex; flex-direction: column; gap: 10px; }

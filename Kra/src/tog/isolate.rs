@@ -72,19 +72,15 @@ impl IsolateManager {
             "--run", "--", "./solution"
         ]);
 
-        // CHỈNH SỬA QUAN TRỌNG TẠI ĐÂY:
-        // Sử dụng cơ chế Pipe của Rust để tránh Isolate bị treo khi tự mở file
         use std::process::Stdio;
         let internal_out_name = format!("{}.out", stem);
         let user_out_external = input_path.with_file_name(&internal_out_name);
 
         match input_mode {
             InputMode::Stdin => {
-                // Mở file input từ máy chủ thật và đổ vào stdin của isolate
                 let input_file = std::fs::File::open(input_path).map_err(|_| "Không mở được input").unwrap();
                 cmd.stdin(Stdio::from(input_file));
                 
-                // Hứng stdout của isolate và ghi vào file thật
                 let output_file = std::fs::File::create(&user_out_external).map_err(|_| "Không tạo được output").unwrap();
                 cmd.stdout(Stdio::from(output_file));
             },
@@ -92,16 +88,12 @@ impl IsolateManager {
                 let inp_name = format!("{}.inp", stem);
                 let _ = tokio::fs::copy(input_path, box_dir.join(&inp_name)).await;
                 cmd.stdin(Stdio::null()); // Khóa stdin
-                // Chế độ file thì không chuyển hướng stdout, thí sinh tự tạo file .out trong box
             }
         }
 
-        // Chạy và chờ
         let _ = timeout(Duration::from_millis(time_limit_ms * 3 + 5000), cmd.status()).await;
 
-        // --- ĐỌC KẾT QUẢ ---
         let meta_content = tokio::fs::read_to_string(box_dir.join("meta.txt")).await.unwrap_or_default();
-        println!("[DEBUG] Metadata content: \n{}", meta_content);
         let (time, mem, mut status) = Self::parse_meta(&meta_content);
 
         if let InputMode::File = input_mode {
@@ -113,11 +105,6 @@ impl IsolateManager {
             }
         }
 
-        // Kiểm tra nội dung file output đã copy/ghi ra ngoài
-        if let Ok(c) = tokio::fs::read_to_string(&user_out_external).await {
-            println!("[DEBUG] User Output Preview: {:?}", if c.len() > 50 { &c[..50] } else { &c });
-        }
-
         let mut passed = false;
         if status == 0 {
             if let (Some(chk), Some(ans)) = (checker_bin, answer_path) {
@@ -126,7 +113,7 @@ impl IsolateManager {
                 ).await;
                 if let Ok(Ok(out)) = chk_res {
                     let res_str = String::from_utf8_lossy(&out.stdout).trim().to_string();
-                    passed = res_str == "1" || res_str.to_lowercase() == "right";
+                    passed = res_str == "1" || res_str.to_lowercase() == "true";
                 }
             }
             status = if passed { 0 } else { 1 };
@@ -162,7 +149,6 @@ impl IsolateManager {
                 _ => {}
             }
         }
-        // Nếu không có status lạ mà exitcode khác 0 thì coi là RE
         if !has_status && exit_code != 0 { s = 4; }
         (t, m, s)
     }

@@ -176,6 +176,7 @@ model BaiNop {
   IdNgonNgu       BigInt
   IdCuocThi       BigInt?
   DuongDanCode    String
+  Code            String    @default("") @db.Text
   TrangThaiCham   String? 
   ThoiGianThucThi Int?
   BoNhoSuDung     Int?

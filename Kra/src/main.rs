@@ -219,15 +219,10 @@ async fn handle_job(job_json: &str, s3_base_url: &str) -> Result<(), BoxError> {
     let env: JobEnvelope = serde_json::from_str(job_json)?;
 
     if env.task != "judge" {
-        println!("Bỏ qua job với task khác 'judge': {}", env.task);
         return Ok(());
     }
 
     let data: JudgeData = serde_json::from_value(env.data)?;
-    println!(
-        "Xử lý job với codeId={} testId={}",
-        data.code_id, data.test_id
-    );
 
     let input_mode = match data.input_mode.to_lowercase().as_str() {
         "file" => InputMode::File,
@@ -296,22 +291,11 @@ async fn send_callback(
         "BoNhoSuDung": max_mem_kb,
     });
 
-    match client
-    .post(&callback_url)
-    .header("x-worker-key", worker_secret)
-    .json(&body)
-    .send().await {
-        Ok(res) => {
-            if res.status().is_success() {
-                println!("✅ Callback sent successfully to {}", callback_url);
-            } else {
-                eprintln!("⚠️ Callback returned status: {}", res.status());
-            }
-        }
-        Err(e) => {
-            eprintln!("❌ Failed to send callback to {}: {}", callback_url, e);
-        }
-    }
+    let _ = client
+            .post(&callback_url)
+            .header("x-worker-key", worker_secret)
+            .json(&body)
+            .send().await;
 }
 
 fn summarize_result(res: &Result<ExecResult, BoxError>) -> (i32, i32) {

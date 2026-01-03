@@ -6,6 +6,8 @@ import Link from "next/link";
 import { formatMemory } from "@/scripts/memory";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import CodeViewModal from "../components/CodeViewModal";
+
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -35,6 +37,10 @@ export default function ProfilePage() {
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [pwdData, setPwdData] = useState({ old: "", new: "", confirm: "" });
   const [pwdLoading, setPwdLoading] = useState(false);
+
+  // --- Code View State ---
+  const [viewingCode, setViewingCode] = useState<{ code: string; lang: string } | null>(null);
+  const [fetchingCodeId, setFetchingCodeId] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -72,6 +78,28 @@ export default function ProfilePage() {
     } catch (error) { console.error(error); }
     finally { setSubLoading(false); }
   }, []);
+
+  const handleViewSource = async (submissionId: string) => {
+    if (!user) return;
+    setFetchingCodeId(submissionId);
+    try {
+      const res = await fetch(`${API_BASE}/api/submissions/${submissionId}/source?userId=${user.IdTaiKhoan}`);
+      if (res.ok) {
+        const data = await res.json();
+        setViewingCode({ 
+          code: data.code || "// Không tìm thấy mã nguồn", 
+          lang: data.language || "cpp" 
+        });
+      } else {
+        const errData = await res.json();
+        toast.error(errData.error || "Không thể tải mã nguồn");
+      }
+    } catch (err) {
+      toast.error("Lỗi kết nối máy chủ");
+    } finally {
+      setFetchingCodeId(null);
+    }
+  };
 
   useEffect(() => {
     const userStr = window.localStorage.getItem("oj_user");
@@ -155,16 +183,13 @@ export default function ProfilePage() {
     return <span className="st-badge error">{label}</span>;
   };
 
-  // Logic tìm kiếm cuộc thi cục bộ
   const filteredContests = user?.participatedContests?.filter((c: any) => 
     c.TenCuocThi.toLowerCase().includes(contestSearch.toLowerCase())
   ) || [];
 
   if (!user) return <div className="loader-box">Đang tải hồ sơ...</div>;
 
-  const totalSub = userStats?.totalSubmissions || 0;
-  const acSub = userStats?.successfulSubmissions || 0;
-  const acRate = totalSub > 0 ? Math.round((acSub / totalSub) * 100) : 0;
+  const acRate = userStats?.totalSubmissions > 0 ? Math.round((userStats.successfulSubmissions / userStats.totalSubmissions) * 100) : 0;
 
   return (
     <div className="profile-wrapper">
@@ -172,7 +197,7 @@ export default function ProfilePage() {
       <style dangerouslySetInnerHTML={{ __html: modernUIStyles }} />
 
       <div className="content-constrain">
-        {/* Header Profile - Khôi phục giao diện gốc */}
+        {/* Header Profile */}
         <div className="profile-hero">
           <div className="avatar-container">
              <img src={user.Avatar} alt="avatar" className="avatar-img" />
@@ -232,8 +257,8 @@ export default function ProfilePage() {
                   <span className="circle-label">Tỉ lệ AC</span>
                 </div>
                 <div className="accuracy-stats">
-                  <div className="stat-mini"><span className="dot ac"></span> Thành công: <strong>{acSub}</strong></div>
-                  <div className="stat-mini"><span className="dot total"></span> Tổng bài: <strong>{totalSub}</strong></div>
+                  <div className="stat-mini"><span className="dot ac"></span> Thành công: <strong>{userStats?.successfulSubmissions || 0}</strong></div>
+                  <div className="stat-mini"><span className="dot total"></span> Tổng bài: <strong>{userStats?.totalSubmissions || 0}</strong></div>
                 </div>
               </div>
               <div className="extra-stats-grid">
@@ -285,13 +310,14 @@ export default function ProfilePage() {
                       <th>Thời gian</th>
                       <th>Bộ nhớ</th>
                       <th>Ngày nộp</th>
+                      <th style={{ textAlign: 'center' }}></th>
                     </tr>
                   </thead>
                   <tbody>
                     {subLoading ? (
-                      <tr><td colSpan={5} className="loading-text">Đang tải...</td></tr>
+                      <tr><td colSpan={6} className="loading-text">Đang tải...</td></tr>
                     ) : submissions.length === 0 ? (
-                      <tr><td colSpan={5} className="empty-text">Chưa có bài nộp nào phù hợp.</td></tr>
+                      <tr><td colSpan={6} className="empty-text">Chưa có bài nộp nào phù hợp.</td></tr>
                     ) : (
                       submissions.map((s) => (
                         <tr key={s.IdBaiNop}>
@@ -303,12 +329,24 @@ export default function ProfilePage() {
                           <td>{s.ThoiGianThucThi}ms</td>
                           <td>{formatMemory(s.BoNhoSuDung)}</td>
                           <td className="date-cell">{new Date(s.NgayNop).toLocaleDateString("vi-VN")}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            {s.Code && s.Code.trim().length > 0 ? (
+                                <button 
+                                    className="view-code-btn-column" 
+                                    onClick={() => handleViewSource(s.IdBaiNop)}
+                                    disabled={fetchingCodeId === s.IdBaiNop}
+                                >
+                                    {fetchingCodeId === s.IdBaiNop ? "..." : "👁️"}
+                                </button>
+                            ) : (
+                                <span style={{ color: '#ccc', fontSize: '12px' }}>N/A</span>
+                            )}
+                          </td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
-                {/* Khôi phục UI Phân trang cũ */}
                 {subTotalPages > 1 && (
                   <div className="pagination">
                     <button disabled={subPage === 1} onClick={() => setSubPage(p => p - 1)} className="p-btn">«</button>
@@ -351,31 +389,40 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Popup Đổi mật khẩu */}
+      {/* Code View Modal Integration */}
+      {viewingCode && (
+        <CodeViewModal 
+            code={viewingCode.code} 
+            language={viewingCode.lang} 
+            onClose={() => setViewingCode(null)} 
+        />
+      )}
+
+      {/* Password Modal */}
       {showPwdModal && (
         <div className="modal-overlay">
            <div className="modal-container animate-pop">
               <div className="modal-header-p">
-                 <h3>🔐 Đổi mật khẩu</h3>
-                 <button className="close-x" onClick={() => setShowPwdModal(false)}>✕</button>
+                  <h3>🔐 Đổi mật khẩu</h3>
+                  <button className="close-x" onClick={() => setShowPwdModal(false)}>✕</button>
               </div>
               <form onSubmit={handleChangePassword}>
-                 <div className="p-group">
+                  <div className="p-group">
                     <label>Mật khẩu hiện tại</label>
                     <input type="password" required value={pwdData.old} onChange={e => setPwdData({...pwdData, old: e.target.value})} />
-                 </div>
-                 <div className="p-group">
+                  </div>
+                  <div className="p-group">
                     <label>Mật khẩu mới</label>
                     <input type="password" required value={pwdData.new} onChange={e => setPwdData({...pwdData, new: e.target.value})} />
-                 </div>
-                 <div className="p-group">
+                  </div>
+                  <div className="p-group">
                     <label>Xác nhận mật khẩu mới</label>
                     <input type="password" required value={pwdData.confirm} onChange={e => setPwdData({...pwdData, confirm: e.target.value})} />
-                 </div>
-                 <div className="modal-btn-row">
+                  </div>
+                  <div className="modal-btn-row">
                     <button type="button" className="btn-s2" onClick={() => setShowPwdModal(false)}>Hủy</button>
                     <button type="submit" className="btn-p2" disabled={pwdLoading}>{pwdLoading ? "Đang lưu..." : "Lưu thay đổi"}</button>
-                 </div>
+                  </div>
               </form>
            </div>
         </div>
@@ -387,6 +434,31 @@ export default function ProfilePage() {
 const modernUIStyles = `
   .profile-wrapper { padding: 40px 20px; font-family: 'Inter', sans-serif; min-height: 100vh; }
   .content-constrain { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+  /* Style cho nút Xem Code ở cột riêng biệt */
+  .view-code-btn-column {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #4f46e5;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .view-code-btn-column:hover {
+    background: #4f46e5;
+    color: #ffffff;
+    border-color: #4338ca;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+    transform: translateY(-1px);
+  }
+  .view-code-btn-column:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* Hero Section */
   .profile-hero { display: flex; align-items: center; gap: 24px; background: white; padding: 32px; border-radius: 24px; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05); border: 1px solid #fff; position: relative; }
@@ -400,7 +472,7 @@ const modernUIStyles = `
   .edit-input { border: none; background: transparent; font-size: 24px; font-weight: 800; outline: none; padding-left: 10px; width: 250px; }
   .btn-icon { width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; }
   .btn-icon.save { background: #1e293b; color: #fff; } .btn-icon.cancel { background: #f1f5f9; color: #64748b; }
-  .user-handle { font-size: 15px; color: #64748b; margin-top: 6px; }
+  .user-handle { font-size: 15px; color: #64748b; margin-top: 4px; }
   .role-badge { background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 
   .btn-password-trigger { margin-left: auto; padding: 10px 16px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; font-weight: 700; color: #64748b; cursor: pointer; transition: 0.2s; font-size: 13px; }
@@ -419,7 +491,7 @@ const modernUIStyles = `
   .accuracy-circle { width: 100px; text-align: center; }
   .circle-label { font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; display: block; margin-top: 5px; }
   .circular-chart { display: block; max-width: 100%; }
-  .circle-bg { fill: none; stroke: #eee; stroke-width: 3; }
+  .circle-bg { fill: none; stroke: #2563eb; stroke-width: 3; }
   .circle { fill: none; stroke-width: 3; stroke-linecap: round; stroke: #22c55e; transition: stroke-dasharray 1s ease; }
   .percentage { fill: #1e293b; font-size: 0.5em; text-anchor: middle; font-weight: 800; }
   .accuracy-stats { flex: 1; display: flex; flex-direction: column; gap: 10px; }
@@ -452,7 +524,7 @@ const modernUIStyles = `
   .st-badge.error { background: #fee2e2; color: #b91c1c; }
   .st-badge.pending { background: #fefce8; color: #a16207; }
 
-  /* Phân trang - Khôi phục chuẩn */
+  /* Phân trang */
   .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
   .p-btn { padding: 6px 14px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; }
   .p-info { font-size: 13px; color: #64748b; font-weight: 600; }
