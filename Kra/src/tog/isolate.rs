@@ -65,7 +65,10 @@ impl IsolateManager {
             &format!("--wall-time={}", (time_limit_ms as f64 / 1000.0) * 3.0 + 2.0),
             &format!("--mem={}", memory_limit_kb),
             &format!("--meta={}", "meta.txt"),
+            &format!("--fsize={}", 10240),
             "--processes=64",
+            "--env=PATH=/usr/bin:/bin",
+            "--silent",
             "--run", "--", "./solution"
         ]);
 
