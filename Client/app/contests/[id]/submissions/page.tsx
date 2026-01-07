@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { formatMemory } from "@/scripts/memory";
 import Link from "next/link";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
@@ -112,7 +113,7 @@ export default function ContestSubmissionsPage() {
                   <td className="prob-title">{s.deBai.TieuDe}</td>
                   <td>{getStatusDisplay(s.TrangThaiCham)}</td>
                   <td className="spec-cell">{s.ThoiGianThucThi || 0} ms</td>
-                  <td className="spec-cell">{s.BoNhoSuDung || 0} MB</td>
+                  <td className="spec-cell">{formatMemory(s.BoNhoSuDung)}</td>
                   <td className="lang-cell"><span>{s.ngonNgu.TenNgonNgu}</span></td>
                   <td className="date-cell">{new Date(s.NgayNop).toLocaleString("vi-VN")}</td>
                 </tr>

@@ -3,13 +3,8 @@
 using namespace std;
 
 int main() {
-    long long a, b;
-
-    if (cin >> a >> b) {
-        long long tong = a + b;
-        
-        cout << tong << endl;
-    }
-
+    int a, b;
+    cin >> a >> b;
+    count << a + b;
     return 0;
 }
