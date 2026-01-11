@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { formatMemory } from "@/scripts/memory";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 
@@ -232,8 +233,8 @@ export default function MyProblemListPage() {
                     {renderDifficulty(prob.DoKho)}
                   </td>
                   <td style={{ padding: "16px 24px", fontSize: "13px", fontFamily: "monospace", color: "#4b5563" }}>
-                    <div>⏱ {prob.GioiHanThoiGian}ms</div>
-                    <div style={{ marginTop: "2px" }}>💾 {prob.GioiHanBoNho} KB</div>
+                    <div>{prob.GioiHanThoiGian}ms</div>
+                    <div style={{ marginTop: "2px" }}>{formatMemory(prob.GioiHanBoNho)}</div>
                   </td>
                   <td style={{ padding: "16px 24px", textAlign: "center" }}>
                     {prob.TrangThai ? (

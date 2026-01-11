@@ -233,7 +233,7 @@ const subPageStyles = `
   .table-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04); }
   .sub-table { width: 100%; border-collapse: collapse; text-align: left; }
   .sub-table th { background: #f8fafc; padding: 15px 20px; font-size: 0.8rem; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
-  .sub-table td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+  .sub-table td { padding: 10px 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
   
   .id-cell { font-family: monospace; color: #94a3b8; font-weight: 600; }
   .p-link { color: #2563eb; font-weight: 700; text-decoration: none; }
