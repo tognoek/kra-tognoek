@@ -59,7 +59,7 @@ router.get("/public", async (req, res) => {
 router.get("/manage", async (req, res) => {
   const { userId, role } = req.query; 
   try {
-    const whereCondition = role === "Admin" ? {} : { IdTaiKhoan: BigInt(userId as string) };
+    const whereCondition = role === "admin" ? {} : { IdTaiKhoan: BigInt(userId as string) };
     
     const posts = await prisma.baiDang.findMany({
       where: whereCondition,
