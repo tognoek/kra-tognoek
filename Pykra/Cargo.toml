@@ -1,0 +1,9 @@
+[package]
+name = "Pykra"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+google-generative-ai-rs = "0.3.4" 
+serde = { version = "1.0", features = ["derive"] }
