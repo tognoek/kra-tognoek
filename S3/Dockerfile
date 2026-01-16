@@ -26,7 +26,7 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# Install runtime dependencies (wget for healthcheck)
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     wget \

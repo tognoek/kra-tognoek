@@ -54,6 +54,10 @@ impl IsolateManager {
             .args([
                 &format!("--box-id={}", box_id), 
                 "--env=PATH=/usr/bin:/bin", 
+                "--dir=/usr/include", 
+                "--dir=/usr/lib",
+                "--dir=/etc/alternatives", // Cần thiết vì g++ thường là link ở đây
+                "--dir=/usr/bin",
                 "--mem=1024000", 
                 "--time=30", 
                 "--processes=200", 

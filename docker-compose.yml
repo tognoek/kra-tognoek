@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MySQL Database
   mysql:
@@ -58,7 +56,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - s3_data:/app/data
+      - ./S3/data:/app/data
     networks:
       - kra-network
     healthcheck:

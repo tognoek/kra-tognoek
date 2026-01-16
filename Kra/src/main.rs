@@ -99,7 +99,6 @@ async fn enqueue_job(Form(form): Form<JudgeForm>) -> Html<String> {
     ))
 }
 
-// --- Logic xử lý chính ---
 #[tokio::main]
 async fn main() -> Result<(), BoxError> {
     dotenvy::dotenv().ok();
@@ -123,7 +122,6 @@ async fn main() -> Result<(), BoxError> {
 
     let mut worker_manager = redis_manager.clone();
 
-    // Nhánh 1: Web Server (Chỉ chạy nếu UI=true)
     let web_task = async {
         if use_ui {
             let app = Router::new()
@@ -135,14 +133,12 @@ async fn main() -> Result<(), BoxError> {
             println!("\x1b[36m🌐 Web UI is live at http://{}\x1b[0m", addr);
             axum::serve(listener, app).await.unwrap();
         } else {
-            // Treo task này nếu không dùng UI
             std::future::pending::<()>().await;
         }
     };
 
     let mut is_reconnecting = false;
 
-    // Nhánh 2: Worker Loop
     let worker_task = async {
         loop {
             let res: Option<(String, String)> = match redis::cmd("BLPOP")
@@ -175,7 +171,6 @@ async fn main() -> Result<(), BoxError> {
         }
     };
 
-    // Chạy song song cả 2 tác vụ
     select! {
         _ = web_task => {},
         _ = worker_task => {},
@@ -203,17 +198,14 @@ async fn handle_job(job_json: &str, s3_base_url: &str, is_debug: bool) -> Result
         language,
     };
 
-    // Gọi Executor chấm bài
     let exec_res = Executor::run_job(cfg).await;
 
-    // Phân tích kết quả
     let codes = build_result_codes(&exec_res);
     let (total_time, total_mem) = summarize_result(&exec_res);
 
     println!("\x1b[1;32m🏁 DONE: Result Codes {:?} | Max Time: {}ms | Max Mem: {}kb\x1b[0m", 
              codes, total_time, total_mem);
 
-    // Gửi Callback về Server chính (nếu có)
     if let (Some(sub_id), Some(srv_url)) = (data.submission_id, data.server_base_url) {
         if is_debug { println!("[LOG] Sending callback to {}...", srv_url); }
         send_callback(&srv_url, &sub_id, total_time, total_mem, &codes).await;

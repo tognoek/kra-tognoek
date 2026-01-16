@@ -16,8 +16,8 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*M!100616 SET @OLD_NOTE_VERBOSITY=@@NOTE_VERBOSITY, NOTE_VERBOSITY=0 */;
 
-DROP DATABASE IF EXISTS `kra-tognoek`;
-CREATE DATABASE `kra-tognoek`;
+DROP DATABASE IF EXISTS `kra-tognoek-`;
+CREATE DATABASE `kra-tognoek-`;
 USE `kra-tognoek`;
 
 --
@@ -93,7 +93,7 @@ CREATE TABLE `BaiNop` (
   CONSTRAINT `BaiNop_ibfk_2` FOREIGN KEY (`IdDeBai`) REFERENCES `DeBai` (`IdDeBai`),
   CONSTRAINT `BaiNop_ibfk_3` FOREIGN KEY (`IdNgonNgu`) REFERENCES `NgonNgu` (`IdNgonNgu`),
   CONSTRAINT `BaiNop_ibfk_4` FOREIGN KEY (`IdCuocThi`) REFERENCES `CuocThi` (`IdCuocThi`)
-) ENGINE=InnoDB AUTO_INCREMENT=1055 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1096 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1157,7 +1157,48 @@ INSERT INTO `BaiNop` VALUES
 (1051,2,1,1,1,'http://127.0.0.1:3001/data/code/thong_1767619508404.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    long long a, b;\n\n    if (cin >> a >> b) {\n        long long tich = a * b;\n        cout << tich << endl;\n    }\n\n    return 0;\n}','[0]',5,3588,'2026-01-05 13:25:08'),
 (1052,2,26,1,1,'http://127.0.0.1:3001/data/code/thong_1767619555060.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    long long a, b;\n\n    if (cin >> a >> b) {\n        cout << a + b << endl;\n    }\n\n    return 0;\n}','[0,0,0]',6,3616,'2026-01-05 13:25:55'),
 (1053,2,15,1,1,'http://127.0.0.1:3001/data/code/thong_1767619700058.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    count << a - b;\n    return 0;\n}','[-1]',0,0,'2026-01-05 13:28:20'),
-(1054,2,15,1,1,'http://127.0.0.1:3001/data/code/thong_1767619752254.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    long long a, b;\n\n    if (cin >> a >> b) {\n        long long tich = a - b;\n        cout << tich << endl;\n    }\n\n    return 0;\n}','[0,0,0]',5,3612,'2026-01-05 13:29:12');
+(1054,2,15,1,1,'http://127.0.0.1:3001/data/code/thong_1767619752254.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    long long a, b;\n\n    if (cin >> a >> b) {\n        long long tich = a - b;\n        cout << tich << endl;\n    }\n\n    return 0;\n}','[0,0,0]',5,3612,'2026-01-05 13:29:12'),
+(1055,3,1,1,1,'http://127.0.0.1:3001/data/code/thong_1767619700058.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    count << a - b;\n    return 0;\n}','[0, 0, 1]',59,3612,'2026-01-05 13:28:20'),
+(1056,3,25,1,1,'http://127.0.0.1:3001/data/code/thong_1767619700058.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    count << a - b;\n    return 0;\n}','[-1]',0,0,'2026-01-05 13:28:20'),
+(1057,3,26,1,1,'http://127.0.0.1:3001/data/code/thong_1767619700058.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    count << a - b;\n    return 0;\n}','[0, 0, 0]',50,1212,'2026-01-05 13:28:20'),
+(1058,4,15,1,1,'http://127.0.0.1:3001/data/code/thong_1767619700058.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    count << a - b;\n    return 0;\n}','[0, 0, 0]',12,5712,'2026-01-05 13:28:20'),
+(1059,4,6,1,1,'http://127.0.0.1:3001/data/code/thong_1767619700058.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    count << a - b;\n    return 0;\n}','[0, -1, 0]',23,4610,'2026-01-05 13:28:20'),
+(1060,3,26,1,1,'http://127.0.0.1:3001/data/code/thong_1767619700058.cpp','#include <iostream>\n\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    count << a - b;\n    return 0;\n}','[0, 2, 0]',15,3912,'2026-01-05 13:28:20'),
+(1061,7,25,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',626,78573,'2026-01-03 20:02:00'),
+(1062,6,6,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[-1]',0,0,'2026-01-03 20:06:00'),
+(1063,4,26,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',688,54257,'2026-01-03 20:10:00'),
+(1064,8,25,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',989,108678,'2026-01-03 20:14:00'),
+(1065,5,1,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',737,93672,'2026-01-03 20:16:00'),
+(1066,9,26,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',96,6605,'2026-01-03 20:18:00'),
+(1067,6,26,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',154,72354,'2026-01-03 20:20:00'),
+(1068,3,26,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',957,115013,'2026-01-03 20:23:00'),
+(1069,6,15,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',192,90441,'2026-01-03 20:26:00'),
+(1070,3,26,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',400,59313,'2026-01-03 20:30:00'),
+(1071,2,6,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,1,0]',465,100299,'2026-01-03 20:34:00'),
+(1072,5,15,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[-1]',0,0,'2026-01-03 20:36:00'),
+(1073,3,1,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',568,39308,'2026-01-03 20:40:00'),
+(1074,7,6,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',249,12454,'2026-01-03 20:44:00'),
+(1075,4,25,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',701,47027,'2026-01-03 20:46:00'),
+(1076,7,25,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[1,0,1]',541,26828,'2026-01-03 20:50:00'),
+(1077,6,1,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',594,96743,'2026-01-03 20:53:00'),
+(1078,7,1,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',123,63461,'2026-01-03 20:57:00'),
+(1079,2,15,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[4]',809,52399,'2026-01-03 21:00:00'),
+(1080,5,1,1,1,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',554,29446,'2026-01-03 21:02:00'),
+(1081,4,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',841,66517,'2026-01-03 20:02:00'),
+(1082,6,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',682,126192,'2026-01-03 20:05:00'),
+(1083,6,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',360,94745,'2026-01-03 20:09:00'),
+(1084,3,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',536,72350,'2026-01-03 20:13:00'),
+(1085,3,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[4]',299,112227,'2026-01-03 20:15:00'),
+(1086,4,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',692,65605,'2026-01-03 20:17:00'),
+(1087,3,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[-1]',0,0,'2026-01-03 20:19:00'),
+(1088,4,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',236,89664,'2026-01-03 20:23:00'),
+(1089,6,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',538,29447,'2026-01-03 20:26:00'),
+(1090,5,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[1,0,1]',787,76464,'2026-01-03 20:30:00'),
+(1091,4,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',377,22995,'2026-01-03 20:32:00'),
+(1092,2,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',522,55610,'2026-01-03 20:36:00'),
+(1093,2,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',92,92294,'2026-01-03 20:39:00'),
+(1094,6,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',661,104191,'2026-01-03 20:43:00'),
+(1095,2,26,1,2,'demo.cpp','#include <iostream>\r\n\r\nusing namespace std;\r\n\r\nint main() {\r\n    cout << \"Hello word!!\";\r\n    return 0;\r\n}','[0,0,0]',546,103523,'2026-01-03 20:47:00');
 /*!40000 ALTER TABLE `BaiNop` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1378,7 +1419,7 @@ CREATE TABLE `CuocThi` (
   PRIMARY KEY (`IdCuocThi`),
   KEY `IdTaiKhoan` (`IdTaiKhoan`),
   CONSTRAINT `CuocThi_ibfk_1` FOREIGN KEY (`IdTaiKhoan`) REFERENCES `TaiKhoan` (`IdTaiKhoan`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1389,7 +1430,8 @@ LOCK TABLES `CuocThi` WRITE;
 /*!40000 ALTER TABLE `CuocThi` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `CuocThi` VALUES
-(1,2,'Màn khởi đầu vui vẻ.','# 🧩 Các Bài Tập Cơ Bản\n\nCuộc thi bao gồm các **bài tập lập trình cơ bản**, giúp kiểm tra khả năng:\n\n- Đọc dữ liệu **Input / Output**\n- Xử lý số học đơn giản\n- Vòng lặp, điều kiện\n- Chuỗi và mảng cơ bản\n\n---\n\n## 📌 Nội dung chính\n\n- Tính toán số học (A + B, tổng, hiệu, tích, chia)\n- Kiểm tra điều kiện (chẵn / lẻ, so sánh)\n- Xử lý chuỗi đơn giản\n- Duyệt mảng, đếm, tìm giá trị\n\n---\n\n## 🎯 Mục tiêu\n\n- Làm quen với hệ thống chấm bài\n- Rèn tư duy logic\n- Phù hợp cho **người mới bắt đầu**\n\n---\n\n## ⏱️ Yêu cầu\n\n- Thời gian & bộ nhớ giới hạn ở mức cơ bản\n- Ngôn ngữ: C / C++\n\n---\n\nChúc bạn làm bài tốt và đạt kết quả cao 🚀\n','2026-01-04 08:13:00','2026-01-20 08:13:00',1,'2026-01-03 20:14:00','# 📜 Quy định\n\n- Mỗi bài nộp phải **đúng định dạng Input / Output**\n- Không sử dụng **code sao chép**\n- Thời gian và bộ nhớ tuân theo **giới hạn của từng bài**\n- Kết quả chấm là **kết quả cuối cùng**\n- Quyết định của hệ thống là **quyết định cuối cùng**\n');
+(1,2,'Màn khởi đầu vui vẻ.','# 🧩 Các Bài Tập Cơ Bản\n\nCuộc thi bao gồm các **bài tập lập trình cơ bản**, giúp kiểm tra khả năng:\n\n- Đọc dữ liệu **Input / Output**\n- Xử lý số học đơn giản\n- Vòng lặp, điều kiện\n- Chuỗi và mảng cơ bản\n\n---\n\n## 📌 Nội dung chính\n\n- Tính toán số học (A + B, tổng, hiệu, tích, chia)\n- Kiểm tra điều kiện (chẵn / lẻ, so sánh)\n- Xử lý chuỗi đơn giản\n- Duyệt mảng, đếm, tìm giá trị\n\n---\n\n## 🎯 Mục tiêu\n\n- Làm quen với hệ thống chấm bài\n- Rèn tư duy logic\n- Phù hợp cho **người mới bắt đầu**\n\n---\n\n## ⏱️ Yêu cầu\n\n- Thời gian & bộ nhớ giới hạn ở mức cơ bản\n- Ngôn ngữ: C / C++\n\n---\n\nChúc bạn làm bài tốt và đạt kết quả cao 🚀\n','2026-01-04 08:13:00','2026-01-20 08:13:00',1,'2026-01-03 20:14:00','# 📜 Quy định\n\n- Mỗi bài nộp phải **đúng định dạng Input / Output**\n- Không sử dụng **code sao chép**\n- Thời gian và bộ nhớ tuân theo **giới hạn của từng bài**\n- Kết quả chấm là **kết quả cuối cùng**\n- Quyết định của hệ thống là **quyết định cuối cùng**\n'),
+(2,2,'Thử nghiệm hệ thống','# Cuộc thì để chạy thử hệ thống','2026-01-14 16:00:00','2026-01-15 16:00:00',1,'2026-01-13 16:00:47','');
 /*!40000 ALTER TABLE `CuocThi` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1420,7 +1462,18 @@ LOCK TABLES `CuocThi_DangKy` WRITE;
 /*!40000 ALTER TABLE `CuocThi_DangKy` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `CuocThi_DangKy` VALUES
-(1,2,1);
+(1,2,1),
+(1,3,1),
+(1,4,1),
+(1,5,1),
+(1,6,1),
+(1,7,1),
+(1,8,1),
+(2,2,1),
+(2,3,1),
+(2,4,1),
+(2,5,1),
+(2,6,1);
 /*!40000 ALTER TABLE `CuocThi_DangKy` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1456,7 +1509,8 @@ INSERT INTO `CuocThi_DeBai` VALUES
 (1,6,' PHẦN DƯ',1),
 (1,15,'HIỆU HAI SỐ',1),
 (1,25,'CHIA NGUYÊN',1),
-(1,26,'TỔNG HAI SỐ',1);
+(1,26,'TỔNG HAI SỐ',1),
+(2,26,'TỔNG HAI SỐ',1);
 /*!40000 ALTER TABLE `CuocThi_DeBai` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1733,4 +1787,4 @@ commit;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-01-07  8:14:33
+-- Dump completed on 2026-01-16 23:04:32

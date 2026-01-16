@@ -3,14 +3,16 @@ from datetime import datetime, timedelta
 
 # --- CẤU HÌNH THỜI GIAN BẮT ĐẦU ---
 THOI_GIAN_BAT_DAU = datetime(2026, 1, 3, 20, 0, 0)
-SO_LUONG_BAN_GHI = 1000  
+SO_LUONG_BAN_GHI = 15  
 FILE_NAME = "insert_submissions.sql"
 
 # --- CẤU HÌNH DỮ LIỆU ---
-danh_sach_id_user = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
-danh_sach_id_de_bai = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+danh_sach_id_user = [2, 3, 4, 5, 6]
+danh_sach_id_de_bai = [26]
 danh_sach_id_ngon_ngu = [1]  
-danh_sach_id_cuoc_thi = ["NULL"]
+danh_sach_id_cuoc_thi = [2]
+
+# mysqldump -u `root` -p `kra-tognoek` > ten_file_xuat.sql
 
 # SỬ DỤNG TRIPLE QUOTES ĐỂ GIỮ ĐỊNH DẠNG CODE
 CODE_MAC_DINH = """#include <iostream>
@@ -30,9 +32,9 @@ DUONG_DAN_MAC_DINH = "demo.cpp"
 
 # Tỷ lệ Trạng thái: (Mã, Trọng số %)
 cac_trang_thai = [
-    ("[0,0,0]", 65),  # AC
-    ("[-1]", 10),     # Compile Error
-    ("[0,1,0]", 10),  # WA
+    ("[0,0,0]", 75),  # AC
+    ("[-1]", 5),     # Compile Error
+    ("[0,1,0]", 5),  # WA
     ("[1,0,1]", 5),   # TLE
     ("[0,0,1]", 5),   # MLE
     ("[4]", 5)        # RE
