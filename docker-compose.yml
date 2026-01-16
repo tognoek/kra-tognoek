@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: kra-tognoek-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      # Lưu ý: Database name trong SQL files data.sql là 'kra-tognoek'
+      # MySQL sẽ tự động tạo database từ SQL files, nên MYSQL_DATABASE có thể khác
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-oj_system}
+      MYSQL_USER: ${MYSQL_USER:-oj_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-oj_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Mount SQL files để tự động chạy khi khởi tạo database lần đầu
+      # Files .sql trong thư mục MySQL sẽ được execute theo thứ tự alphabet
+      - ./MySQL:/docker-entrypoint-initdb.d
+    networks:
+      - kra-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: kra-tognoek-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kra-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # S3 Service
+  s3:
+    build:
+      context: ./S3
+      dockerfile: Dockerfile
+    container_name: kra-tognoek-s3
+    restart: unless-stopped
+    environment:
+      - ENABLE_CONSOLE_OUTPUT=${S3_ENABLE_CONSOLE_OUTPUT:-true}
+      - MAXCALL=${S3_MAXCALL:-100000000000000}
+    ports:
+      - "3001:3001"
+    volumes:
+      - s3_data:/app/data
+    networks:
+      - kra-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Ark Moderation Service
+  ark:
+    build:
+      context: ./Ark
+      dockerfile: Dockerfile
+    container_name: kra-tognoek-ark
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://${MYSQL_USER:-oj_user}:${MYSQL_PASSWORD:-oj_password}@mysql:3306/${MYSQL_DATABASE:-oj_system}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    networks:
+      - kra-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Server API
+  server:
+    build:
+      context: ./Server
+      dockerfile: Dockerfile
+    container_name: kra-tognoek-server
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://${MYSQL_USER:-oj_user}:${MYSQL_PASSWORD:-oj_password}@mysql:3306/${MYSQL_DATABASE:-oj_system}
+      - REDIS_URL=redis://redis:6379
+      - REDIS_QUEUE=${REDIS_QUEUE:-job_queue}
+      - PORT=${PORT:-5000}
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - SERVER_BASE_URL=${SERVER_BASE_URL:-http://localhost:5000}
+      - WORKER_SECRET=${WORKER_SECRET:-worker-secret-key}
+      - S3_BASE_URL=${S3_BASE_URL:-http://s3:3001}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - URL_FRONTEND_LOGIN=${URL_FRONTEND_LOGIN:-http://localhost:3000}
+    ports:
+      - "${PORT:-5000}:5000"
+    volumes:
+      - server_data:/app/data
+    networks:
+      - kra-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
+
+  # Client Frontend
+  client:
+    build:
+      context: ./Client
+      dockerfile: Dockerfile
+    container_name: kra-tognoek-client
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://localhost:5000}
+    ports:
+      - "3000:3000"
+    networks:
+      - kra-network
+    depends_on:
+      - server
+
+networks:
+  kra-network:
+    driver: bridge
+    # Expose ports để Kra bên ngoài có thể kết nối
+    # Kra sẽ kết nối qua localhost với các ports được expose
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  s3_data:
+    driver: local
+  server_data:
+    driver: local
+

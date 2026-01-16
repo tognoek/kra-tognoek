@@ -5,8 +5,8 @@ export class JobQueueManager {
     private static instance: JobQueue | null = null;
 
     static async initialize(
-        queueName: string = 'job_queue',
-        redisUrl: string = 'redis://127.0.0.1:6379'
+        queueName: string = process.env.REDIS_QUEUE || 'job_queue',
+        redisUrl: string = process.env.REDIS_URL || 'redis://127.0.0.1:6379'
     ): Promise<JobQueue> {
         if (JobQueueManager.instance) {
             return JobQueueManager.instance;

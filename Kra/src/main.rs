@@ -118,7 +118,10 @@ async fn main() -> Result<(), BoxError> {
     println!("   UI   : {}", use_ui);
 
     let redis_client = redis::Client::open(redis_url)?;
-    let mut worker_conn = redis_client.get_async_connection().await?;
+
+    let redis_manager = redis_client.get_connection_manager().await?;
+
+    let mut worker_manager = redis_manager.clone();
 
     // Nhánh 1: Web Server (Chỉ chạy nếu UI=true)
     let web_task = async {
@@ -143,13 +146,13 @@ async fn main() -> Result<(), BoxError> {
             let res: Option<(String, String)> = match redis::cmd("BLPOP")
                 .arg(&queue_name)
                 .arg(0)
-                .query_async(&mut worker_conn)
+                .query_async(&mut worker_manager)
                 .await 
             {
                 Ok(v) => v,
                 Err(e) => {
                     eprintln!("❌ Redis Error: {}", e);
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    tokio::time::sleep(Duration::from_secs(2)).await;
                     continue;
                 }
             };

@@ -17,8 +17,8 @@ export class JobQueue {
     private queueName: string;
 
     constructor(
-        queueName: string = 'job_queue',
-        private redisUrl: string = 'redis://127.0.0.1:6379'
+        queueName: string = process.env.REDIS_QUEUE || 'job_queue',
+        private redisUrl: string = process.env.REDIS_URL || 'redis://127.0.0.1:6379'
     ) {
         this.queueName = queueName;
         

@@ -1,0 +1,61 @@
+# Example override file for local development
+# Copy this to docker-compose.override.yml and customize
+
+version: '3.8'
+
+services:
+  mysql:
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: your_root_password
+      MYSQL_DATABASE: oj_system
+      MYSQL_USER: oj_user
+      MYSQL_PASSWORD: oj_password
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  s3:
+    ports:
+      - "3001:3001"
+    environment:
+      ENABLE_CONSOLE_OUTPUT: "true"
+      MAXCALL: "100000000000000"
+
+  kra:
+    ports:
+      - "4000:4000"
+    environment:
+      REDIS_URL: redis://redis:6379
+      REDIS_QUEUE: job_queue
+      S3_BASE_URL: http://s3:3001
+      KRA_WEB_PORT: 4000
+      WORKER_SECRET: your-worker-secret-key
+
+  ark:
+    environment:
+      DATABASE_URL: mysql://oj_user:oj_password@mysql:3306/oj_system
+      OPENAI_API_KEY: your-openai-api-key
+
+  server:
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: mysql://oj_user:oj_password@mysql:3306/oj_system
+      REDIS_URL: redis://redis:6379
+      REDIS_QUEUE: job_queue
+      PORT: 5000
+      JWT_SECRET: your-jwt-secret-key
+      SERVER_BASE_URL: http://server:5000
+      WORKER_SECRET: your-worker-secret-key
+      S3_BASE_URL: http://s3:3001
+      RESEND_API_KEY: your-resend-api-key
+
+  client:
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:5000
+

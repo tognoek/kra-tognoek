@@ -58,7 +58,7 @@ model BaiDang {
 
 model ChuDe {
   IdChuDe  BigInt  @id @default(autoincrement())
-  TenChuDe String  @unique
+  TenChuDe String  @unique @db.VarChar(255)
   MoTa     String? @db.Text
 
   deBaiChuDes DeBai_ChuDe[]
@@ -176,7 +176,7 @@ model BaiNop {
   IdNgonNgu       BigInt
   IdCuocThi       BigInt?
   DuongDanCode    String
-  Code            String    @default("") @db.Text
+  Code            String @db.Text
   TrangThaiCham   String? 
   ThoiGianThucThi Int?
   BoNhoSuDung     Int?
