@@ -140,6 +140,8 @@ async fn main() -> Result<(), BoxError> {
         }
     };
 
+    let mut is_reconnecting = false;
+
     // Nhánh 2: Worker Loop
     let worker_task = async {
         loop {
@@ -149,9 +151,16 @@ async fn main() -> Result<(), BoxError> {
                 .query_async(&mut worker_manager)
                 .await 
             {
-                Ok(v) => v,
+                Ok(v) => {
+                    if is_reconnecting {
+                        println!("\x1b[1;32m✅ Redis Connection Restored!\x1b[0m");
+                        is_reconnecting = false;
+                    }
+                    v
+                },
                 Err(e) => {
                     eprintln!("❌ Redis Error: {}", e);
+                    is_reconnecting = true;
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     continue;
                 }

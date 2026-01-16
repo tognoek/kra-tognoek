@@ -24,16 +24,6 @@ services:
       ENABLE_CONSOLE_OUTPUT: "true"
       MAXCALL: "100000000000000"
 
-  kra:
-    ports:
-      - "4000:4000"
-    environment:
-      REDIS_URL: redis://redis:6379
-      REDIS_QUEUE: job_queue
-      S3_BASE_URL: http://s3:3001
-      KRA_WEB_PORT: 4000
-      WORKER_SECRET: your-worker-secret-key
-
   ark:
     environment:
       DATABASE_URL: mysql://oj_user:oj_password@mysql:3306/oj_system
