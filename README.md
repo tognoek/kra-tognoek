@@ -915,7 +915,7 @@ Kra-tognoek/
 │   └── tsconfig.json            # TypeScript config
 │
 ├── MySQL/
-│   └── code.sql                 # SQL dump (nếu có)
+│   └── data.sql                 # SQL dump (nếu có)
 │
 ├── logs/                        # Log files
 │
@@ -1244,21 +1244,9 @@ npx prisma validate
 
 ---
 
-## 📄 License
-
-[Thêm license của bạn]
-
----
-
-## 👥 Contributors
-
-[Thêm contributors]
-
----
-
 ## 📞 Liên hệ
 
-[Thêm thông tin liên hệ]
+Hãy gửi [Email](dangvanthong29042003@gmail.com) cho tôi nhé.
 
 ---
 

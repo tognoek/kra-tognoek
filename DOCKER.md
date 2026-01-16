@@ -59,7 +59,6 @@ docker-compose logs -f kra
 ### 3. Setup Database
 
 MySQL sẽ tự động chạy các file SQL trong thư mục `MySQL/` khi khởi tạo database lần đầu:
-- `code.sql` - Schema và structure
 - `data.sql` - Dữ liệu mẫu/seed data
 
 **Lưu ý**: Các file SQL chỉ chạy khi volume `mysql_data` chưa tồn tại (database mới). Nếu muốn chạy lại, xóa volume:
