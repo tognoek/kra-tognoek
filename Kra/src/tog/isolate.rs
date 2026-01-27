@@ -6,21 +6,18 @@ use crate::tog::types::{BoxError, TestCaseResult, InputMode};
 pub struct IsolateManager;
 
 impl IsolateManager {
-    // Hàm tiện ích để kiểm tra trạng thái debug
     fn is_debug() -> bool {
         std::env::var("DEBUG").unwrap_or_default() == "true"
     }
 
-    // Hàm in log có điều kiện và màu sắc
     fn log(msg: &str, color: &str) {
         if Self::is_debug() {
-            // \x1b[...m là ANSI escape codes để in màu trên terminal
             println!("\x1b[{}m[ISOLATE] {}\x1b[0m", color, msg);
         }
     }
 
     pub async fn init(box_id: u32) -> Result<PathBuf, BoxError> {
-        Self::log(&format!("Initializing box-id: {}", box_id), "34"); // Blue
+        Self::log(&format!("Initializing box-id: {}", box_id), "34"); 
         
         let _ = timeout(Duration::from_secs(2), 
             Command::new("isolate").args(["--cleanup", &format!("--box-id={}", box_id)]).output()
@@ -30,12 +27,12 @@ impl IsolateManager {
         let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
         let p = PathBuf::from(path_str).join("box");
         
-        Self::log(&format!("Box path: {:?}", p), "32"); // Green
+        Self::log(&format!("Box path: {:?}", p), "32"); 
         Ok(p)
     }
 
     pub async fn cleanup(box_id: u32) -> Result<(), BoxError> {
-        Self::log(&format!("Cleaning up box-id: {}", box_id), "33"); // Yellow
+        Self::log(&format!("Cleaning up box-id: {}", box_id), "33");
         let _ = Command::new("isolate").args(["--cleanup", &format!("--box-id={}", box_id)]).output().await;
         Ok(())
     }
@@ -48,7 +45,7 @@ impl IsolateManager {
         tokio::fs::copy(src_path, box_dir.join(&internal_src)).await?;
 
         let compiler = if is_cpp { "/usr/bin/g++" } else { "/usr/bin/gcc" };
-        Self::log(&format!("Compiling source with {}", compiler), "36"); // Cyan
+        Self::log(&format!("Compiling source with {}", compiler), "36"); 
 
         let output = Command::new("isolate")
             .args([
@@ -56,7 +53,7 @@ impl IsolateManager {
                 "--env=PATH=/usr/bin:/bin", 
                 "--dir=/usr/include", 
                 "--dir=/usr/lib",
-                "--dir=/etc/alternatives", // Cần thiết vì g++ thường là link ở đây
+                "--dir=/etc/alternatives",
                 "--dir=/usr/bin",
                 "--mem=1024000", 
                 "--time=30", 
@@ -68,7 +65,7 @@ impl IsolateManager {
 
         if !output.status.success() {
             let err_msg = String::from_utf8_lossy(&output.stderr);
-            Self::log(&format!("Compile Error: {}", err_msg), "31"); // Red
+            Self::log(&format!("Compile Error: {}", err_msg), "31"); 
             return Err(format!("Compile error: {}", err_msg).into());
         }
         
@@ -87,7 +84,7 @@ impl IsolateManager {
         input_mode: InputMode,
     ) -> TestCaseResult {
         let stem = input_path.file_stem().unwrap().to_string_lossy();
-        Self::log(&format!("Starting testcase: {}", stem), "35"); // Magenta
+        Self::log(&format!("Starting testcase: {}", stem), "35");
 
         let box_dir = match Self::init(box_id).await {
             Ok(p) => p,
@@ -161,7 +158,6 @@ impl IsolateManager {
             }
         }
 
-        // --- DEBUG OUTPUT ---
         if Self::is_debug() {
             if let Ok(user_output_data) = tokio::fs::read_to_string(&user_out_external).await {
                 println!("\x1b[90m---------- [USER OUTPUT: {}] ----------", stem);

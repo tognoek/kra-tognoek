@@ -214,7 +214,6 @@ router.get("/:id/source", async (req, res) => {
 
     if (!submission) return res.status(404).json({ error: "Không tìm thấy bài nộp" });
 
-    // Kiểm tra quyền sở hữu (Security Check)
     if (submission.IdTaiKhoan !== userId) {
       return res.status(403).json({ error: "Bạn không có quyền xem mã nguồn này" });
     }

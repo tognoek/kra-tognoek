@@ -1,7 +1,7 @@
 mod fetch;
-pub mod run; // Để public hàm compare_lenient cho isolate.rs
+pub mod run; 
 mod types;
-mod isolate; // Khai báo module con mới
+mod isolate;
 
 use tokio::fs;
 use std::path::Path;

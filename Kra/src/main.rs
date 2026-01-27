@@ -14,7 +14,6 @@ use serde_json::{json, Value};
 use tokio::net::TcpListener;
 use tokio::select;
 
-// Import các thành phần từ module tog
 use tog::{Executor, BoxError, JobConfig, ExecResult, InputMode, Language};
 
 #[derive(Debug, Deserialize)]
@@ -59,7 +58,6 @@ struct JudgeForm {
     language: Option<String>,
 }
 
-// --- Giao diện Web UI ---
 async fn index_page() -> Html<String> {
     match tokio::fs::read_to_string("ui/index.html").await {
         Ok(content) => Html(content),
